@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/GrayboxLevelBuilder.cs" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/world/RealityWorld.tscn" id="2_reality"]
@@ -7,6 +7,8 @@
 [ext_resource type="Script" path="res://scripts/player/PlayerController.cs" id="5_player"]
 [ext_resource type="Script" path="res://scripts/ui/HudController.cs" id="6_hud"]
 [ext_resource type="Shader" path="res://shaders/reality_blur.gdshader" id="7_blur"]
+[ext_resource type="Script" path="res://scripts/world/MyopiaEffectController.cs" id="8_myopia"]
+[ext_resource type="Script" path="res://scripts/ui/DeveloperConsole.cs" id="9_console"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -19,6 +21,9 @@ tonemap_mode = 2
 [sub_resource type="CapsuleShape3D" id="CapsuleShape_player"]
 radius = 0.35
 height = 1.75
+
+[sub_resource type="SphereShape3D" id="SphereShape_interaction_probe"]
+radius = 0.32
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_glass"]
 top_radius = 0.075
@@ -45,6 +50,64 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
+[sub_resource type="StyleBoxFlat" id="StyleBox_prompt"]
+bg_color = Color(0.035, 0.025, 0.022, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.83, 0.61, 0.3, 0.8)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 22.0
+content_margin_top = 12.0
+content_margin_right = 22.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_feedback"]
+bg_color = Color(0.08, 0.19, 0.15, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.9, 0.62, 0.9)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_progress_bg"]
+bg_color = Color(0.03, 0.035, 0.04, 0.9)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_progress_fill"]
+bg_color = Color(0.95, 0.68, 0.25, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_console"]
+bg_color = Color(0.012, 0.018, 0.025, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.16, 0.72, 0.66, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
 
@@ -58,10 +121,16 @@ light_energy = 1.35
 shadow_enabled = true
 
 [node name="WarmLight" type="OmniLight3D" parent="."]
-position = Vector3(0, 3.6, -1.5)
+position = Vector3(0, 3.6, 0.8)
 light_color = Color(1, 0.48, 0.25, 1)
 light_energy = 4.0
 omni_range = 11.0
+
+[node name="BackBarLight" type="OmniLight3D" parent="."]
+position = Vector3(0, 3.2, -5.6)
+light_color = Color(1, 0.68, 0.4, 1)
+light_energy = 2.4
+omni_range = 7.0
 
 [node name="NeutralGameplay" type="Node3D" parent="."]
 
@@ -72,8 +141,14 @@ omni_range = 11.0
 [node name="WorldLayerController" type="Node" parent="."]
 script = ExtResource("4_layers")
 
+[node name="MyopiaEffectController" type="Node" parent="."]
+script = ExtResource("8_myopia")
+InitialMyopiaDegrees = 50.0
+
 [node name="Player" type="CharacterBody3D" parent="."]
-position = Vector3(0, 0.9, 4.5)
+position = Vector3(0, 0.9, -3)
+rotation_degrees = Vector3(0, 180, 0)
+collision_mask = 3
 script = ExtResource("5_player")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
@@ -87,10 +162,17 @@ current = true
 fov = 72.0
 
 [node name="InteractionRay" type="RayCast3D" parent="Player/Head/Camera3D"]
-target_position = Vector3(0, 0, -3.2)
+target_position = Vector3(0, 0, -5.2)
 collision_mask = 1
 collide_with_areas = false
 collide_with_bodies = true
+enabled = true
+
+[node name="InteractionProbe" type="ShapeCast3D" parent="Player/Head/Camera3D"]
+shape = SubResource("SphereShape_interaction_probe")
+target_position = Vector3(0, 0, -5.2)
+collision_mask = 1
+max_results = 8
 enabled = true
 
 [node name="HandAnchor" type="Node3D" parent="Player/Head/Camera3D"]
@@ -135,15 +217,15 @@ mouse_filter = 2
 color = Color(0.01, 0.16, 0.18, 0.12)
 
 [node name="Recipe" type="Label" parent="GlassesInfo/GlassesOverlay"]
-offset_left = 36.0
-offset_top = 120.0
-offset_right = 500.0
-offset_bottom = 430.0
+offset_left = 1420.0
+offset_top = 60.0
+offset_right = 1870.0
+offset_bottom = 270.0
 theme_override_colors/font_color = Color(0.67, 1, 0.94, 1)
 theme_override_colors/font_outline_color = Color(0.01, 0.08, 0.1, 1)
 theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 25
-text = "眼镜世界 // 开发占位配方\n\n冰美式\n1. 拿取高球杯\n2. 加入冰\n3. 手工倒水\n4. 研磨咖啡豆\n5. 持续萃取浓缩\n6. 交付\n\n客人与原材料在此世界隐藏\n按 G 返回现实世界"
+theme_override_font_sizes/font_size = 19
+text = "眼镜世界 // 开发占位配方\n冰美式\n拿杯 → 加冰 → 手工倒水\n研磨 → 持续萃取 → 交付\n\n按 G 返回现实世界"
 
 [node name="HUD" type="CanvasLayer" parent="."]
 layer = 10
@@ -173,6 +255,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
 theme_override_font_sizes/font_size = 20
 text = "状态"
+autowrap_mode = 2
 
 [node name="Crosshair" type="Label" parent="HUD"]
 anchors_preset = 8
@@ -192,19 +275,62 @@ theme_override_font_sizes/font_size = 28
 text = "+"
 horizontal_alignment = 1
 
-[node name="Prompt" type="Label" parent="HUD"]
+[node name="PromptPanel" type="PanelContainer" parent="HUD"]
+visible = false
 anchors_preset = 12
+anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -150.0
-offset_bottom = -92.0
+offset_left = 470.0
+offset_top = -148.0
+offset_right = -470.0
+offset_bottom = -86.0
 grow_horizontal = 2
 grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBox_prompt")
+
+[node name="Prompt" type="Label" parent="HUD/PromptPanel"]
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.53, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 7
 theme_override_font_sizes/font_size = 25
 horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OperationProgress" type="ProgressBar" parent="HUD"]
+visible = false
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 680.0
+offset_top = -76.0
+offset_right = -680.0
+offset_bottom = -62.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/background = SubResource("StyleBox_progress_bg")
+theme_override_styles/fill = SubResource("StyleBox_progress_fill")
+show_percentage = false
+
+[node name="FeedbackPanel" type="PanelContainer" parent="HUD"]
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -320.0
+offset_top = 186.0
+offset_right = 320.0
+offset_bottom = 240.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBox_feedback")
+
+[node name="Feedback" type="Label" parent="HUD/FeedbackPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 1, 0.88, 1)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Debug" type="Label" parent="HUD"]
 anchors_preset = 3
@@ -246,3 +372,45 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
+[node name="DeveloperConsole" type="CanvasLayer" parent="."]
+layer = 30
+script = ExtResource("9_console")
+
+[node name="Panel" type="PanelContainer" parent="DeveloperConsole"]
+visible = false
+offset_left = 36.0
+offset_top = 650.0
+offset_right = 760.0
+offset_bottom = 1028.0
+theme_override_styles/panel = SubResource("StyleBox_console")
+
+[node name="Margin" type="MarginContainer" parent="DeveloperConsole/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 18
+
+[node name="Stack" type="VBoxContainer" parent="DeveloperConsole/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="DeveloperConsole/Panel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 1, 0.9, 1)
+theme_override_font_sizes/font_size = 22
+text = "开发控制台"
+
+[node name="Output" type="Label" parent="DeveloperConsole/Panel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 210)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.9, 0.93, 1)
+theme_override_font_sizes/font_size = 18
+text = "输入 help 查看命令"
+autowrap_mode = 2
+
+[node name="Input" type="LineEdit" parent="DeveloperConsole/Panel/Margin/Stack"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+placeholder_text = "例如：myopia 50"
+caret_blink = true

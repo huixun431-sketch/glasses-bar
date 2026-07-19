@@ -9,4 +9,4 @@ builds/
 *.user
 *.tmp
 *.log
-
+artifacts/

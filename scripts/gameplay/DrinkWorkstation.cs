@@ -42,6 +42,7 @@ public partial class DrinkWorkstation : Node
         HasGlass = true;
         MarkStep("take_glass");
         EmitSignal(SignalName.GlassHeldChanged, true);
+        GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, "已拿取高球杯。");
     }
 
     public void AddIce()
@@ -51,6 +52,7 @@ public partial class DrinkWorkstation : Node
         IcePieces++;
         _snapshot.IngredientAmounts["ice"] = IcePieces;
         MarkStep("add_ice");
+        GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, $"已加入冰块 × {IcePieces}。");
     }
 
     public double AddLiquid(string id, double amount)

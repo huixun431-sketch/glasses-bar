@@ -22,6 +22,16 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         _ => string.Empty
     };
 
+    public float FeedbackProgress => Kind switch
+    {
+        StationKind.WaterDispenser when _context is not null =>
+            (float)Math.Clamp(_context.Workstation.Glass.Ingredients.TryGetValue("water", out var water) ? water / 0.05d : 0d, 0d, 1d),
+        StationKind.Grinder => (float)Math.Clamp(_progress / 0.6d, 0d, 1d),
+        StationKind.EspressoMachine when _context is not null =>
+            (float)Math.Clamp(_context.Workstation.Glass.Ingredients.TryGetValue("espresso", out var espresso) ? espresso / 0.15d : 0d, 0d, 1d),
+        _ => 0f
+    };
+
     public string GetPrompt(InteractionContext context) => Kind switch
     {
         StationKind.Customer => "[E] 接受冰美式订单",
@@ -33,6 +43,34 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         StationKind.ServeCounter => "[E] 交付饮品并评价",
         StationKind.Sink => "[E] 丢弃当前饮品并重做",
         _ => string.Empty
+    };
+
+    public string GetUnavailablePrompt(InteractionContext context)
+    {
+        if (GameSession.Instance.WorldMode == WorldMode.Glasses && Kind == StationKind.Customer)
+            return string.Empty;
+        if (GameSession.Instance.WorldMode == WorldMode.Glasses)
+            return $"[G] 摘下眼镜后操作 · {DisplayName}";
+        if (Kind == StationKind.PickupGlass && context.Workstation.HasGlass)
+            return "高球杯已拿取 · 继续下一步";
+        if (GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder && Kind != StationKind.Customer)
+            return $"先向客人接单 · {DisplayName}";
+        if (!GameSession.Instance.CanCraft && Kind != StationKind.Customer)
+            return $"当前阶段暂不可用 · {DisplayName}";
+        return $"尚未满足操作条件 · {DisplayName}";
+    }
+
+    public string DisplayName => Kind switch
+    {
+        StationKind.Customer => "客人",
+        StationKind.PickupGlass => "高球杯",
+        StationKind.IceBucket => "冰桶",
+        StationKind.WaterDispenser => "水台",
+        StationKind.Grinder => "磨豆机",
+        StationKind.EspressoMachine => "咖啡机",
+        StationKind.ServeCounter => "出杯区",
+        StationKind.Sink => "水槽/丢弃",
+        _ => EntityId
     };
 
     public bool CanInteract(InteractionContext context)
@@ -163,4 +201,3 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         _duration = 0d;
     }
 }
-

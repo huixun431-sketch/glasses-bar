@@ -6,7 +6,9 @@ namespace GlassesBar;
 public partial class PlayerController : CharacterBody3D
 {
     [Signal] public delegate void PromptChangedEventHandler(string prompt);
+    [Signal] public delegate void PromptStateChangedEventHandler(string prompt, bool available);
     [Signal] public delegate void OperationChangedEventHandler(string prompt, bool active);
+    [Signal] public delegate void OperationProgressChangedEventHandler(float progress);
 
     [Export] public float MoveSpeed { get; set; } = 4.2f;
     [Export] public float MouseSensitivity { get; set; } = 0.0022f;
@@ -14,16 +16,19 @@ public partial class PlayerController : CharacterBody3D
 
     private Node3D _head = null!;
     private RayCast3D _ray = null!;
+    private ShapeCast3D _probe = null!;
     private MeshInstance3D _heldGlass = null!;
     private DrinkWorkstation? _workstation;
     private IManualOperation? _operation;
     private double _gestureIntensity;
     private string _lastPrompt = string.Empty;
+    private bool _lastPromptAvailable;
 
     public override void _Ready()
     {
         _head = GetNode<Node3D>("Head");
         _ray = GetNode<RayCast3D>("Head/Camera3D/InteractionRay");
+        _probe = GetNode<ShapeCast3D>("Head/Camera3D/InteractionProbe");
         _heldGlass = GetNode<MeshInstance3D>("Head/Camera3D/HandAnchor/HeldGlass");
         Input.MouseMode = Input.MouseModeEnum.Captured;
     }
@@ -82,7 +87,7 @@ public partial class PlayerController : CharacterBody3D
         else if (velocity.Y < 0f)
             velocity.Y = 0f;
 
-        var input = GameSession.Instance.CanMove && _operation is null
+        var input = GameSession.Instance.CanMove && _operation is null && !DeveloperConsole.IsOpen
             ? Input.GetVector("move_left", "move_right", "move_forward", "move_back")
             : Vector2.Zero;
         var direction = (Transform.Basis * new Vector3(input.X, 0f, input.Y)).Normalized();
@@ -111,9 +116,9 @@ public partial class PlayerController : CharacterBody3D
 
     private void TryInteract()
     {
-        if (_operation is not null || _workstation is null || !_ray.IsColliding())
+        if (_operation is not null || _workstation is null || DeveloperConsole.IsOpen)
             return;
-        if (_ray.GetCollider() is not IInteractable interactable)
+        if (GetFocusedInteractable() is not { } interactable)
             return;
 
         var context = new InteractionContext { Player = this, Workstation = _workstation };
@@ -129,6 +134,7 @@ public partial class PlayerController : CharacterBody3D
         var assist = Input.IsActionPressed("operate_assist") ? 0.8d : 0d;
         var intensity = Math.Max(Math.Max(held, assist), _gestureIntensity);
         _operation.UpdateOperation(intensity, delta);
+        EmitSignal(SignalName.OperationProgressChanged, _operation.FeedbackProgress);
         _gestureIntensity = Math.Max(0d, _gestureIntensity - delta * 3d);
     }
 
@@ -140,6 +146,7 @@ public partial class PlayerController : CharacterBody3D
         GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, result.Feedback);
         _operation = null;
         EmitSignal(SignalName.OperationChanged, string.Empty, false);
+        EmitSignal(SignalName.OperationProgressChanged, 0f);
     }
 
     private void CancelOperation()
@@ -149,23 +156,44 @@ public partial class PlayerController : CharacterBody3D
         _operation.Cancel();
         _operation = null;
         EmitSignal(SignalName.OperationChanged, string.Empty, false);
+        EmitSignal(SignalName.OperationProgressChanged, 0f);
     }
 
     private void UpdatePrompt()
     {
         var prompt = string.Empty;
+        var available = false;
         if (_operation is not null)
+        {
             prompt = _operation.OperationPrompt;
-        else if (_workstation is not null && _ray.IsColliding() && _ray.GetCollider() is IInteractable interactable)
+            available = true;
+        }
+        else if (_workstation is not null && GetFocusedInteractable() is { } interactable)
         {
             var context = new InteractionContext { Player = this, Workstation = _workstation };
-            prompt = interactable.CanInteract(context) ? interactable.GetPrompt(context) : string.Empty;
+            available = interactable.CanInteract(context);
+            prompt = available ? interactable.GetPrompt(context) : interactable.GetUnavailablePrompt(context);
         }
 
-        if (prompt == _lastPrompt)
+        if (prompt == _lastPrompt && available == _lastPromptAvailable)
             return;
         _lastPrompt = prompt;
+        _lastPromptAvailable = available;
         EmitSignal(SignalName.PromptChanged, prompt);
+        EmitSignal(SignalName.PromptStateChanged, prompt, available);
+    }
+
+    private IInteractable? GetFocusedInteractable()
+    {
+        if (_ray.IsColliding() && _ray.GetCollider() is IInteractable direct)
+            return direct;
+
+        _probe.ForceShapecastUpdate();
+        for (var index = 0; index < _probe.GetCollisionCount(); index++)
+        {
+            if (_probe.GetCollider(index) is IInteractable nearby)
+                return nearby;
+        }
+        return null;
     }
 }
-
