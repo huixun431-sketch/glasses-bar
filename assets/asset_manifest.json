@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "units": "meters",
+  "up_axis": "+Y",
+  "forward_axis": "-Z",
+  "assets": [
+    {"id": "bar_counter", "path": "models/bar_counter.glb", "placeholder": true, "required_anchors": ["Placement"]},
+    {"id": "highball_glass", "path": "models/highball_glass.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "FillOrigin"]},
+    {"id": "ice_bucket", "path": "models/ice_bucket.glb", "placeholder": true, "required_anchors": ["Interaction"]},
+    {"id": "water_dispenser", "path": "models/water_dispenser.glb", "placeholder": true, "required_anchors": ["Interaction", "Spout"]},
+    {"id": "grinder", "path": "models/grinder.glb", "placeholder": true, "required_anchors": ["Interaction"]},
+    {"id": "espresso_machine", "path": "models/espresso_machine.glb", "placeholder": true, "required_anchors": ["Interaction", "Spout"]},
+    {"id": "coffee_beans", "path": "models/coffee_beans.glb", "placeholder": true, "required_anchors": ["Grip", "Placement"]}
+  ]
+}
+

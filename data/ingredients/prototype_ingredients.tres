@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="IngredientDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/IngredientDefinition.cs" id="1_ingredient"]
+
+[resource]
+script = ExtResource("1_ingredient")
+Id = &"water"
+DisplayName = "纯净水（开发占位）"
+Unit = 0
+IsPrototype = true
+

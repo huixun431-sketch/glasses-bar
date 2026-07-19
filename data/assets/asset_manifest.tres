@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="AssetManifest" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/AssetManifest.cs" id="1_manifest"]
+[ext_resource type="Script" path="res://scripts/data/AssetEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Asset_bar"]
+script = ExtResource("2_entry")
+Id = &"bar_counter"
+IsPlaceholder = true
+
+[sub_resource type="Resource" id="Asset_glass"]
+script = ExtResource("2_entry")
+Id = &"highball_glass"
+IsPlaceholder = true
+
+[sub_resource type="Resource" id="Asset_ice"]
+script = ExtResource("2_entry")
+Id = &"ice_bucket"
+IsPlaceholder = true
+
+[sub_resource type="Resource" id="Asset_water"]
+script = ExtResource("2_entry")
+Id = &"water_dispenser"
+IsPlaceholder = true
+
+[sub_resource type="Resource" id="Asset_grinder"]
+script = ExtResource("2_entry")
+Id = &"grinder"
+IsPlaceholder = true
+
+[sub_resource type="Resource" id="Asset_machine"]
+script = ExtResource("2_entry")
+Id = &"espresso_machine"
+IsPlaceholder = true
+
+[sub_resource type="Resource" id="Asset_bean"]
+script = ExtResource("2_entry")
+Id = &"coffee_beans"
+IsPlaceholder = true
+
+[resource]
+script = ExtResource("1_manifest")
+Entries = Array[ExtResource("2_entry")]([SubResource("Asset_bar"), SubResource("Asset_glass"), SubResource("Asset_ice"), SubResource("Asset_water"), SubResource("Asset_grinder"), SubResource("Asset_machine"), SubResource("Asset_bean")])

@@ -1,0 +1,248 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/GrayboxLevelBuilder.cs" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/world/RealityWorld.tscn" id="2_reality"]
+[ext_resource type="PackedScene" path="res://scenes/world/GlassesWorld.tscn" id="3_glasses"]
+[ext_resource type="Script" path="res://scripts/world/WorldLayerController.cs" id="4_layers"]
+[ext_resource type="Script" path="res://scripts/player/PlayerController.cs" id="5_player"]
+[ext_resource type="Script" path="res://scripts/ui/HudController.cs" id="6_hud"]
+[ext_resource type="Shader" path="res://shaders/reality_blur.gdshader" id="7_blur"]
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 1
+background_color = Color(0.012, 0.018, 0.028, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.45, 0.5, 0.62, 1)
+ambient_light_energy = 0.58
+tonemap_mode = 2
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape_player"]
+radius = 0.35
+height = 1.75
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_glass"]
+top_radius = 0.075
+bottom_radius = 0.06
+height = 0.22
+
+[sub_resource type="StandardMaterial3D" id="Material_glass"]
+transparency = 1
+albedo_color = Color(0.55, 0.8, 0.95, 0.42)
+roughness = 0.15
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_blur"]
+shader = ExtResource("7_blur")
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_summary"]
+bg_color = Color(0.025, 0.04, 0.06, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.15, 0.8, 0.72, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -30, 0)
+light_color = Color(0.82, 0.9, 1, 1)
+light_energy = 1.35
+shadow_enabled = true
+
+[node name="WarmLight" type="OmniLight3D" parent="."]
+position = Vector3(0, 3.6, -1.5)
+light_color = Color(1, 0.48, 0.25, 1)
+light_energy = 4.0
+omni_range = 11.0
+
+[node name="NeutralGameplay" type="Node3D" parent="."]
+
+[node name="RealityWorld" parent="." instance=ExtResource("2_reality")]
+
+[node name="GlassesWorld" parent="." instance=ExtResource("3_glasses")]
+
+[node name="WorldLayerController" type="Node" parent="."]
+script = ExtResource("4_layers")
+
+[node name="Player" type="CharacterBody3D" parent="."]
+position = Vector3(0, 0.9, 4.5)
+script = ExtResource("5_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+shape = SubResource("CapsuleShape_player")
+
+[node name="Head" type="Node3D" parent="Player"]
+position = Vector3(0, 0.62, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Player/Head"]
+current = true
+fov = 72.0
+
+[node name="InteractionRay" type="RayCast3D" parent="Player/Head/Camera3D"]
+target_position = Vector3(0, 0, -3.2)
+collision_mask = 1
+collide_with_areas = false
+collide_with_bodies = true
+enabled = true
+
+[node name="HandAnchor" type="Node3D" parent="Player/Head/Camera3D"]
+position = Vector3(0.34, -0.26, -0.62)
+rotation_degrees = Vector3(-8, 0, -8)
+
+[node name="HeldGlass" type="MeshInstance3D" parent="Player/Head/Camera3D/HandAnchor"]
+visible = false
+mesh = SubResource("CylinderMesh_glass")
+material_override = SubResource("Material_glass")
+
+[node name="RealityEffects" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="RealityBlur" type="ColorRect" parent="RealityEffects"]
+mouse_filter = 2
+material = SubResource("ShaderMaterial_blur")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GlassesInfo" type="CanvasLayer" parent="."]
+layer = 6
+
+[node name="GlassesOverlay" type="Control" parent="GlassesInfo"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Tint" type="ColorRect" parent="GlassesInfo/GlassesOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.16, 0.18, 0.12)
+
+[node name="Recipe" type="Label" parent="GlassesInfo/GlassesOverlay"]
+offset_left = 36.0
+offset_top = 120.0
+offset_right = 500.0
+offset_bottom = 430.0
+theme_override_colors/font_color = Color(0.67, 1, 0.94, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.08, 0.1, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 25
+text = "眼镜世界 // 开发占位配方\n\n冰美式\n1. 拿取高球杯\n2. 加入冰\n3. 手工倒水\n4. 研磨咖啡豆\n5. 持续萃取浓缩\n6. 交付\n\n客人与原材料在此世界隐藏\n按 G 返回现实世界"
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 10
+script = ExtResource("6_hud")
+
+[node name="Margin" type="MarginContainer" parent="HUD"]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 940.0
+offset_bottom = 170.0
+
+[node name="Stack" type="VBoxContainer" parent="HUD/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Phase" type="Label" parent="HUD/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 24
+text = "阶段"
+
+[node name="Status" type="Label" parent="HUD/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.94, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 20
+text = "状态"
+
+[node name="Crosshair" type="Label" parent="HUD"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -18.0
+offset_right = 8.0
+offset_bottom = 18.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 28
+text = "+"
+horizontal_alignment = 1
+
+[node name="Prompt" type="Label" parent="HUD"]
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -150.0
+offset_bottom = -92.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 0.88, 0.53, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 7
+theme_override_font_sizes/font_size = 25
+horizontal_alignment = 1
+
+[node name="Debug" type="Label" parent="HUD"]
+anchors_preset = 3
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -44.0
+offset_right = -20.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.65, 0.75, 0.78, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 16
+
+[node name="SummaryPanel" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -180.0
+offset_right = 360.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_summary")
+
+[node name="Summary" type="Label" parent="HUD/SummaryPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 1, 0.97, 1)
+theme_override_font_sizes/font_size = 25
+text = "结算"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+

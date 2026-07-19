@@ -1,0 +1,12 @@
+.godot/
+.mono/
+.vs/
+.idea/
+bin/
+obj/
+TestResults/
+builds/
+*.user
+*.tmp
+*.log
+

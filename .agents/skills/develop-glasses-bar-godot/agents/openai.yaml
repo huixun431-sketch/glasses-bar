@@ -1,0 +1,5 @@
+interface:
+  display_name: "眼镜酒馆 Godot 开发"
+  short_description: "维护眼镜酒馆的核心玩法、Godot 资产管线与验证流程"
+  default_prompt: "Use $develop-glasses-bar-godot to implement and verify the next Glasses Bar Godot milestone."
+
