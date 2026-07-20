@@ -36,11 +36,13 @@ public partial class HudController : CanvasLayer
 
         GameSession.Instance.DayPhaseChanged += OnPhaseChanged;
         GameSession.Instance.DayChanged += OnDayChanged;
+        GameSession.Instance.GameStartedChanged += started => Visible = started;
         GameSession.Instance.StatusMessage += OnStatusMessage;
         GameSession.Instance.EvaluationFinished += OnEvaluationFinished;
         _status.Text = "与客人交互开始教学。WASD 移动｜鼠标观察｜E 交互｜G 切换眼镜｜` 开发控制台";
         OnPhaseChanged((int)GameSession.Instance.Flow.Current);
         OnDayChanged(GameSession.Instance.CurrentDay);
+        Visible = GameSession.Instance.GameStarted;
     }
 
     public void Bind(PlayerController player, DrinkWorkstation workstation)

@@ -24,6 +24,9 @@ public partial class FlowIntegrationTests : Node
             var glassesChildren = glasses.GetChildCount();
             GameSession.Instance.EvaluationFinished += (passed, _) => _evaluationPassed = passed;
 
+            main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
+            Require(GameSession.Instance.GameStarted, "opening menu starts the gameplay session");
+
             Require(!main.HasNode("NeutralGameplay/serve_counter"), "legacy delivery counter is removed");
             Require(main.HasNode("NeutralGameplay/waste_bin"), "side waste bin is available");
             Require(reality.HasNode("CuttingBoard"), "cutting board anchors the center worktop");

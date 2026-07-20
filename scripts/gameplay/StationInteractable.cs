@@ -55,6 +55,8 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
 
     public string GetUnavailablePrompt(InteractionContext context)
     {
+        if (!GameSession.Instance.GameStarted)
+            return string.Empty;
         if (GameSession.Instance.WorldMode == WorldMode.Glasses && Kind == StationKind.Customer)
             return string.Empty;
         if (GameSession.Instance.WorldMode == WorldMode.Glasses)
@@ -100,6 +102,8 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
 
     public bool CanInteract(InteractionContext context)
     {
+        if (!GameSession.Instance.GameStarted)
+            return false;
         if (GameSession.Instance.WorldMode == WorldMode.Glasses)
             return false;
 

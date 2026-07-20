@@ -8,6 +8,7 @@ public partial class GameSession : Node
     [Signal] public delegate void WorldModeChangedEventHandler(int mode);
     [Signal] public delegate void DayPhaseChangedEventHandler(int phase);
     [Signal] public delegate void DayChangedEventHandler(int day);
+    [Signal] public delegate void GameStartedChangedEventHandler(bool started);
     [Signal] public delegate void StatusMessageEventHandler(string message);
     [Signal] public delegate void EvaluationFinishedEventHandler(bool passed, string summary);
 
@@ -16,15 +17,18 @@ public partial class GameSession : Node
     public WorldMode WorldMode { get; private set; } = WorldMode.Reality;
     public DayFlow Flow { get; } = new();
     public int CurrentDay { get; private set; } = 1;
+    public bool GameStarted { get; private set; }
     public bool RecipeObserved { get; private set; }
 
-    public bool CanMove => Flow.Current is not DayPhase.Evaluation and not DayPhase.DaySummary;
-    public bool CanCraft => WorldMode == WorldMode.Reality && Flow.Current == DayPhase.Preparation;
+    public bool CanMove => GameStarted && Flow.Current is not DayPhase.Evaluation and not DayPhase.DaySummary;
+    public bool CanCraft => GameStarted && WorldMode == WorldMode.Reality && Flow.Current == DayPhase.Preparation;
 
     public override void _EnterTree() => Instance = this;
 
     public void AcceptOrder()
     {
+        if (!GameStarted)
+            return;
         if (!Flow.TryAdvance(DayPhase.OrderReceived))
         {
             EmitSignal(SignalName.StatusMessage, "当前无法重复接单。");
@@ -37,7 +41,7 @@ public partial class GameSession : Node
 
     public void ToggleWorld()
     {
-        if (Flow.Current == DayPhase.DaySummary)
+        if (!GameStarted || Flow.Current == DayPhase.DaySummary)
             return;
 
         WorldMode = WorldMode == WorldMode.Reality ? WorldMode.Glasses : WorldMode.Reality;
@@ -103,6 +107,13 @@ public partial class GameSession : Node
         EmitSignal(SignalName.DayChanged, CurrentDay);
         EmitSignal(SignalName.StatusMessage, $"第 {CurrentDay} 天开始。与客人交互接单。");
         return true;
+    }
+
+    public void StartNewGame()
+    {
+        GameStarted = true;
+        EmitSignal(SignalName.GameStartedChanged, true);
+        ResetCampaign();
     }
 
     public void ResetCampaign()

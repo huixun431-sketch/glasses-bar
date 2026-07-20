@@ -25,6 +25,8 @@ public partial class DeveloperConsole : CanvasLayer
 
     public override void _Input(InputEvent @event)
     {
+        if (!GameSession.Instance.GameStarted)
+            return;
         if (@event is not InputEventKey key || !key.Pressed || key.Echo || key.PhysicalKeycode != Key.Quoteleft)
             return;
 

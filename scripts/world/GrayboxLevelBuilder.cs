@@ -40,8 +40,16 @@ public partial class GrayboxLevelBuilder : Node3D
 
         var player = GetNode<PlayerController>("Player");
         var hud = GetNode<HudController>("HUD");
+        var menu = GetNode<OpeningMenuController>("OpeningMenu");
         player.BindWorkstation(workstation);
         hud.Bind(player, workstation);
+        menu.StartRequested += () =>
+        {
+            workstation.ResetForNewDay();
+            player.ResetForNewDay();
+            GameSession.Instance.StartNewGame();
+        };
+        menu.QuitRequested += () => GetTree().Quit();
     }
 
     private void BuildArchitecture()

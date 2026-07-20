@@ -8,6 +8,7 @@ public partial class InteractionFeedbackVisualCapture : Node
 
     private void TriggerInteraction()
     {
+        GetNode<Button>("Main/OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
         var player = GetNode<PlayerController>("Main/Player");
         player.GetNode<RayCast3D>("Head/Camera3D/InteractionRay").ForceRaycastUpdate();
         player._UnhandledInput(new InputEventAction { Action = "interact", Pressed = true, Strength = 1f });

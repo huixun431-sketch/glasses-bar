@@ -19,6 +19,15 @@ public partial class InputIntegrationTests : Node
             var probe = player.GetNode<ShapeCast3D>("Head/Camera3D/InteractionProbe");
             var myopia = main.GetNode<MyopiaEffectController>("MyopiaEffectController");
             var console = main.GetNode<DeveloperConsole>("DeveloperConsole");
+            var menu = main.GetNode<OpeningMenuController>("OpeningMenu");
+
+            Require(menu.Visible && !GameSession.Instance.GameStarted, "opening menu is visible before play begins");
+            Require(!GameSession.Instance.CanMove, "opening menu gates player movement");
+            main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
+            Require(GameSession.Instance.GameStarted && !menu.Visible, "start button enters a new game and hides the menu");
+            Require(GameSession.Instance.CanMove && main.GetNode<HudController>("HUD").Visible,
+                "starting the game enables movement and gameplay HUD");
+            await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
 
             Require(player.GlobalPosition.Z < -1f, "player starts inside the bartender work area");
             Require(probe.Enabled && probe.TargetPosition.Length() > 5f, "forgiving interaction probe is active");

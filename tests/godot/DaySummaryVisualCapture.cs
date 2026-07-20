@@ -9,6 +9,7 @@ public partial class DaySummaryVisualCapture : Node
 
     private void ShowSummary()
     {
+        GetNode<Button>("Main/OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
         GameSession.Instance.AcceptOrder();
         GameSession.Instance.ToggleWorld();
         GameSession.Instance.ToggleWorld();

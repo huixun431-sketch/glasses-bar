@@ -8,8 +8,8 @@ public partial class GlassesVisualCapture : Node
 
     private void ActivateGlasses()
     {
+        GetNode<Button>("Main/OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
         GameSession.Instance.AcceptOrder();
         GameSession.Instance.ToggleWorld();
     }
 }
-

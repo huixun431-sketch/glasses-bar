@@ -8,6 +8,7 @@ public partial class ConsoleVisualCapture : Node
 
     private void OpenConsole()
     {
+        GetNode<Button>("Main/OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
         var console = GetNode<DeveloperConsole>("Main/DeveloperConsole");
         console._Input(new InputEventKey { PhysicalKeycode = Key.Quoteleft, Pressed = true });
         GetNode<LineEdit>("Main/DeveloperConsole/Panel/Margin/Stack/Input").Text = "myopia 50";
