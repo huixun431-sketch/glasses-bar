@@ -16,11 +16,21 @@ public partial class FlowIntegrationTests : Node
         {
             var main = GetNode<Node3D>("Main");
             var workstation = main.GetNode<DrinkWorkstation>("NeutralGameplay/DrinkWorkstation");
+            var player = main.GetNode<PlayerController>("Player");
+            var customer = main.GetNode<StationInteractable>("NeutralGameplay/customer");
             var reality = main.GetNode<Node3D>("RealityWorld");
             var glasses = main.GetNode<Node3D>("GlassesWorld");
             var realityChildren = reality.GetChildCount();
             var glassesChildren = glasses.GetChildCount();
             GameSession.Instance.EvaluationFinished += (passed, _) => _evaluationPassed = passed;
+
+            Require(!main.HasNode("NeutralGameplay/serve_counter"), "legacy delivery counter is removed");
+            Require(main.HasNode("NeutralGameplay/waste_bin"), "side waste bin is available");
+            Require(reality.HasNode("CuttingBoard"), "cutting board anchors the center worktop");
+            Require(!reality.HasNode("OperationManual") && glasses.HasNode("OperationManual"),
+                "operation manual exists only in the glasses world");
+            Require(reality.HasNode("CoffeeBeansJar") && !glasses.HasNode("CoffeeBeansJar"),
+                "rear-bar raw ingredients are hidden in the glasses world");
 
             GameSession.Instance.AcceptOrder();
             GameSession.Instance.ToggleWorld();
@@ -57,7 +67,11 @@ public partial class FlowIntegrationTests : Node
             workstation.MarkGroundCoffee();
             workstation.AddLiquid("espresso", 0.2d);
             workstation.MarkEspressoComplete();
-            workstation.EvaluateAndFinish();
+            var context = new InteractionContext { Player = player, Workstation = workstation };
+            Require(!customer.CanInteract(context), "finished drink cannot be submitted from the initial distant position");
+            player.GlobalPosition = new Vector3(0f, 0.9f, -0.9f);
+            Require(customer.CanInteract(context), "finished drink can be submitted after approaching the customer");
+            customer.Interact(context);
 
             Require(_evaluationPassed, "valid prototype drink passes");
             Require(GameSession.Instance.Flow.Current == DayPhase.DaySummary, "flow reaches day summary");
@@ -77,4 +91,3 @@ public partial class FlowIntegrationTests : Node
             throw new InvalidOperationException(message);
     }
 }
-

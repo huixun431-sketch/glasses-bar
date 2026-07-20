@@ -6,6 +6,8 @@ namespace GlassesBar;
 
 public partial class StationInteractable : StaticBody3D, IInteractable, IManualOperation
 {
+    private const float CustomerDeliveryDistance = 3.15f;
+
     [Export] public StationKind Kind { get; set; }
     [Export] public string EntityId { get; set; } = string.Empty;
 
@@ -34,14 +36,14 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
 
     public string GetPrompt(InteractionContext context) => Kind switch
     {
-        StationKind.Customer => "[E] 接受冰美式订单",
+        StationKind.Customer when GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder => "[E] 接受冰美式订单",
+        StationKind.Customer => "[E] 将手中成品交给客人",
         StationKind.PickupGlass => context.Workstation.HasGlass ? "高球杯已在手中" : "[E] 拿取高球杯",
         StationKind.IceBucket => "[E] 加入一块冰",
         StationKind.WaterDispenser => "[E] 开始手工倒水",
         StationKind.Grinder => "[E] 开始研磨咖啡豆",
         StationKind.EspressoMachine => "[E] 开始萃取浓缩咖啡",
-        StationKind.ServeCounter => "[E] 交付饮品并评价",
-        StationKind.Sink => "[E] 丢弃当前饮品并重做",
+        StationKind.WasteBin => "[E] 丢弃当前饮品并重做",
         _ => string.Empty
     };
 
@@ -51,6 +53,14 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
             return string.Empty;
         if (GameSession.Instance.WorldMode == WorldMode.Glasses)
             return $"[G] 摘下眼镜后操作 · {DisplayName}";
+        if (Kind == StationKind.Customer && GameSession.Instance.Flow.Current == DayPhase.Preparation)
+        {
+            if (!context.Workstation.HasGlass)
+                return "先完成饮品，再回到客人面前提交";
+            return IsWithinCustomerDeliveryDistance(context)
+                ? "[E] 将手中成品交给客人"
+                : "请走近客人后再提交成品";
+        }
         if (Kind == StationKind.PickupGlass && context.Workstation.HasGlass)
             return "高球杯已拿取 · 继续下一步";
         if (GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder && Kind != StationKind.Customer)
@@ -68,8 +78,7 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         StationKind.WaterDispenser => "水台",
         StationKind.Grinder => "磨豆机",
         StationKind.EspressoMachine => "咖啡机",
-        StationKind.ServeCounter => "出杯区",
-        StationKind.Sink => "水槽/丢弃",
+        StationKind.WasteBin => "弃物桶",
         _ => EntityId
     };
 
@@ -80,14 +89,14 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
 
         return Kind switch
         {
-            StationKind.Customer => GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder,
+            StationKind.Customer => GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder ||
+                GameSession.Instance.Flow.Current == DayPhase.Preparation && context.Workstation.HasGlass && IsWithinCustomerDeliveryDistance(context),
             StationKind.PickupGlass => GameSession.Instance.CanCraft && !context.Workstation.HasGlass,
             StationKind.IceBucket => GameSession.Instance.CanCraft && context.Workstation.HasGlass,
             StationKind.WaterDispenser => GameSession.Instance.CanCraft && context.Workstation.HasGlass,
             StationKind.Grinder => GameSession.Instance.CanCraft,
             StationKind.EspressoMachine => GameSession.Instance.CanCraft && context.Workstation.GroundCoffeeReady && context.Workstation.HasGlass,
-            StationKind.ServeCounter => GameSession.Instance.CanCraft && context.Workstation.HasGlass,
-            StationKind.Sink => GameSession.Instance.CanCraft,
+            StationKind.WasteBin => GameSession.Instance.CanCraft,
             _ => false
         };
     }
@@ -103,7 +112,10 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         switch (Kind)
         {
             case StationKind.Customer:
-                GameSession.Instance.AcceptOrder();
+                if (GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder)
+                    GameSession.Instance.AcceptOrder();
+                else
+                    context.Workstation.EvaluateAndFinish();
                 break;
             case StationKind.PickupGlass:
                 context.Workstation.TakeGlass();
@@ -117,10 +129,7 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
                 if (Begin(context))
                     context.Player.BeginOperation(this);
                 break;
-            case StationKind.ServeCounter:
-                context.Workstation.EvaluateAndFinish();
-                break;
-            case StationKind.Sink:
+            case StationKind.WasteBin:
                 context.Workstation.DiscardAndReset();
                 break;
         }
@@ -200,4 +209,7 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         _progress = 0d;
         _duration = 0d;
     }
+
+    private bool IsWithinCustomerDeliveryDistance(InteractionContext context) =>
+        GlobalPosition.DistanceTo(context.Player.GlobalPosition) <= CustomerDeliveryDistance;
 }

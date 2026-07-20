@@ -33,7 +33,5 @@ public enum StationKind
     WaterDispenser,
     Grinder,
     EspressoMachine,
-    ServeCounter,
-    Sink
+    WasteBin
 }
-

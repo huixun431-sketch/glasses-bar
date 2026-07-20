@@ -9,13 +9,10 @@ public partial class GrayboxLevelBuilder : Node3D
     private static readonly (string Id, StationKind Kind, Vector3 Position, Vector3 Size, string Label)[] Stations =
     {
         ("customer", StationKind.Customer, new Vector3(0f, 1f, 2.05f), new Vector3(0.65f, 1.7f, 0.65f), "客人"),
-        ("highball_glass", StationKind.PickupGlass, new Vector3(-4.25f, 1.08f, 0.15f), new Vector3(0.35f, 0.55f, 0.35f), "高球杯"),
-        ("ice_bucket", StationKind.IceBucket, new Vector3(-3.15f, 1.05f, 0.15f), new Vector3(0.8f, 0.65f, 0.8f), "冰桶"),
-        ("water_dispenser", StationKind.WaterDispenser, new Vector3(-1.85f, 1.2f, 0.15f), new Vector3(0.8f, 1.25f, 0.7f), "水台"),
-        ("grinder", StationKind.Grinder, new Vector3(-0.45f, 1.18f, 0.15f), new Vector3(0.75f, 1.2f, 0.7f), "磨豆机"),
-        ("espresso_machine", StationKind.EspressoMachine, new Vector3(1.15f, 1.2f, 0.15f), new Vector3(1.1f, 1.25f, 0.85f), "咖啡机"),
-        ("serve_counter", StationKind.ServeCounter, new Vector3(2.8f, 0.98f, 0.15f), new Vector3(1.15f, 0.25f, 0.9f), "出杯区"),
-        ("sink", StationKind.Sink, new Vector3(4.25f, 1.02f, 0.15f), new Vector3(1.0f, 0.45f, 0.8f), "水槽/丢弃")
+        ("highball_glass", StationKind.PickupGlass, new Vector3(-4.35f, 1.05f, -5.45f), new Vector3(0.35f, 0.5f, 0.35f), "高球杯"),
+        ("ice_bucket", StationKind.IceBucket, new Vector3(-2.75f, 1.06f, -5.45f), new Vector3(0.72f, 0.55f, 0.72f), "冰桶"),
+        ("water_dispenser", StationKind.WaterDispenser, new Vector3(3.75f, 1.08f, 0.15f), new Vector3(1.15f, 0.38f, 0.92f), "水槽"),
+        ("waste_bin", StationKind.WasteBin, new Vector3(5.75f, 0.58f, -3.85f), new Vector3(0.9f, 1.15f, 0.9f), "弃物桶")
     };
 
     private Node3D _neutral = null!;
@@ -75,6 +72,8 @@ public partial class GrayboxLevelBuilder : Node3D
 
         BuildBackBar(_reality, false);
         BuildBackBar(_glasses, true);
+        BuildFrontWorktop(_reality, false);
+        BuildFrontWorktop(_glasses, true);
         BuildLounge(_reality, false);
         BuildLounge(_glasses, true);
     }
@@ -87,12 +86,54 @@ public partial class GrayboxLevelBuilder : Node3D
         for (var row = 0; row < 3; row++)
             CreateBox(parent, $"Shelf{row}", new Vector3(0f, 1.25f + row * 0.9f, -7.32f), new Vector3(10.3f, 0.12f, 0.55f), shelf, glasses);
 
-        for (var index = 0; index < 15; index++)
+        if (glasses)
+            return;
+
+        for (var index = 0; index < 10; index++)
         {
             var x = -4.7f + (index % 5) * 2.35f;
             var y = 1.6f + (index / 5) * 0.9f;
-            var color = glasses ? new Color("35e6cc") : BottleColor(index);
-            CreateCylinder(parent, $"BackBottle{index}", new Vector3(x, y, -7.08f), 0.13f, 0.52f, color, glasses);
+            CreateCylinder(parent, $"BackLiquor{index}", new Vector3(x, y, -7.08f), 0.13f, 0.52f, BottleColor(index));
+        }
+
+        CreateCylinder(parent, "CoffeeBeansJar", new Vector3(-1.3f, 1.33f, -5.38f), 0.34f, 0.55f, new Color("463127"));
+        CreateBox(parent, "LemonBasket", new Vector3(0f, 1.22f, -5.38f), new Vector3(0.85f, 0.35f, 0.62f), new Color("c5a33c"));
+        CreateCylinder(parent, "WaterCarafe", new Vector3(1.25f, 1.38f, -5.38f), 0.25f, 0.72f, new Color(0.4f, 0.68f, 0.8f, 0.62f));
+    }
+
+    private static void BuildFrontWorktop(Node3D parent, bool glasses)
+    {
+        var accent = glasses ? new Color("28d5c6") : new Color("845531");
+        var metal = glasses ? new Color("38ead6") : new Color("77838a");
+
+        CreateBox(parent, "CuttingBoard", new Vector3(0f, 1.06f, 0.12f), new Vector3(2.25f, 0.12f, 0.92f), accent, glasses);
+        CreateCylinder(parent, "MixingSpoonCup", new Vector3(-1.45f, 1.25f, 0.12f), 0.16f, 0.46f, metal, glasses);
+        CreateBox(parent, "BarKnife", new Vector3(1.42f, 1.12f, 0.08f), new Vector3(0.08f, 0.06f, 0.72f), metal, glasses);
+        CreateCylinder(parent, "Jigger", new Vector3(1.85f, 1.19f, 0.08f), 0.13f, 0.34f, metal, glasses);
+
+        if (glasses)
+        {
+            CreateBox(parent, "OperationManual", new Vector3(-3.25f, 1.11f, 0.08f), new Vector3(1.05f, 0.12f, 0.78f), new Color("45f1d4"), true);
+            var manualTag = new Label3D
+            {
+                Name = "OperationManualLabel",
+                Text = "操作手册",
+                Position = new Vector3(-3.25f, 1.42f, 0.08f),
+                FontSize = 28,
+                OutlineSize = 8,
+                Modulate = new Color("c6fff5"),
+                Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+                NoDepthTest = true
+            };
+            parent.AddChild(manualTag);
+            return;
+        }
+
+        for (var side = -1; side <= 1; side += 2)
+        {
+            CreateCylinder(parent, side < 0 ? "LeftDisplayLiquor" : "RightDisplayLiquor",
+                new Vector3(side * 5.05f, 1.42f, 0.1f), 0.22f, 0.82f,
+                side < 0 ? new Color("49663d") : new Color("805039"));
         }
     }
 
@@ -145,7 +186,7 @@ public partial class GrayboxLevelBuilder : Node3D
             _neutral.AddChild(gameplay);
 
             CreateStationVisual(_reality, station.Id, station.Position, station.Size, station.Kind, station.Label, false);
-            if (station.Kind != StationKind.Customer)
+            if (station.Kind is not StationKind.Customer and not StationKind.PickupGlass and not StationKind.IceBucket)
                 CreateStationVisual(_glasses, station.Id, station.Position, station.Size, station.Kind, station.Label, true);
         }
     }
@@ -161,7 +202,7 @@ public partial class GrayboxLevelBuilder : Node3D
             Name = "Visual",
             Mesh = kind == StationKind.Customer
                 ? new CapsuleMesh { Radius = 0.32f, Height = 1.65f }
-                : kind is StationKind.PickupGlass or StationKind.IceBucket or StationKind.WaterDispenser or StationKind.Grinder
+                : kind is StationKind.PickupGlass or StationKind.IceBucket or StationKind.WasteBin
                     ? new CylinderMesh { TopRadius = size.X * 0.36f, BottomRadius = size.X * 0.46f, Height = size.Y }
                     : new BoxMesh { Size = size },
             MaterialOverride = MakeMaterial(glasses ? new Color("2dd4bf") : RealityColor(kind), glasses)
@@ -190,10 +231,7 @@ public partial class GrayboxLevelBuilder : Node3D
         StationKind.PickupGlass => new Color(0.65f, 0.8f, 0.9f, 0.5f),
         StationKind.IceBucket => new Color("8da4b8"),
         StationKind.WaterDispenser => new Color("6385a5"),
-        StationKind.Grinder => new Color("58483f"),
-        StationKind.EspressoMachine => new Color("8d9399"),
-        StationKind.ServeCounter => new Color("a17252"),
-        StationKind.Sink => new Color("566b75"),
+        StationKind.WasteBin => new Color("4b5456"),
         _ => Colors.Gray
     };
 
