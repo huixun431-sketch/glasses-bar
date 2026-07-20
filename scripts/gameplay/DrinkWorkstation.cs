@@ -142,6 +142,27 @@ public partial class DrinkWorkstation : Node
         GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, "已丢弃成品，可重新拿杯制作；浪费已记录。");
     }
 
+    public void ResetForNewDay()
+    {
+        _snapshot.CompletedSteps.Clear();
+        _snapshot.IngredientAmounts.Clear();
+        _snapshot.WastedAmount = 0d;
+        _snapshot.SpilledAmount = 0d;
+        _snapshot.ElapsedSeconds = 0d;
+        IcePieces = 0;
+        HasMortarTool = false;
+        HasFilterTool = false;
+        CoffeeBeansPortioned = false;
+        GroundCoffeeReady = false;
+        ExtractedCoffeeReady = false;
+        FilteredCoffeeComplete = false;
+        HasGlass = false;
+        Glass = new LiquidContainer(3d);
+        _timing = false;
+        EmitSignal(SignalName.GlassHeldChanged, false);
+        EmitChanged();
+    }
+
     public DrinkEvaluation EvaluateAndFinish()
     {
         _timing = false;

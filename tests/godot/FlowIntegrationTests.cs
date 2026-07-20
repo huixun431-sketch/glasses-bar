@@ -71,6 +71,16 @@ public partial class FlowIntegrationTests : Node
 
             Require(_evaluationPassed, "valid prototype drink passes");
             Require(GameSession.Instance.Flow.Current == DayPhase.DaySummary, "flow reaches day summary");
+            Require(GameSession.Instance.CurrentDay == 1, "first completed service belongs to day one");
+
+            player._UnhandledInput(new InputEventAction { Action = "next_day", Pressed = true, Strength = 1f });
+            Require(GameSession.Instance.CurrentDay == 2, "next-day action increments the day counter");
+            Require(GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder, "next day returns to waiting for order");
+            Require(!workstation.HasGlass && !workstation.HasMortarTool && !workstation.HasFilterTool,
+                "next day resets held drink and traditional tools");
+            Require(Math.Abs(player.GlobalPosition.Z - (-3f)) < 0.01f, "next day restores the bartender start position");
+            Require(main.GetNode<Label>("HUD/Margin/Stack/Day").Text.Contains("2"), "HUD displays the new day number");
+            Require(!main.GetNode<PanelContainer>("HUD/SummaryPanel").Visible, "day summary closes when the next day starts");
             GD.Print("FLOW_INTEGRATION_PASS");
             GetTree().Quit(0);
         }

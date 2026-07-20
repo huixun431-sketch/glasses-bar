@@ -23,6 +23,8 @@ public partial class PlayerController : CharacterBody3D
     private double _gestureIntensity;
     private string _lastPrompt = string.Empty;
     private bool _lastPromptAvailable;
+    private Transform3D _dayStartTransform;
+    private Vector3 _dayStartHeadRotation;
 
     public override void _Ready()
     {
@@ -30,6 +32,8 @@ public partial class PlayerController : CharacterBody3D
         _ray = GetNode<RayCast3D>("Head/Camera3D/InteractionRay");
         _probe = GetNode<ShapeCast3D>("Head/Camera3D/InteractionProbe");
         _heldGlass = GetNode<MeshInstance3D>("Head/Camera3D/HandAnchor/HeldGlass");
+        _dayStartTransform = Transform;
+        _dayStartHeadRotation = _head.Rotation;
         Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
@@ -67,6 +71,14 @@ public partial class PlayerController : CharacterBody3D
         {
             CancelOperation();
             GameSession.Instance.ToggleWorld();
+        }
+
+        if (@event.IsActionPressed("next_day") && GameSession.Instance.Flow.Current == GlassesBar.Domain.DayPhase.DaySummary && _workstation is not null)
+        {
+            _workstation.ResetForNewDay();
+            ResetForNewDay();
+            GameSession.Instance.AdvanceToNextDay();
+            return;
         }
 
         if (@event.IsActionPressed("interact"))
@@ -112,6 +124,14 @@ public partial class PlayerController : CharacterBody3D
         _operation = operation;
         _gestureIntensity = 0d;
         EmitSignal(SignalName.OperationChanged, operation.OperationPrompt, true);
+    }
+
+    public void ResetForNewDay()
+    {
+        CancelOperation();
+        Transform = _dayStartTransform;
+        _head.Rotation = _dayStartHeadRotation;
+        Velocity = Vector3.Zero;
     }
 
     private void TryInteract()

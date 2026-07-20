@@ -7,6 +7,7 @@ public partial class GameSession : Node
 {
     [Signal] public delegate void WorldModeChangedEventHandler(int mode);
     [Signal] public delegate void DayPhaseChangedEventHandler(int phase);
+    [Signal] public delegate void DayChangedEventHandler(int day);
     [Signal] public delegate void StatusMessageEventHandler(string message);
     [Signal] public delegate void EvaluationFinishedEventHandler(bool passed, string summary);
 
@@ -14,6 +15,7 @@ public partial class GameSession : Node
 
     public WorldMode WorldMode { get; private set; } = WorldMode.Reality;
     public DayFlow Flow { get; } = new();
+    public int CurrentDay { get; private set; } = 1;
     public bool RecipeObserved { get; private set; }
 
     public bool CanMove => Flow.Current is not DayPhase.Evaluation and not DayPhase.DaySummary;
@@ -89,6 +91,35 @@ public partial class GameSession : Node
         EmitSignal(SignalName.WorldModeChanged, (int)WorldMode);
         EmitPhase();
         EmitSignal(SignalName.StatusMessage, "教学日已重置。与客人交互开始接单。");
+    }
+
+    public bool AdvanceToNextDay()
+    {
+        if (Flow.Current != DayPhase.DaySummary)
+            return false;
+
+        CurrentDay++;
+        ResetFlowForDay();
+        EmitSignal(SignalName.DayChanged, CurrentDay);
+        EmitSignal(SignalName.StatusMessage, $"第 {CurrentDay} 天开始。与客人交互接单。");
+        return true;
+    }
+
+    public void ResetCampaign()
+    {
+        CurrentDay = 1;
+        ResetFlowForDay();
+        EmitSignal(SignalName.DayChanged, CurrentDay);
+        EmitSignal(SignalName.StatusMessage, "第 1 天开始。与客人交互接单。");
+    }
+
+    private void ResetFlowForDay()
+    {
+        Flow.Reset();
+        RecipeObserved = false;
+        WorldMode = WorldMode.Reality;
+        EmitSignal(SignalName.WorldModeChanged, (int)WorldMode);
+        EmitPhase();
     }
 
     private void EmitPhase() => EmitSignal(SignalName.DayPhaseChanged, (int)Flow.Current);

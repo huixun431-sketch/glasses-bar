@@ -38,7 +38,7 @@ public partial class InputIntegrationTests : Node
             console._Input(new InputEventKey { PhysicalKeycode = Key.Quoteleft, Pressed = true });
             Require(!DeveloperConsole.IsOpen, "built-in developer console closes with the quote-left key");
 
-            foreach (var action in new[] { "move_forward", "interact", "toggle_glasses", "operate" })
+            foreach (var action in new[] { "move_forward", "interact", "toggle_glasses", "operate", "next_day" })
             {
                 Require(InputMap.HasAction(action), $"input action exists: {action}");
                 Require(InputMap.ActionGetEvents(action).Count > 0, $"input action has binding: {action}");

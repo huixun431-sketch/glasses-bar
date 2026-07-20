@@ -241,6 +241,14 @@ offset_bottom = 170.0
 layout_mode = 2
 theme_override_constants/separation = 8
 
+[node name="Day" type="Label" parent="HUD/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.42, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 28
+text = "第 1 天"
+
 [node name="Phase" type="Label" parent="HUD/Margin/Stack"]
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)

@@ -6,6 +6,7 @@ namespace GlassesBar;
 public partial class HudController : CanvasLayer
 {
     private Label _phase = null!;
+    private Label _day = null!;
     private Label _status = null!;
     private Label _prompt = null!;
     private PanelContainer _promptPanel = null!;
@@ -20,6 +21,7 @@ public partial class HudController : CanvasLayer
 
     public override void _Ready()
     {
+        _day = GetNode<Label>("Margin/Stack/Day");
         _phase = GetNode<Label>("Margin/Stack/Phase");
         _status = GetNode<Label>("Margin/Stack/Status");
         _promptPanel = GetNode<PanelContainer>("PromptPanel");
@@ -33,10 +35,12 @@ public partial class HudController : CanvasLayer
         _summary = GetNode<Label>("SummaryPanel/Summary");
 
         GameSession.Instance.DayPhaseChanged += OnPhaseChanged;
+        GameSession.Instance.DayChanged += OnDayChanged;
         GameSession.Instance.StatusMessage += OnStatusMessage;
         GameSession.Instance.EvaluationFinished += OnEvaluationFinished;
         _status.Text = "与客人交互开始教学。WASD 移动｜鼠标观察｜E 交互｜G 切换眼镜｜` 开发控制台";
         OnPhaseChanged((int)GameSession.Instance.Flow.Current);
+        OnDayChanged(GameSession.Instance.CurrentDay);
     }
 
     public void Bind(PlayerController player, DrinkWorkstation workstation)
@@ -69,6 +73,16 @@ public partial class HudController : CanvasLayer
         _phase.Text = $"当前阶段｜{label}";
     }
 
+    private void OnDayChanged(int day)
+    {
+        _day.Text = $"第 {day} 天";
+        if (GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder)
+        {
+            _summaryPanel.Visible = false;
+            Input.MouseMode = Input.MouseModeEnum.Captured;
+        }
+    }
+
     private void OnPromptChanged(string prompt, bool available)
     {
         _prompt.Text = prompt;
@@ -94,7 +108,8 @@ public partial class HudController : CanvasLayer
 
     private void OnEvaluationFinished(bool passed, string summary)
     {
-        _summary.Text = (passed ? "教学日完成\n" : "教学日结束\n") + summary + "\n\n正式配方数值尚未批准，本结果只验证流程。";
+        _summary.Text = $"第 {GameSession.Instance.CurrentDay} 天" + (passed ? "完成\n" : "结束\n") + summary +
+            $"\n\n正式配方数值尚未批准，本结果只验证流程。\n\n[Enter] 开始第 {GameSession.Instance.CurrentDay + 1} 天";
         _summaryPanel.Visible = true;
         Input.MouseMode = Input.MouseModeEnum.Visible;
     }
