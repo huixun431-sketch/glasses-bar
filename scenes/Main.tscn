@@ -225,7 +225,7 @@ theme_override_colors/font_color = Color(0.67, 1, 0.94, 1)
 theme_override_colors/font_outline_color = Color(0.01, 0.08, 0.1, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 19
-text = "眼镜世界 // 开发占位配方\n冰美式\n拿杯 → 加冰 → 手工倒水\n研磨 → 持续萃取 → 交付\n\n按 G 返回现实世界"
+text = "眼镜世界 // 开发占位流程\n冰美式\n取研钵与咖啡豆 → 砧板研磨\n取滤具 → 浸润萃取 → 过滤入杯\n拿杯 → 加冰 → 加水 → 走近客人提交\n\n按 G 返回现实世界"
 
 [node name="HUD" type="CanvasLayer" parent="."]
 layer = 10

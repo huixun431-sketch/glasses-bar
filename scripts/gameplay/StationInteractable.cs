@@ -19,8 +19,9 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
     public string OperationPrompt => Kind switch
     {
         StationKind.WaterDispenser => "按住左键并向下移动鼠标倒水；空格/↑ 为辅助；松开完成",
-        StationKind.Grinder => "按住左键并移动鼠标研磨；空格/↑ 为辅助；松开完成",
-        StationKind.EspressoMachine => "按住左键持续萃取；空格/↑ 为辅助；松开完成",
+        StationKind.GrindingStation => "在砧板上按住左键并移动鼠标研磨；空格/↑ 为辅助；松开完成",
+        StationKind.ExtractionStation => "按住左键持续浸润萃取；空格/↑ 为辅助；松开完成",
+        StationKind.FilteringStation => "按住左键将萃取液过滤入杯；空格/↑ 为辅助；松开完成",
         _ => string.Empty
     };
 
@@ -28,8 +29,9 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
     {
         StationKind.WaterDispenser when _context is not null =>
             (float)Math.Clamp(_context.Workstation.Glass.Ingredients.TryGetValue("water", out var water) ? water / 0.05d : 0d, 0d, 1d),
-        StationKind.Grinder => (float)Math.Clamp(_progress / 0.6d, 0d, 1d),
-        StationKind.EspressoMachine when _context is not null =>
+        StationKind.GrindingStation => (float)Math.Clamp(_progress / 0.6d, 0d, 1d),
+        StationKind.ExtractionStation => (float)Math.Clamp(_progress / 0.7d, 0d, 1d),
+        StationKind.FilteringStation when _context is not null =>
             (float)Math.Clamp(_context.Workstation.Glass.Ingredients.TryGetValue("espresso", out var espresso) ? espresso / 0.15d : 0d, 0d, 1d),
         _ => 0f
     };
@@ -40,9 +42,13 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         StationKind.Customer => "[E] 将手中成品交给客人",
         StationKind.PickupGlass => context.Workstation.HasGlass ? "高球杯已在手中" : "[E] 拿取高球杯",
         StationKind.IceBucket => "[E] 加入一块冰",
-        StationKind.WaterDispenser => "[E] 开始手工倒水",
-        StationKind.Grinder => "[E] 开始研磨咖啡豆",
-        StationKind.EspressoMachine => "[E] 开始萃取浓缩咖啡",
+        StationKind.WaterDispenser => "[E] 从左侧水槽开始手工加水",
+        StationKind.CoffeeBeans => "[E] 从后吧台取用咖啡豆",
+        StationKind.MortarTool => "[E] 拿取研钵与研杵",
+        StationKind.FilterTool => "[E] 拿取传统滤具",
+        StationKind.GrindingStation => "[E] 在砧板上手工研磨咖啡豆",
+        StationKind.ExtractionStation => "[E] 开始手工浸润萃取",
+        StationKind.FilteringStation => "[E] 将萃取液过滤入杯",
         StationKind.WasteBin => "[E] 丢弃当前饮品并重做",
         _ => string.Empty
     };
@@ -63,6 +69,12 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         }
         if (Kind == StationKind.PickupGlass && context.Workstation.HasGlass)
             return "高球杯已拿取 · 继续下一步";
+        if (Kind == StationKind.MortarTool && context.Workstation.HasMortarTool)
+            return "研钵与研杵已拿取 · 前往中央砧板";
+        if (Kind == StationKind.FilterTool && context.Workstation.HasFilterTool)
+            return "滤具已拿取 · 前往中央砧板";
+        if (Kind == StationKind.CoffeeBeans && context.Workstation.CoffeeBeansPortioned)
+            return "咖啡豆已取用 · 前往中央砧板";
         if (GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder && Kind != StationKind.Customer)
             return $"先向客人接单 · {DisplayName}";
         if (!GameSession.Instance.CanCraft && Kind != StationKind.Customer)
@@ -75,9 +87,13 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         StationKind.Customer => "客人",
         StationKind.PickupGlass => "高球杯",
         StationKind.IceBucket => "冰桶",
-        StationKind.WaterDispenser => "水台",
-        StationKind.Grinder => "磨豆机",
-        StationKind.EspressoMachine => "咖啡机",
+        StationKind.WaterDispenser => "水槽",
+        StationKind.CoffeeBeans => "咖啡豆",
+        StationKind.MortarTool => "研钵与研杵",
+        StationKind.FilterTool => "传统滤具",
+        StationKind.GrindingStation => "砧板·研磨",
+        StationKind.ExtractionStation => "砧板·萃取",
+        StationKind.FilteringStation => "砧板·过滤",
         StationKind.WasteBin => "弃物桶",
         _ => EntityId
     };
@@ -94,8 +110,15 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
             StationKind.PickupGlass => GameSession.Instance.CanCraft && !context.Workstation.HasGlass,
             StationKind.IceBucket => GameSession.Instance.CanCraft && context.Workstation.HasGlass,
             StationKind.WaterDispenser => GameSession.Instance.CanCraft && context.Workstation.HasGlass,
-            StationKind.Grinder => GameSession.Instance.CanCraft,
-            StationKind.EspressoMachine => GameSession.Instance.CanCraft && context.Workstation.GroundCoffeeReady && context.Workstation.HasGlass,
+            StationKind.CoffeeBeans => GameSession.Instance.CanCraft && !context.Workstation.CoffeeBeansPortioned,
+            StationKind.MortarTool => GameSession.Instance.CanCraft && !context.Workstation.HasMortarTool,
+            StationKind.FilterTool => GameSession.Instance.CanCraft && !context.Workstation.HasFilterTool,
+            StationKind.GrindingStation => GameSession.Instance.CanCraft && context.Workstation.HasMortarTool &&
+                context.Workstation.CoffeeBeansPortioned && !context.Workstation.GroundCoffeeReady,
+            StationKind.ExtractionStation => GameSession.Instance.CanCraft && context.Workstation.GroundCoffeeReady &&
+                context.Workstation.HasFilterTool && !context.Workstation.ExtractedCoffeeReady,
+            StationKind.FilteringStation => GameSession.Instance.CanCraft && context.Workstation.ExtractedCoffeeReady &&
+                context.Workstation.HasFilterTool && context.Workstation.HasGlass && !context.Workstation.FilteredCoffeeComplete,
             StationKind.WasteBin => GameSession.Instance.CanCraft,
             _ => false
         };
@@ -123,9 +146,19 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
             case StationKind.IceBucket:
                 context.Workstation.AddIce();
                 break;
+            case StationKind.CoffeeBeans:
+                context.Workstation.TakeCoffeeBeans();
+                break;
+            case StationKind.MortarTool:
+                context.Workstation.TakeMortarTool();
+                break;
+            case StationKind.FilterTool:
+                context.Workstation.TakeFilterTool();
+                break;
             case StationKind.WaterDispenser:
-            case StationKind.Grinder:
-            case StationKind.EspressoMachine:
+            case StationKind.GrindingStation:
+            case StationKind.ExtractionStation:
+            case StationKind.FilteringStation:
                 if (Begin(context))
                     context.Player.BeginOperation(this);
                 break;
@@ -161,7 +194,7 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
             case StationKind.WaterDispenser:
                 _context.Workstation.AddLiquid("water", LiquidMath.FlowFromTilt(intensity, 0.75d, deltaSeconds));
                 break;
-            case StationKind.EspressoMachine:
+            case StationKind.FilteringStation:
                 _context.Workstation.AddLiquid("espresso", LiquidMath.FlowFromTilt(intensity, 0.45d, deltaSeconds));
                 break;
         }
@@ -175,8 +208,9 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         var completed = Kind switch
         {
             StationKind.WaterDispenser => _context.Workstation.Glass.Ingredients.TryGetValue("water", out var water) && water > 0.05d,
-            StationKind.Grinder => _progress >= 0.6d,
-            StationKind.EspressoMachine => _context.Workstation.Glass.Ingredients.TryGetValue("espresso", out var espresso) && espresso > 0.15d,
+            StationKind.GrindingStation => _progress >= 0.6d,
+            StationKind.ExtractionStation => _progress >= 0.7d,
+            StationKind.FilteringStation => _context.Workstation.Glass.Ingredients.TryGetValue("espresso", out var espresso) && espresso > 0.15d,
             _ => false
         };
 
@@ -184,10 +218,12 @@ public partial class StationInteractable : StaticBody3D, IInteractable, IManualO
         {
             if (Kind == StationKind.WaterDispenser)
                 _context.Workstation.MarkWaterComplete();
-            else if (Kind == StationKind.Grinder)
+            else if (Kind == StationKind.GrindingStation)
                 _context.Workstation.MarkGroundCoffee();
-            else if (Kind == StationKind.EspressoMachine)
-                _context.Workstation.MarkEspressoComplete();
+            else if (Kind == StationKind.ExtractionStation)
+                _context.Workstation.MarkExtractionComplete();
+            else if (Kind == StationKind.FilteringStation)
+                _context.Workstation.MarkFilteringComplete();
         }
 
         IsRunning = false;

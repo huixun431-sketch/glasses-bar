@@ -17,7 +17,12 @@ public partial class DrinkWorkstation : Node
     public LiquidContainer Glass { get; private set; } = new(3d);
     public bool HasGlass { get; private set; }
     public int IcePieces { get; private set; }
+    public bool HasMortarTool { get; private set; }
+    public bool HasFilterTool { get; private set; }
+    public bool CoffeeBeansPortioned { get; private set; }
     public bool GroundCoffeeReady { get; private set; }
+    public bool ExtractedCoffeeReady { get; private set; }
+    public bool FilteredCoffeeComplete { get; private set; }
     public double TotalWaste { get; private set; }
 
     public override void _Ready()
@@ -55,6 +60,33 @@ public partial class DrinkWorkstation : Node
         GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, $"已加入冰块 × {IcePieces}。");
     }
 
+    public void TakeMortarTool()
+    {
+        if (HasMortarTool)
+            return;
+        HasMortarTool = true;
+        MarkStep("take_mortar");
+        GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, "已拿取研钵与研杵，前往砧板手工研磨。");
+    }
+
+    public void TakeFilterTool()
+    {
+        if (HasFilterTool)
+            return;
+        HasFilterTool = true;
+        MarkStep("take_filter");
+        GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, "已拿取滤具，可进行萃取与过滤。");
+    }
+
+    public void TakeCoffeeBeans()
+    {
+        if (CoffeeBeansPortioned)
+            return;
+        CoffeeBeansPortioned = true;
+        MarkStep("take_coffee_beans");
+        GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, "已从后吧台取用开发占位咖啡豆。");
+    }
+
     public double AddLiquid(string id, double amount)
     {
         if (!HasGlass)
@@ -76,7 +108,17 @@ public partial class DrinkWorkstation : Node
         MarkStep("grind_coffee");
     }
 
-    public void MarkEspressoComplete() => MarkStep("extract_espresso");
+    public void MarkExtractionComplete()
+    {
+        ExtractedCoffeeReady = true;
+        MarkStep("manual_extract");
+    }
+
+    public void MarkFilteringComplete()
+    {
+        FilteredCoffeeComplete = true;
+        MarkStep("filter_coffee");
+    }
 
     public void DiscardAndReset()
     {
@@ -87,7 +129,12 @@ public partial class DrinkWorkstation : Node
         _snapshot.IngredientAmounts.Clear();
         _snapshot.SpilledAmount = 0d;
         IcePieces = 0;
+        HasMortarTool = false;
+        HasFilterTool = false;
+        CoffeeBeansPortioned = false;
         GroundCoffeeReady = false;
+        ExtractedCoffeeReady = false;
+        FilteredCoffeeComplete = false;
         HasGlass = false;
         Glass = new LiquidContainer(3d);
         EmitSignal(SignalName.GlassHeldChanged, false);
@@ -109,7 +156,9 @@ public partial class DrinkWorkstation : Node
         var ingredients = _snapshot.IngredientAmounts.Count == 0
             ? "无"
             : string.Join("，", _snapshot.IngredientAmounts.Select(pair => $"{pair.Key}:{pair.Value:0.00}"));
-        return $"杯:{(HasGlass ? "手持" : "未拿取")}｜冰:{IcePieces}｜液体:{Glass.CurrentAmount:0.00}/3.00｜{ingredients}｜溢出:{_snapshot.SpilledAmount:0.00}";
+        var tools = $"研钵:{(HasMortarTool ? "有" : "无")} 滤具:{(HasFilterTool ? "有" : "无")}";
+        var coffee = $"豆:{(CoffeeBeansPortioned ? "已取" : "未取")} 研磨:{(GroundCoffeeReady ? "完成" : "未完成")} 萃取:{(ExtractedCoffeeReady ? "完成" : "未完成")}";
+        return $"杯:{(HasGlass ? "手持" : "未拿取")}｜冰:{IcePieces}｜{tools}｜{coffee}｜液体:{Glass.CurrentAmount:0.00}/3.00｜{ingredients}｜溢出:{_snapshot.SpilledAmount:0.00}";
     }
 
     private void MarkStep(string id)

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/RecipeDefinition.cs" id="1_recipe"]
 [ext_resource type="Script" path="res://scripts/data/RecipeStep.cs" id="2_step"]
@@ -26,10 +26,30 @@ script = ExtResource("2_step")
 Id = &"grind_coffee"
 DisplayName = "研磨咖啡豆"
 
-[sub_resource type="Resource" id="Step_espresso"]
+[sub_resource type="Resource" id="Step_mortar"]
 script = ExtResource("2_step")
-Id = &"extract_espresso"
-DisplayName = "持续萃取浓缩咖啡"
+Id = &"take_mortar"
+DisplayName = "拿取研钵与研杵"
+
+[sub_resource type="Resource" id="Step_beans"]
+script = ExtResource("2_step")
+Id = &"take_coffee_beans"
+DisplayName = "从后吧台取用咖啡豆"
+
+[sub_resource type="Resource" id="Step_filter_tool"]
+script = ExtResource("2_step")
+Id = &"take_filter"
+DisplayName = "拿取传统滤具"
+
+[sub_resource type="Resource" id="Step_extract"]
+script = ExtResource("2_step")
+Id = &"manual_extract"
+DisplayName = "手工浸润萃取"
+
+[sub_resource type="Resource" id="Step_filter"]
+script = ExtResource("2_step")
+Id = &"filter_coffee"
+DisplayName = "过滤咖啡液入杯"
 IngredientId = &"espresso"
 
 [sub_resource type="Resource" id="Tolerance_prototype"]
@@ -42,6 +62,5 @@ script = ExtResource("1_recipe")
 Id = &"prototype_iced_americano"
 DisplayName = "冰美式（开发占位）"
 IsPrototype = true
-Steps = Array[ExtResource("2_step")]([SubResource("Step_glass"), SubResource("Step_ice"), SubResource("Step_water"), SubResource("Step_grind"), SubResource("Step_espresso")])
+Steps = Array[ExtResource("2_step")]([SubResource("Step_glass"), SubResource("Step_ice"), SubResource("Step_water"), SubResource("Step_mortar"), SubResource("Step_beans"), SubResource("Step_grind"), SubResource("Step_filter_tool"), SubResource("Step_extract"), SubResource("Step_filter")])
 Tolerance = SubResource("Tolerance_prototype")
-

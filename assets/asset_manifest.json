@@ -7,10 +7,10 @@
     {"id": "bar_counter", "path": "models/bar_counter.glb", "placeholder": true, "required_anchors": ["Placement"]},
     {"id": "highball_glass", "path": "models/highball_glass.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "FillOrigin"]},
     {"id": "ice_bucket", "path": "models/ice_bucket.glb", "placeholder": true, "required_anchors": ["Interaction"]},
-    {"id": "water_dispenser", "path": "models/water_dispenser.glb", "placeholder": true, "required_anchors": ["Interaction", "Spout"]},
-    {"id": "grinder", "path": "models/grinder.glb", "placeholder": true, "required_anchors": ["Interaction"]},
-    {"id": "espresso_machine", "path": "models/espresso_machine.glb", "placeholder": true, "required_anchors": ["Interaction", "Spout"]},
+    {"id": "bar_sink", "path": "models/bar_sink.glb", "placeholder": true, "required_anchors": ["Interaction", "Spout"]},
+    {"id": "cutting_board", "path": "models/cutting_board.glb", "placeholder": true, "required_anchors": ["Placement", "Interaction"]},
+    {"id": "mortar_and_pestle", "path": "models/mortar_and_pestle.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "Interaction"]},
+    {"id": "traditional_filter", "path": "models/traditional_filter.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "Spout", "Interaction"]},
     {"id": "coffee_beans", "path": "models/coffee_beans.glb", "placeholder": true, "required_anchors": ["Grip", "Placement"]}
   ]
 }
-

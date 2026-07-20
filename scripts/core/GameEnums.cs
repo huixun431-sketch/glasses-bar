@@ -31,7 +31,11 @@ public enum StationKind
     PickupGlass,
     IceBucket,
     WaterDispenser,
-    Grinder,
-    EspressoMachine,
+    CoffeeBeans,
+    MortarTool,
+    FilterTool,
+    GrindingStation,
+    ExtractionStation,
+    FilteringStation,
     WasteBin
 }

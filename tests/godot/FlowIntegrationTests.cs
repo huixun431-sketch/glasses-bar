@@ -29,7 +29,7 @@ public partial class FlowIntegrationTests : Node
             Require(reality.HasNode("CuttingBoard"), "cutting board anchors the center worktop");
             Require(!reality.HasNode("OperationManual") && glasses.HasNode("OperationManual"),
                 "operation manual exists only in the glasses world");
-            Require(reality.HasNode("CoffeeBeansJar") && !glasses.HasNode("CoffeeBeansJar"),
+            Require(reality.HasNode("coffee_beans") && !glasses.HasNode("coffee_beans"),
                 "rear-bar raw ingredients are hidden in the glasses world");
 
             GameSession.Instance.AcceptOrder();
@@ -39,13 +39,12 @@ public partial class FlowIntegrationTests : Node
             GameSession.Instance.ToggleWorld();
             Require(GameSession.Instance.Flow.Current == DayPhase.Preparation, "preparation phase entered");
 
+            var context = new InteractionContext { Player = player, Workstation = workstation };
             workstation.TakeGlass();
             workstation.AddIce();
+            CompleteTraditionalCoffee(main, context, true);
             workstation.AddLiquid("water", 4d);
             workstation.MarkWaterComplete();
-            workstation.MarkGroundCoffee();
-            workstation.AddLiquid("espresso", 0.2d);
-            workstation.MarkEspressoComplete();
             Require(workstation.Glass.SpilledAmount > 0d, "overflow recorded");
             var amountBeforeToggles = workstation.Glass.CurrentAmount;
 
@@ -64,10 +63,7 @@ public partial class FlowIntegrationTests : Node
             workstation.AddIce();
             workstation.AddLiquid("water", 0.5d);
             workstation.MarkWaterComplete();
-            workstation.MarkGroundCoffee();
-            workstation.AddLiquid("espresso", 0.2d);
-            workstation.MarkEspressoComplete();
-            var context = new InteractionContext { Player = player, Workstation = workstation };
+            CompleteTraditionalCoffee(main, context, false);
             Require(!customer.CanInteract(context), "finished drink cannot be submitted from the initial distant position");
             player.GlobalPosition = new Vector3(0f, 0.9f, -0.9f);
             Require(customer.CanInteract(context), "finished drink can be submitted after approaching the customer");
@@ -83,6 +79,43 @@ public partial class FlowIntegrationTests : Node
             GD.PushError(exception.ToString());
             GetTree().Quit(1);
         }
+    }
+
+    private static void CompleteTraditionalCoffee(Node3D main, InteractionContext context, bool verifyGates)
+    {
+        var mortar = main.GetNode<StationInteractable>("NeutralGameplay/mortar_tool");
+        var beans = main.GetNode<StationInteractable>("NeutralGameplay/coffee_beans");
+        var grinding = main.GetNode<StationInteractable>("NeutralGameplay/grinding_station");
+        var filterTool = main.GetNode<StationInteractable>("NeutralGameplay/filter_tool");
+        var extraction = main.GetNode<StationInteractable>("NeutralGameplay/extraction_station");
+        var filtering = main.GetNode<StationInteractable>("NeutralGameplay/filtering_station");
+
+        if (verifyGates)
+        {
+            Require(!grinding.CanInteract(context), "grinding is blocked before taking its tool and ingredient");
+            Require(!extraction.CanInteract(context), "extraction is blocked before grinding and taking the filter");
+        }
+
+        mortar.Interact(context);
+        beans.Interact(context);
+        Require(context.Workstation.HasMortarTool && context.Workstation.CoffeeBeansPortioned,
+            "mortar and coffee beans are acquired separately before grinding");
+        Require(grinding.Begin(context), "traditional grinding starts on the cutting board");
+        grinding.UpdateOperation(1d, 0.7d);
+        Require(grinding.Complete().Completed && context.Workstation.GroundCoffeeReady, "traditional grinding completes");
+
+        if (verifyGates)
+            Require(!extraction.CanInteract(context), "extraction still requires taking the filter tool");
+        filterTool.Interact(context);
+        Require(context.Workstation.HasFilterTool, "filter tool is acquired separately before extraction");
+        Require(extraction.Begin(context), "manual extraction starts after grinding and filter pickup");
+        extraction.UpdateOperation(1d, 0.8d);
+        Require(extraction.Complete().Completed && context.Workstation.ExtractedCoffeeReady, "manual extraction completes");
+
+        Require(filtering.Begin(context), "filtering starts only after extraction with a held glass");
+        filtering.UpdateOperation(1d, 0.5d);
+        Require(filtering.Complete().Completed && context.Workstation.FilteredCoffeeComplete,
+            "traditional filtering transfers coffee into the glass");
     }
 
     private static void Require(bool condition, string message)
