@@ -193,6 +193,7 @@ public partial class GrayboxLevelBuilder : Node3D
 
     private void BuildCabinetry()
     {
+        // The player faces +Z here, so +X is screen-left. Keep that left-side sink bay open.
         var modules = new[] { -4.65f, -2.85f, -1.05f, 0.75f, 2.35f, 5.1f };
         for (var index = 0; index < modules.Length; index++)
         {

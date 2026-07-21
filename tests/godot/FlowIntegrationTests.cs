@@ -32,6 +32,11 @@ public partial class FlowIntegrationTests : Node
                 "one compositional workboard replaces fixed operation stations");
             Require(reality.HasNode("CuttingBoard") && !reality.HasNode("OperationManual") && glasses.HasNode("OperationManual"),
                 "cutting board and glasses-only manual remain in the approved layout");
+            var sink = Station(main, "water_dispenser");
+            var operationManual = glasses.GetNode<Node3D>("OperationManual");
+            // The player faces +Z, so +X renders on the player's left side.
+            Require(sink.Position.X > 0f && operationManual.Position.X < 0f,
+                "player-facing layout keeps the sink on the left and manual on the right");
             Require(reality.HasNode("coffee_beans") && !glasses.HasNode("coffee_beans"),
                 "raw ingredients remain hidden in the glasses world");
 
@@ -49,6 +54,10 @@ public partial class FlowIntegrationTests : Node
 
             var context = Context(player, workstation);
             var drawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_1");
+            foreach (var cabinetNode in GetTree().GetNodesInGroup("cabinet_storage"))
+                if (cabinetNode is CabinetInteractable cabinet && cabinet.Name.ToString().Contains("drawer"))
+                    Require(Math.Abs(cabinet.Position.X - sink.Position.X) > 1f,
+                        "the left-side sink bay has no drawer or cabinet module beneath it");
             drawer.Interact(context);
             Require(drawer.IsOpen, "empty under-counter drawers are interactable and open with animation state");
             drawer.Interact(context);

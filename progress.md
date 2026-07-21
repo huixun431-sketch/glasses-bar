@@ -47,10 +47,12 @@
 - .NET Debug/Release 均为 0 警告、0 错误；纯领域测试 9/9 通过。
 - Godot 4.7.1 .NET 编辑器导入、主场景、`SMOKE_TESTS_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS` 全部通过。
 - 自动化覆盖接单前制作/状态保留、载料工具落台限制、左手优先、正常萃取、主动错误、手动清废、主/暂停菜单、设置、重开当天、返回主菜单、封闭边界、柜门/抽屉、30 天近视曲线与第 30 天周目结束。
+- 布局回归测试现在直接按玩家面向客人的视角锁定“画面左侧水槽、画面右侧眼镜手册”，并检查水槽下方没有抽屉/柜体模块，避免再次按世界坐标正负误判左右。
 - Forward+ 实际截图已人工检查：
   - 主菜单：`C:\Users\lenovo\AppData\Local\Temp\glasses-bar-main-menu-20260722\main00000001.png`
   - 暂停菜单：`C:\Users\lenovo\AppData\Local\Temp\glasses-bar-pause-20260722\pause00000001.png`
   - 柜体开合：`C:\Users\lenovo\AppData\Local\Temp\glasses-bar-cabinet-20260722-v2\cabinet00000003.png`
+  - 左水槽/右手册方位复核：`C:\Users\lenovo\AppData\Local\Temp\glasses-bar-layout-corrected-20260722-v3\layout00000002.png`
 - Windows 包已重导出且实际隐藏启动退出码均为 0：
   - Debug：`builds/windows/debug/GlassesBar.exe`，103,279,056 字节，2026-07-22 01:29:24
   - Release：`builds/windows/release/GlassesBar.exe`，109,370,320 字节，2026-07-22 01:29:41
