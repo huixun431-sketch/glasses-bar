@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/GrayboxLevelBuilder.cs" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/world/RealityWorld.tscn" id="2_reality"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/world/MyopiaEffectController.cs" id="8_myopia"]
 [ext_resource type="Script" path="res://scripts/ui/DeveloperConsole.cs" id="9_console"]
 [ext_resource type="Script" path="res://scripts/ui/OpeningMenuController.cs" id="10_menu"]
+[ext_resource type="Script" path="res://scripts/ui/PauseMenuController.cs" id="11_pause"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -35,6 +36,14 @@ height = 0.22
 transparency = 1
 albedo_color = Color(0.55, 0.8, 0.95, 0.42)
 roughness = 0.15
+
+[sub_resource type="BoxMesh" id="BoxMesh_handheld"]
+size = Vector3(0.08, 0.08, 0.36)
+
+[sub_resource type="StandardMaterial3D" id="Material_handheld"]
+albedo_color = Color(0.85, 0.64, 0.36, 1)
+roughness = 0.55
+metallic = 0.12
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_blur"]
 shader = ExtResource("7_blur")
@@ -121,6 +130,34 @@ corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button"]
+bg_color = Color(0.09, 0.055, 0.045, 0.72)
+border_width_left = 3
+border_color = Color(0.76, 0.48, 0.23, 0.6)
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+content_margin_left = 24.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button_hover"]
+bg_color = Color(0.32, 0.16, 0.07, 0.92)
+border_width_left = 6
+border_color = Color(1, 0.7, 0.28, 1)
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+content_margin_left = 28.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_pause"]
+bg_color = Color(0.025, 0.022, 0.028, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.68, 0.42, 0.22, 0.92)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
 
@@ -188,14 +225,39 @@ collision_mask = 1
 max_results = 8
 enabled = true
 
-[node name="HandAnchor" type="Node3D" parent="Player/Head/Camera3D"]
-position = Vector3(0.34, -0.26, -0.62)
-rotation_degrees = Vector3(-8, 0, -8)
+[node name="LeftHandAnchor" type="Node3D" parent="Player/Head/Camera3D"]
+position = Vector3(-0.34, -0.27, -0.62)
+rotation_degrees = Vector3(-8, 0, 8)
 
-[node name="HeldGlass" type="MeshInstance3D" parent="Player/Head/Camera3D/HandAnchor"]
+[node name="HeldTool" type="MeshInstance3D" parent="Player/Head/Camera3D/LeftHandAnchor"]
 visible = false
 mesh = SubResource("CylinderMesh_glass")
 material_override = SubResource("Material_glass")
+
+[node name="Label" type="Label3D" parent="Player/Head/Camera3D/LeftHandAnchor"]
+visible = false
+position = Vector3(0, 0.2, 0)
+font_size = 20
+outline_size = 4
+pixel_size = 0.001
+text = "左手"
+
+[node name="RightHandAnchor" type="Node3D" parent="Player/Head/Camera3D"]
+position = Vector3(0.34, -0.27, -0.62)
+rotation_degrees = Vector3(-8, 0, -8)
+
+[node name="HeldTool" type="MeshInstance3D" parent="Player/Head/Camera3D/RightHandAnchor"]
+visible = false
+mesh = SubResource("BoxMesh_handheld")
+material_override = SubResource("Material_handheld")
+
+[node name="Label" type="Label3D" parent="Player/Head/Camera3D/RightHandAnchor"]
+visible = false
+position = Vector3(0, 0.2, 0)
+font_size = 20
+outline_size = 4
+pixel_size = 0.001
+text = "右手"
 
 [node name="RealityEffects" type="CanvasLayer" parent="."]
 layer = 5
@@ -231,14 +293,14 @@ color = Color(0.01, 0.16, 0.18, 0.12)
 
 [node name="Recipe" type="Label" parent="GlassesInfo/GlassesOverlay"]
 offset_left = 1420.0
-offset_top = 60.0
+offset_top = 180.0
 offset_right = 1870.0
-offset_bottom = 270.0
+offset_bottom = 510.0
 theme_override_colors/font_color = Color(0.67, 1, 0.94, 1)
 theme_override_colors/font_outline_color = Color(0.01, 0.08, 0.1, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 19
-text = "眼镜世界 // 开发占位流程\n冰美式\n取研钵与咖啡豆 → 砧板研磨\n取滤具 → 浸润萃取 → 过滤入杯\n拿杯 → 加冰 → 加水 → 走近客人提交\n\n按 G 返回现实世界"
+text = "眼镜世界 // 查询信息（非制作前置）\n冰美式开发占位流程\n左手放研钵 → 右手原料勺放豆 → 研杵研磨\n原料勺转移咖啡粉 → 左手放滤具 → 水壶萃取\n滤具 + 高球杯 → 普通过滤\n左手拿杯，冰夹/水壶携料后按 R 加入\n\n错误工具、材料或比例可能报废｜按 G 返回现实"
 
 [node name="HUD" type="CanvasLayer" parent="."]
 layer = 10
@@ -353,6 +415,40 @@ theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="HandsPanel" type="PanelContainer" parent="HUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -500.0
+offset_top = 28.0
+offset_right = -28.0
+offset_bottom = 138.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBox_prompt")
+
+[node name="Margin" type="MarginContainer" parent="HUD/HandsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="Stack" type="VBoxContainer" parent="HUD/HandsPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="LeftHand" type="Label" parent="HUD/HandsPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "左手｜放置类：空"
+
+[node name="RightHand" type="Label" parent="HUD/HandsPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.76, 0.43, 1)
+theme_override_font_sizes/font_size = 20
+text = "右手｜手持类：空"
+
 [node name="Debug" type="Label" parent="HUD"]
 anchors_preset = 3
 anchor_top = 1.0
@@ -446,61 +542,420 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.008, 0.006, 0.008, 0.88)
+color = Color(0.015, 0.018, 0.028, 0.46)
 
-[node name="MenuPanel" type="PanelContainer" parent="OpeningMenu/Backdrop"]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -420.0
-offset_top = -270.0
-offset_right = 420.0
-offset_bottom = 270.0
+[node name="CoolTint" type="ColorRect" parent="OpeningMenu/Backdrop"]
+mouse_filter = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBox_menu")
+color = Color(0.02, 0.09, 0.16, 0.38)
+
+[node name="WarmPanel" type="ColorRect" parent="OpeningMenu/Backdrop"]
+mouse_filter = 2
+anchor_right = 0.52
+anchor_bottom = 1.0
+grow_vertical = 2
+color = Color(0.08, 0.027, 0.016, 0.93)
+
+[node name="Divider" type="ColorRect" parent="OpeningMenu/Backdrop"]
+mouse_filter = 2
+anchor_left = 0.52
+anchor_right = 0.52
+anchor_bottom = 1.0
+offset_left = -2.0
+offset_right = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.72, 0.46, 0.24, 0.78)
+
+[node name="MenuPanel" type="Control" parent="OpeningMenu/Backdrop"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 0.52
+anchor_bottom = 1.0
+offset_left = 78.0
+offset_top = 54.0
+offset_right = -72.0
+offset_bottom = -46.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Margin" type="MarginContainer" parent="OpeningMenu/Backdrop/MenuPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 70
-theme_override_constants/margin_top = 58
-theme_override_constants/margin_right = 70
-theme_override_constants/margin_bottom = 58
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 34
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 28
 
 [node name="Stack" type="VBoxContainer" parent="OpeningMenu/Backdrop/MenuPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 12
 
 [node name="Title" type="Label" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.77, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0.08, 0.03, 0.02, 1)
 theme_override_constants/outline_size = 10
-theme_override_font_sizes/font_size = 56
+theme_override_font_sizes/font_size = 68
 text = "眼镜酒馆"
-horizontal_alignment = 1
+horizontal_alignment = 0
 
 [node name="Subtitle" type="Label" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.82, 0.76, 0.7, 1)
-theme_override_font_sizes/font_size = 21
-text = "观察 · 记忆 · 摘镜 · 手工调制\n当前为开发占位版本"
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 20
+text = "GLASSES BAR  ──  ◉─◉\n观察 · 记忆 · 摘镜 · 手工调制"
+horizontal_alignment = 0
 
 [node name="Spacer" type="Control" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-custom_minimum_size = Vector2(0, 26)
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 
-[node name="Start" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-custom_minimum_size = Vector2(0, 72)
+[node name="Continue" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
-theme_override_font_sizes/font_size = 27
-text = "开始营业"
+disabled = true
+theme_override_colors/font_disabled_color = Color(0.44, 0.39, 0.36, 1)
+theme_override_font_sizes/font_size = 23
+theme_override_styles/disabled = SubResource("StyleBox_menu_button")
+text = "继续游戏（暂无存档）"
+alignment = 0
+
+[node name="Start" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.58, 1)
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_menu_button_hover")
+text = "一、开始游戏"
+alignment = 0
+
+[node name="Settings" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_menu_button_hover")
+text = "设置"
+alignment = 0
+
+[node name="Credits" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_menu_button_hover")
+text = "制作人员"
+alignment = 0
 
 [node name="Quit" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
 custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_menu_button_hover")
 text = "退出游戏"
+alignment = 0
+
+[node name="Version" type="Label" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.51, 0.48, 1)
+theme_override_font_sizes/font_size = 15
+text = "开发灰盒版本｜30 天单周目"
+
+[node name="SettingsPanel" type="PanelContainer" parent="OpeningMenu/Backdrop"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -300.0
+offset_right = 360.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_menu")
+
+[node name="Margin" type="MarginContainer" parent="OpeningMenu/Backdrop/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 52
+theme_override_constants/margin_top = 42
+theme_override_constants/margin_right = 52
+theme_override_constants/margin_bottom = 42
+
+[node name="Stack" type="VBoxContainer" parent="OpeningMenu/Backdrop/SettingsPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.46, 1)
+theme_override_font_sizes/font_size = 38
+text = "设置"
+
+[node name="VolumeLabel" type="Label" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "主音量"
+
+[node name="VolumeRow" type="HBoxContainer" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+
+[node name="MasterVolume" type="HSlider" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack/VolumeRow"]
+custom_minimum_size = Vector2(560, 44)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+
+[node name="VolumeValue" type="Label" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+text = "100%"
+
+[node name="SensitivityLabel" type="Label" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "鼠标灵敏度"
+
+[node name="SensitivityRow" type="HBoxContainer" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+
+[node name="MouseSensitivity" type="HSlider" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack/SensitivityRow"]
+custom_minimum_size = Vector2(560, 44)
+layout_mode = 2
+min_value = 1.0
+max_value = 6.0
+step = 0.1
+value = 2.2
+
+[node name="SensitivityValue" type="Label" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+text = "2.2"
+
+[node name="Hint" type="Label" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.69, 0.66, 0.63, 1)
+text = "近视度数由天数规则推进；开发控制台仍可临时覆盖。"
+autowrap_mode = 2
+
+[node name="Back" type="Button" parent="OpeningMenu/Backdrop/SettingsPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "返回"
+
+[node name="CreditsPanel" type="PanelContainer" parent="OpeningMenu/Backdrop"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -240.0
+offset_right = 360.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_menu")
+
+[node name="Margin" type="MarginContainer" parent="OpeningMenu/Backdrop/CreditsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 52
+theme_override_constants/margin_top = 42
+theme_override_constants/margin_right = 52
+theme_override_constants/margin_bottom = 42
+
+[node name="Stack" type="VBoxContainer" parent="OpeningMenu/Backdrop/CreditsPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Title" type="Label" parent="OpeningMenu/Backdrop/CreditsPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.46, 1)
+theme_override_font_sizes/font_size = 38
+text = "制作人员"
+
+[node name="Body" type="Label" parent="OpeningMenu/Backdrop/CreditsPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "《眼镜酒馆》开发灰盒\n\n设计与制作：项目团队\n技术原型：Godot 4.7.1 .NET\n\n正式人员名单将在后续版本补充。"
+
+[node name="Back" type="Button" parent="OpeningMenu/Backdrop/CreditsPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "返回"
+
+[node name="PauseMenu" type="CanvasLayer" parent="."]
+layer = 45
+script = ExtResource("11_pause")
+
+[node name="Backdrop" type="ColorRect" parent="PauseMenu"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.008, 0.01, 0.018, 0.76)
+
+[node name="PausePanel" type="PanelContainer" parent="PauseMenu/Backdrop"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -310.0
+offset_top = -330.0
+offset_right = 310.0
+offset_bottom = 330.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_pause")
+
+[node name="Margin" type="MarginContainer" parent="PauseMenu/Backdrop/PausePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 56
+theme_override_constants/margin_top = 46
+theme_override_constants/margin_right = 56
+theme_override_constants/margin_bottom = 46
+
+[node name="Stack" type="VBoxContainer" parent="PauseMenu/Backdrop/PausePanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="PauseMenu/Backdrop/PausePanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.44, 1)
+theme_override_font_sizes/font_size = 42
+text = "暂停"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="PauseMenu/Backdrop/PausePanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.69, 0.69, 0.72, 1)
+text = "当天进度已暂时保留"
+horizontal_alignment = 1
+
+[node name="Continue" type="Button" parent="PauseMenu/Backdrop/PausePanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+text = "继续游戏"
+
+[node name="RestartDay" type="Button" parent="PauseMenu/Backdrop/PausePanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 23
+text = "重新开始当天"
+
+[node name="Settings" type="Button" parent="PauseMenu/Backdrop/PausePanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 23
+text = "设置"
+
+[node name="ReturnMain" type="Button" parent="PauseMenu/Backdrop/PausePanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 23
+text = "返回主菜单"
+
+[node name="Footer" type="Label" parent="PauseMenu/Backdrop/PausePanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.53, 0.53, 0.56, 1)
+text = "Esc 继续"
+horizontal_alignment = 1
+
+[node name="SettingsPanel" type="PanelContainer" parent="PauseMenu/Backdrop"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -330.0
+offset_top = -280.0
+offset_right = 330.0
+offset_bottom = 280.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_pause")
+
+[node name="Margin" type="MarginContainer" parent="PauseMenu/Backdrop/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 52
+theme_override_constants/margin_top = 42
+theme_override_constants/margin_right = 52
+theme_override_constants/margin_bottom = 42
+
+[node name="Stack" type="VBoxContainer" parent="PauseMenu/Backdrop/SettingsPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.44, 1)
+theme_override_font_sizes/font_size = 36
+text = "设置"
+
+[node name="VolumeLabel" type="Label" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+text = "主音量"
+
+[node name="VolumeRow" type="HBoxContainer" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+
+[node name="MasterVolume" type="HSlider" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack/VolumeRow"]
+custom_minimum_size = Vector2(520, 42)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+
+[node name="VolumeValue" type="Label" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+text = "100%"
+
+[node name="SensitivityLabel" type="Label" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+text = "鼠标灵敏度"
+
+[node name="SensitivityRow" type="HBoxContainer" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+
+[node name="MouseSensitivity" type="HSlider" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack/SensitivityRow"]
+custom_minimum_size = Vector2(520, 42)
+layout_mode = 2
+min_value = 1.0
+max_value = 6.0
+step = 0.1
+value = 2.2
+
+[node name="SensitivityValue" type="Label" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack"]
+layout_mode = 2
+text = "2.2"
+
+[node name="Back" type="Button" parent="PauseMenu/Backdrop/SettingsPanel/Margin/Stack"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "返回暂停菜单"

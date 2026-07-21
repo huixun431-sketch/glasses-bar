@@ -28,14 +28,8 @@ public enum IngredientUnit
 public enum StationKind
 {
     Customer,
-    PickupGlass,
     IceBucket,
     WaterDispenser,
     CoffeeBeans,
-    MortarTool,
-    FilterTool,
-    GrindingStation,
-    ExtractionStation,
-    FilteringStation,
     WasteBin
 }

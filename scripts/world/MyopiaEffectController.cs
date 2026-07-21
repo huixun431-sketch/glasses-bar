@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using GlassesBar.Domain;
 
 namespace GlassesBar;
 
@@ -18,7 +19,8 @@ public partial class MyopiaEffectController : Node
     {
         var blur = GetNode<ColorRect>("../RealityEffects/RealityBlur");
         _material = (ShaderMaterial)blur.Material;
-        SetMyopiaDegrees(InitialMyopiaDegrees, false);
+        GameSession.Instance.DayChanged += OnDayChanged;
+        SetMyopiaDegrees(MyopiaProgression.DegreesForDay(GameSession.Instance.CurrentDay), false);
     }
 
     public void SetMyopiaDegrees(float degrees, bool announce = true)
@@ -40,4 +42,6 @@ public partial class MyopiaEffectController : Node
             return 0f;
         return Math.Clamp(0.65f + degrees / 38f, 0f, 6f);
     }
+
+    private void OnDayChanged(int day) => SetMyopiaDegrees(MyopiaProgression.DegreesForDay(day), false);
 }

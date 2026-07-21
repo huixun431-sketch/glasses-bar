@@ -29,5 +29,5 @@ public sealed class InteractionContext
 {
     public required PlayerController Player { get; init; }
     public required DrinkWorkstation Workstation { get; init; }
+    public Vector3 InteractionPoint { get; init; }
 }
-

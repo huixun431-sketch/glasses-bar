@@ -20,9 +20,14 @@ public partial class InputIntegrationTests : Node
             var myopia = main.GetNode<MyopiaEffectController>("MyopiaEffectController");
             var console = main.GetNode<DeveloperConsole>("DeveloperConsole");
             var menu = main.GetNode<OpeningMenuController>("OpeningMenu");
+            var pauseMenu = main.GetNode<PauseMenuController>("PauseMenu");
 
             Require(menu.Visible && !GameSession.Instance.GameStarted, "opening menu is visible before play begins");
             Require(!GameSession.Instance.CanMove, "opening menu gates player movement");
+            main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Settings").EmitSignal(Button.SignalName.Pressed);
+            Require(main.GetNode<Control>("OpeningMenu/Backdrop/SettingsPanel").Visible,
+                "main menu settings button opens an interactive settings panel");
+            main.GetNode<Button>("OpeningMenu/Backdrop/SettingsPanel/Margin/Stack/Back").EmitSignal(Button.SignalName.Pressed);
             main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
             Require(GameSession.Instance.GameStarted && !menu.Visible, "start button enters a new game and hides the menu");
             Require(GameSession.Instance.CanMove && main.GetNode<HudController>("HUD").Visible,
@@ -30,6 +35,20 @@ public partial class InputIntegrationTests : Node
             await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
 
             Require(player.GlobalPosition.Z < -1f, "player starts inside the bartender work area");
+            player.GlobalPosition = new Vector3(4.6f, 0.9f, -3f);
+            Input.ActionPress("move_left");
+            for (var frame = 0; frame < 30; frame++)
+                await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+            Input.ActionRelease("move_left");
+            Require(player.GlobalPosition.X < 4.95f,
+                "side return collision encloses the bartender work area and prevents walking out");
+            player.ResetForNewDay();
+            await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+            var workstation = main.GetNode<DrinkWorkstation>("NeutralGameplay/DrinkWorkstation");
+            var glassPickup = main.GetNode<ToolInteractable>("NeutralGameplay/highball_glass");
+            var context = new InteractionContext { Player = player, Workstation = workstation };
+            Require(GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder && glassPickup.CanInteract(context),
+                "tools and crafting interactions are available before accepting an order");
             Require(probe.Enabled && probe.TargetPosition.Length() > 5f, "forgiving interaction probe is active");
             Require(Math.Abs(myopia.MyopiaDegrees - 50f) < 0.01f, "reality myopia defaults to 50 degrees");
             var blurMaterial = (ShaderMaterial)main.GetNode<ColorRect>("RealityEffects/RealityBlur").Material;
@@ -47,7 +66,7 @@ public partial class InputIntegrationTests : Node
             console._Input(new InputEventKey { PhysicalKeycode = Key.Quoteleft, Pressed = true });
             Require(!DeveloperConsole.IsOpen, "built-in developer console closes with the quote-left key");
 
-            foreach (var action in new[] { "move_forward", "interact", "toggle_glasses", "operate", "next_day" })
+            foreach (var action in new[] { "move_forward", "interact", "toggle_glasses", "operate", "use_held_tool", "next_day", "pause_game" })
             {
                 Require(InputMap.HasAction(action), $"input action exists: {action}");
                 Require(InputMap.ActionGetEvents(action).Count > 0, $"input action has binding: {action}");
@@ -60,8 +79,29 @@ public partial class InputIntegrationTests : Node
 
             SendPlayerAction(player, "interact", true);
             SendPlayerAction(player, "interact", false);
-            Require(GameSession.Instance.Flow.Current == DayPhase.OrderReceived, "E action reaches PlayerController and accepts order");
+            Require(GameSession.Instance.Flow.Current == DayPhase.Preparation && !GameSession.Instance.RecipeObserved,
+                "E accepts the order and immediately allows crafting without glasses");
             Require(main.GetNode<PanelContainer>("HUD/FeedbackPanel").Visible, "interaction produces immediate UI feedback");
+
+            pauseMenu._Input(new InputEventAction { Action = "pause_game", Pressed = true, Strength = 1f });
+            Require(pauseMenu.IsOpen && GetTree().Paused && main.GetNode<Control>("PauseMenu/Backdrop").Visible,
+                "Escape opens the real in-game pause menu and pauses the scene tree");
+            main.GetNode<Button>("PauseMenu/Backdrop/PausePanel/Margin/Stack/Settings").EmitSignal(Button.SignalName.Pressed);
+            Require(main.GetNode<Control>("PauseMenu/Backdrop/SettingsPanel").Visible,
+                "pause menu settings can be opened without leaving the day");
+            var sensitivity = main.GetNode<HSlider>("PauseMenu/Backdrop/SettingsPanel/Margin/Stack/SensitivityRow/MouseSensitivity");
+            sensitivity.Value = 3.4d;
+            Require(Math.Abs(player.MouseSensitivity - 0.0034f) < 0.00001f,
+                "pause settings modify runtime mouse sensitivity");
+            main.GetNode<Button>("PauseMenu/Backdrop/SettingsPanel/Margin/Stack/Back").EmitSignal(Button.SignalName.Pressed);
+            main.GetNode<Button>("PauseMenu/Backdrop/PausePanel/Margin/Stack/Continue").EmitSignal(Button.SignalName.Pressed);
+            Require(!pauseMenu.IsOpen && !GetTree().Paused, "continue closes pause menu and resumes gameplay");
+            pauseMenu.Pause();
+            main.GetNode<Button>("PauseMenu/Backdrop/PausePanel/Margin/Stack/RestartDay").EmitSignal(Button.SignalName.Pressed);
+            Require(!GetTree().Paused && GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder &&
+                    GameSession.Instance.CurrentDay == 1,
+                "restart-day option resets the current day without advancing the campaign");
+            GameSession.Instance.AcceptOrder();
 
             SendPlayerAction(player, "toggle_glasses", true);
             SendPlayerAction(player, "toggle_glasses", false);
@@ -80,12 +120,9 @@ public partial class InputIntegrationTests : Node
 
             SendPlayerAction(player, "toggle_glasses", true);
             SendPlayerAction(player, "toggle_glasses", false);
-            Require(GameSession.Instance.Flow.Current == DayPhase.Preparation, "returning to reality enters preparation");
+            Require(GameSession.Instance.Flow.Current == DayPhase.Preparation, "returning to reality preserves preparation");
             Require(GameSession.Instance.CanMove, "movement gate is enabled in reality world");
 
-            var workstation = main.GetNode<DrinkWorkstation>("NeutralGameplay/DrinkWorkstation");
-            var glassPickup = main.GetNode<StationInteractable>("NeutralGameplay/highball_glass");
-            var context = new InteractionContext { Player = player, Workstation = workstation };
             Require(glassPickup.CanInteract(context), "glass pickup is available during reality preparation");
 
             SendPlayerAction(player, "toggle_glasses", true);
@@ -95,6 +132,11 @@ public partial class InputIntegrationTests : Node
 
             SendPlayerAction(player, "toggle_glasses", true);
             SendPlayerAction(player, "toggle_glasses", false);
+
+            pauseMenu.Pause();
+            main.GetNode<Button>("PauseMenu/Backdrop/PausePanel/Margin/Stack/ReturnMain").EmitSignal(Button.SignalName.Pressed);
+            Require(!GameSession.Instance.GameStarted && menu.Visible && !GetTree().Paused,
+                "return-to-main option leaves gameplay and restores the startup menu");
 
             GD.Print("INPUT_INTEGRATION_PASS");
             GetTree().Quit(0);

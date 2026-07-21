@@ -11,6 +11,8 @@ public sealed class DrinkSnapshot
     public double ElapsedSeconds { get; set; }
     public double WastedAmount { get; set; }
     public double SpilledAmount { get; set; }
+    public double CraftCompletionRatio { get; set; } = 1d;
+    public int FailedOperations { get; set; }
 }
 
 public sealed class RecipeTargets
@@ -31,6 +33,8 @@ public sealed class DrinkEvaluation
     public double ElapsedSeconds { get; init; }
     public double WastedAmount { get; init; }
     public double SpilledAmount { get; init; }
+    public double CraftCompletionRatio { get; init; }
+    public int FailedOperations { get; init; }
     public IReadOnlyList<string> MissingSteps { get; init; } = Array.Empty<string>();
     public IReadOnlyList<string> MissingIngredients { get; init; } = Array.Empty<string>();
 }
@@ -58,6 +62,8 @@ public static class RecipeEvaluator
             ElapsedSeconds = drink.ElapsedSeconds,
             WastedAmount = drink.WastedAmount,
             SpilledAmount = drink.SpilledAmount,
+            CraftCompletionRatio = Math.Clamp(drink.CraftCompletionRatio, 0d, 1d),
+            FailedOperations = drink.FailedOperations,
             MissingSteps = missingSteps,
             MissingIngredients = missingIngredients
         };
@@ -82,4 +88,3 @@ public static class RecipeEvaluator
 
     private static double Ratio(int count, int total) => total == 0 ? 1d : (double)count / total;
 }
-

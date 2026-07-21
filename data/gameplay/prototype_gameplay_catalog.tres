@@ -1,0 +1,131 @@
+[gd_resource type="Resource" script_class="GameplayCatalogDefinition" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/GameplayCatalogDefinition.cs" id="1_catalog"]
+[ext_resource type="Script" path="res://scripts/data/ToolDefinition.cs" id="2_tool"]
+[ext_resource type="Script" path="res://scripts/data/OperationDefinition.cs" id="3_operation"]
+
+[sub_resource type="Resource" id="Tool_glass"]
+script = ExtResource("2_tool")
+Id = &"highball_glass"
+DisplayName = "高球杯"
+CanContainIngredients = true
+BoardConflictGroup = "serving_vessel"
+FootprintRadius = 0.16
+
+[sub_resource type="Resource" id="Tool_mortar"]
+script = ExtResource("2_tool")
+Id = &"mortar"
+DisplayName = "研钵"
+CanContainIngredients = true
+BoardConflictGroup = "prep_vessel"
+FootprintRadius = 0.22
+
+[sub_resource type="Resource" id="Tool_filter"]
+script = ExtResource("2_tool")
+Id = &"traditional_filter"
+DisplayName = "传统滤具"
+CanContainIngredients = true
+BoardConflictGroup = "prep_vessel"
+FootprintRadius = 0.2
+
+[sub_resource type="Resource" id="Tool_pestle"]
+script = ExtResource("2_tool")
+Id = &"pestle"
+DisplayName = "研杵"
+UsedInHand = true
+FootprintRadius = 0.1
+
+[sub_resource type="Resource" id="Tool_scoop"]
+script = ExtResource("2_tool")
+Id = &"bean_scoop"
+DisplayName = "原料勺"
+CanCarryIngredients = true
+FootprintRadius = 0.11
+AllowedIngredientIds = Array[StringName]([&"coffee_beans", &"ground_coffee", &"ice"])
+
+[sub_resource type="Resource" id="Tool_tongs"]
+script = ExtResource("2_tool")
+Id = &"ice_tongs"
+DisplayName = "冰夹"
+CanCarryIngredients = true
+FootprintRadius = 0.12
+AllowedIngredientIds = Array[StringName]([&"ice", &"coffee_beans", &"ground_coffee"])
+
+[sub_resource type="Resource" id="Tool_carafe"]
+script = ExtResource("2_tool")
+Id = &"water_carafe"
+DisplayName = "水壶"
+CanCarryIngredients = true
+FootprintRadius = 0.15
+AllowedIngredientIds = Array[StringName]([&"water"])
+
+[sub_resource type="Resource" id="Operation_grind"]
+script = ExtResource("3_operation")
+Id = &"grind_coffee"
+DisplayName = "研磨"
+RequiredPlacementToolIds = Array[StringName]([&"mortar"])
+RequiredHandheldToolId = &"pestle"
+InputIngredientIds = Array[StringName]([&"coffee_beans"])
+InputTargetAmounts = Array[float]([1.0])
+OutputIngredientIds = Array[StringName]([&"ground_coffee"])
+OutputAmounts = Array[float]([1.0])
+ResultTargetToolId = &"mortar"
+RequiredAction = 0.6
+
+[sub_resource type="Resource" id="Operation_extract"]
+script = ExtResource("3_operation")
+Id = &"manual_extract"
+DisplayName = "浸润萃取"
+RequiredPlacementToolIds = Array[StringName]([&"traditional_filter"])
+RequiredHandheldToolId = &"water_carafe"
+InputIngredientIds = Array[StringName]([&"ground_coffee", &"water"])
+InputTargetAmounts = Array[float]([1.0, 0.5])
+OutputIngredientIds = Array[StringName]([&"coffee_extract"])
+OutputAmounts = Array[float]([0.5])
+ResultTargetToolId = &"traditional_filter"
+RequiredAction = 0.7
+
+[sub_resource type="Resource" id="Operation_filter"]
+script = ExtResource("3_operation")
+Id = &"filter_coffee"
+DisplayName = "过滤入杯"
+RequiredPlacementToolIds = Array[StringName]([&"traditional_filter", &"highball_glass"])
+InputIngredientIds = Array[StringName]([&"coffee_extract"])
+InputTargetAmounts = Array[float]([0.5])
+OutputIngredientIds = Array[StringName]([&"espresso"])
+OutputAmounts = Array[float]([0.5])
+ResultTargetToolId = &"highball_glass"
+RequiredAction = 0.5
+
+[sub_resource type="Resource" id="Operation_ice"]
+script = ExtResource("3_operation")
+Id = &"add_ice"
+DisplayName = "加冰"
+CanRunOffBoard = true
+RequiredPlacementToolIds = Array[StringName]([&"highball_glass"])
+RequiredHandheldToolId = &"ice_tongs"
+InputIngredientIds = Array[StringName]([&"ice"])
+InputTargetAmounts = Array[float]([1.0])
+OutputIngredientIds = Array[StringName]([&"ice"])
+OutputAmounts = Array[float]([1.0])
+ResultTargetToolId = &"highball_glass"
+RequiredAction = 0.0
+
+[sub_resource type="Resource" id="Operation_water"]
+script = ExtResource("3_operation")
+Id = &"add_water"
+DisplayName = "加水"
+CanRunOffBoard = true
+RequiredPlacementToolIds = Array[StringName]([&"highball_glass"])
+RequiredHandheldToolId = &"water_carafe"
+InputIngredientIds = Array[StringName]([&"water"])
+InputTargetAmounts = Array[float]([0.5])
+OutputIngredientIds = Array[StringName]([&"water"])
+OutputAmounts = Array[float]([0.5])
+ResultTargetToolId = &"highball_glass"
+RequiredAction = 0.0
+
+[resource]
+script = ExtResource("1_catalog")
+Tools = Array[ExtResource("2_tool")]([SubResource("Tool_glass"), SubResource("Tool_mortar"), SubResource("Tool_filter"), SubResource("Tool_pestle"), SubResource("Tool_scoop"), SubResource("Tool_tongs"), SubResource("Tool_carafe")])
+Operations = Array[ExtResource("3_operation")]([SubResource("Operation_grind"), SubResource("Operation_extract"), SubResource("Operation_filter"), SubResource("Operation_ice"), SubResource("Operation_water")])

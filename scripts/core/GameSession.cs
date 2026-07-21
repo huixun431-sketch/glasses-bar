@@ -5,6 +5,8 @@ namespace GlassesBar;
 
 public partial class GameSession : Node
 {
+    public const int MaxCampaignDays = 30;
+
     [Signal] public delegate void WorldModeChangedEventHandler(int mode);
     [Signal] public delegate void DayPhaseChangedEventHandler(int phase);
     [Signal] public delegate void DayChangedEventHandler(int day);
@@ -21,7 +23,9 @@ public partial class GameSession : Node
     public bool RecipeObserved { get; private set; }
 
     public bool CanMove => GameStarted && Flow.Current is not DayPhase.Evaluation and not DayPhase.DaySummary;
-    public bool CanCraft => GameStarted && WorldMode == WorldMode.Reality && Flow.Current == DayPhase.Preparation;
+    public bool CanCraft => GameStarted && WorldMode == WorldMode.Reality &&
+        Flow.Current is DayPhase.WaitingForOrder or DayPhase.Preparation;
+    public bool IsCampaignComplete => CurrentDay >= MaxCampaignDays && Flow.Current == DayPhase.DaySummary;
 
     public override void _EnterTree() => Instance = this;
 
@@ -35,8 +39,9 @@ public partial class GameSession : Node
             return;
         }
 
+        Flow.TryAdvance(DayPhase.Preparation);
         EmitPhase();
-        EmitSignal(SignalName.StatusMessage, "订单：冰美式。按 G 戴上眼镜查看开发占位配方。");
+        EmitSignal(SignalName.StatusMessage, "订单：冰美式。接单前已完成的操作与失误都会保留；按 G 戴镜只用于查询信息。");
     }
 
     public void ToggleWorld()
@@ -45,17 +50,8 @@ public partial class GameSession : Node
             return;
 
         WorldMode = WorldMode == WorldMode.Reality ? WorldMode.Glasses : WorldMode.Reality;
-        if (WorldMode == WorldMode.Glasses && Flow.Current == DayPhase.OrderReceived)
-        {
+        if (WorldMode == WorldMode.Glasses)
             RecipeObserved = true;
-            Flow.TryAdvance(DayPhase.RecipeObservation);
-            EmitPhase();
-        }
-        else if (WorldMode == WorldMode.Reality && Flow.Current == DayPhase.RecipeObservation)
-        {
-            Flow.TryAdvance(DayPhase.Preparation);
-            EmitPhase();
-        }
 
         EmitSignal(SignalName.WorldModeChanged, (int)WorldMode);
         EmitSignal(SignalName.StatusMessage,
@@ -79,7 +75,7 @@ public partial class GameSession : Node
 
         EmitPhase();
         var summary = evaluation.Passed
-            ? $"教学完成｜步骤 {evaluation.StepCompletionRatio:P0}｜原料 {evaluation.IngredientCompletionRatio:P0}｜浪费 {evaluation.WastedAmount:0.00}"
+            ? $"教学完成｜步骤 {evaluation.StepCompletionRatio:P0}｜原料 {evaluation.IngredientCompletionRatio:P0}｜成品完成度 {evaluation.CraftCompletionRatio:P0}｜失败工序 {evaluation.FailedOperations}｜浪费 {evaluation.WastedAmount:0.00}"
             : $"成品未通过｜缺少步骤：{string.Join("、", evaluation.MissingSteps)}｜缺少原料：{string.Join("、", evaluation.MissingIngredients)}";
 
         EmitSignal(SignalName.EvaluationFinished, evaluation.Passed, summary);
@@ -94,7 +90,7 @@ public partial class GameSession : Node
         WorldMode = WorldMode.Reality;
         EmitSignal(SignalName.WorldModeChanged, (int)WorldMode);
         EmitPhase();
-        EmitSignal(SignalName.StatusMessage, "教学日已重置。与客人交互开始接单。");
+        EmitSignal(SignalName.StatusMessage, "当天已重置。顾客需求仍未知；可自由操作，接单前不能交付。");
     }
 
     public bool AdvanceToNextDay()
@@ -102,10 +98,16 @@ public partial class GameSession : Node
         if (Flow.Current != DayPhase.DaySummary)
             return false;
 
+        if (CurrentDay >= MaxCampaignDays)
+        {
+            ReturnToMainMenu();
+            return false;
+        }
+
         CurrentDay++;
         ResetFlowForDay();
         EmitSignal(SignalName.DayChanged, CurrentDay);
-        EmitSignal(SignalName.StatusMessage, $"第 {CurrentDay} 天开始。与客人交互接单。");
+        EmitSignal(SignalName.StatusMessage, $"第 {CurrentDay} 天开始。需求未知，可先操作或直接向客人接单。");
         return true;
     }
 
@@ -121,7 +123,18 @@ public partial class GameSession : Node
         CurrentDay = 1;
         ResetFlowForDay();
         EmitSignal(SignalName.DayChanged, CurrentDay);
-        EmitSignal(SignalName.StatusMessage, "第 1 天开始。与客人交互接单。");
+        EmitSignal(SignalName.StatusMessage, "第 1 天开始。需求未知，可先操作或直接向客人接单。");
+    }
+
+    public void ReturnToMainMenu()
+    {
+        GameStarted = false;
+        Flow.Reset();
+        RecipeObserved = false;
+        WorldMode = WorldMode.Reality;
+        EmitSignal(SignalName.WorldModeChanged, (int)WorldMode);
+        EmitPhase();
+        EmitSignal(SignalName.GameStartedChanged, false);
     }
 
     private void ResetFlowForDay()

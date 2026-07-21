@@ -31,6 +31,7 @@ public sealed class DayFlow
     private static bool IsAllowed(DayPhase current, DayPhase next) => (current, next) switch
     {
         (DayPhase.WaitingForOrder, DayPhase.OrderReceived) => true,
+        (DayPhase.OrderReceived, DayPhase.Preparation) => true,
         (DayPhase.OrderReceived, DayPhase.RecipeObservation) => true,
         (DayPhase.RecipeObservation, DayPhase.Preparation) => true,
         (DayPhase.Preparation, DayPhase.Delivery) => true,
@@ -39,4 +40,3 @@ public sealed class DayFlow
         _ => false
     };
 }
-

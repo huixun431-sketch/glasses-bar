@@ -17,7 +17,10 @@ public partial class PlayerController : CharacterBody3D
     private Node3D _head = null!;
     private RayCast3D _ray = null!;
     private ShapeCast3D _probe = null!;
-    private MeshInstance3D _heldGlass = null!;
+    private MeshInstance3D _leftHandVisual = null!;
+    private MeshInstance3D _rightHandVisual = null!;
+    private Label3D _leftHandLabel = null!;
+    private Label3D _rightHandLabel = null!;
     private DrinkWorkstation? _workstation;
     private IManualOperation? _operation;
     private double _gestureIntensity;
@@ -25,13 +28,17 @@ public partial class PlayerController : CharacterBody3D
     private bool _lastPromptAvailable;
     private Transform3D _dayStartTransform;
     private Vector3 _dayStartHeadRotation;
+    private Vector3 _focusedInteractionPoint;
 
     public override void _Ready()
     {
         _head = GetNode<Node3D>("Head");
         _ray = GetNode<RayCast3D>("Head/Camera3D/InteractionRay");
         _probe = GetNode<ShapeCast3D>("Head/Camera3D/InteractionProbe");
-        _heldGlass = GetNode<MeshInstance3D>("Head/Camera3D/HandAnchor/HeldGlass");
+        _leftHandVisual = GetNode<MeshInstance3D>("Head/Camera3D/LeftHandAnchor/HeldTool");
+        _rightHandVisual = GetNode<MeshInstance3D>("Head/Camera3D/RightHandAnchor/HeldTool");
+        _leftHandLabel = GetNode<Label3D>("Head/Camera3D/LeftHandAnchor/Label");
+        _rightHandLabel = GetNode<Label3D>("Head/Camera3D/RightHandAnchor/Label");
         _dayStartTransform = Transform;
         _dayStartHeadRotation = _head.Rotation;
         Input.MouseMode = Input.MouseModeEnum.Captured;
@@ -84,6 +91,13 @@ public partial class PlayerController : CharacterBody3D
         if (@event.IsActionPressed("interact"))
             TryInteract();
 
+        if (@event.IsActionPressed("use_held_tool") && _workstation is not null && _operation is null)
+        {
+            var result = _workstation.TryUseSimpleOperation();
+            if (!string.Equals(result.Feedback, _workstation.LastOperationFeedback, StringComparison.Ordinal))
+                GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, result.Feedback);
+        }
+
         if (@event.IsActionReleased("operate") && _operation is not null)
             CompleteOperation();
 
@@ -115,8 +129,10 @@ public partial class PlayerController : CharacterBody3D
     public void BindWorkstation(DrinkWorkstation workstation)
     {
         _workstation = workstation;
-        _workstation.GlassHeldChanged += held => _heldGlass.Visible = held;
-        _heldGlass.Visible = workstation.HasGlass;
+        _workstation.HandsChanged += UpdateHeldVisuals;
+        _workstation.HandToolIdsChanged += UpdateHeldToolMeshes;
+        UpdateHeldVisuals(workstation.LeftHandDisplayName, workstation.RightHandDisplayName);
+        UpdateHeldToolMeshes(workstation.LeftHandToolId, workstation.RightHandToolId);
     }
 
     public void BeginOperation(IManualOperation operation)
@@ -141,7 +157,7 @@ public partial class PlayerController : CharacterBody3D
         if (GetFocusedInteractable() is not { } interactable)
             return;
 
-        var context = new InteractionContext { Player = this, Workstation = _workstation };
+        var context = CreateInteractionContext();
         interactable.Interact(context);
     }
 
@@ -190,7 +206,7 @@ public partial class PlayerController : CharacterBody3D
         }
         else if (_workstation is not null && GetFocusedInteractable() is { } interactable)
         {
-            var context = new InteractionContext { Player = this, Workstation = _workstation };
+            var context = CreateInteractionContext();
             available = interactable.CanInteract(context);
             prompt = available ? interactable.GetPrompt(context) : interactable.GetUnavailablePrompt(context);
         }
@@ -206,14 +222,56 @@ public partial class PlayerController : CharacterBody3D
     private IInteractable? GetFocusedInteractable()
     {
         if (_ray.IsColliding() && _ray.GetCollider() is IInteractable direct)
+        {
+            _focusedInteractionPoint = _ray.GetCollisionPoint();
             return direct;
+        }
 
         _probe.ForceShapecastUpdate();
         for (var index = 0; index < _probe.GetCollisionCount(); index++)
         {
             if (_probe.GetCollider(index) is IInteractable nearby)
+            {
+                _focusedInteractionPoint = _probe.GetCollisionPoint(index);
                 return nearby;
+            }
         }
         return null;
+    }
+
+    private InteractionContext CreateInteractionContext() => new()
+    {
+        Player = this,
+        Workstation = _workstation!,
+        InteractionPoint = _focusedInteractionPoint
+    };
+
+    private void UpdateHeldVisuals(string leftHand, string rightHand)
+    {
+        var hasLeft = !string.IsNullOrWhiteSpace(leftHand) && leftHand != "空";
+        var hasRight = !string.IsNullOrWhiteSpace(rightHand) && rightHand != "空";
+        _leftHandVisual.Visible = hasLeft;
+        _rightHandVisual.Visible = hasRight;
+        _leftHandLabel.Visible = false;
+        _rightHandLabel.Visible = false;
+        _leftHandLabel.Text = leftHand;
+        _rightHandLabel.Text = rightHand;
+    }
+
+    private void UpdateHeldToolMeshes(string leftToolId, string rightToolId)
+    {
+        _leftHandVisual.Mesh = leftToolId switch
+        {
+            "mortar" => new CylinderMesh { TopRadius = 0.135f, BottomRadius = 0.165f, Height = 0.16f },
+            "traditional_filter" => new CylinderMesh { TopRadius = 0.12f, BottomRadius = 0.07f, Height = 0.22f },
+            _ => new CylinderMesh { TopRadius = 0.075f, BottomRadius = 0.06f, Height = 0.22f }
+        };
+        _rightHandVisual.Mesh = rightToolId switch
+        {
+            "pestle" => new CylinderMesh { TopRadius = 0.034f, BottomRadius = 0.049f, Height = 0.3f },
+            "water_carafe" => new CylinderMesh { TopRadius = 0.07f, BottomRadius = 0.11f, Height = 0.27f },
+            "ice_tongs" => new BoxMesh { Size = new Vector3(0.08f, 0.06f, 0.4f) },
+            _ => new BoxMesh { Size = new Vector3(0.14f, 0.08f, 0.3f) }
+        };
     }
 }
