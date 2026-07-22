@@ -52,10 +52,9 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
         else
         {
             Position = center;
-            // Deep trays stay mostly supported by the cabinet carcass. Limiting the pull-out
-            // distance keeps a comfortable walking lane in the widened two-person aisle while
-            // still exposing the useful front section of the drawer.
-            var openTravel = Mathf.Clamp(storageDepth * 0.46f, 0.3f, 0.34f);
+            // The low rear bar no longer occupies the work aisle, so the deep front trays can
+            // expose most of their useful depth without pinching the two-person passage.
+            var openTravel = Mathf.Clamp(storageDepth * 0.82f, 0.56f, 0.68f);
             _openPosition = center + _outwardDirection * openTravel;
         }
         _closedPosition = Position;

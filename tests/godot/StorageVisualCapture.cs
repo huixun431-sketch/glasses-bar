@@ -13,14 +13,12 @@ public partial class StorageVisualCapture : Node
         main.GetNode<HudController>("HUD").Visible = false;
         main.GetNode<MyopiaEffectController>("MyopiaEffectController").SetMyopiaDegrees(0f, false);
         main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper").SetOpen(true, true);
-        main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_4_lower").SetOpen(true, true);
-        main.GetNode<CabinetInteractable>("NeutralGameplay/back_cabinet_3_left").SetOpen(true, true);
 
-        var camera = new Camera3D { Name = "StorageReviewCamera", Current = true, Fov = 84f };
+        var camera = new Camera3D { Name = "StorageReviewCamera", Current = true, Fov = 76f };
         main.AddChild(camera);
-        camera.LookAtFromPosition(new Vector3(0f, 2.8f, -1.22f), new Vector3(0f, 0.58f, -0.18f), Vector3.Up);
+        camera.LookAtFromPosition(new Vector3(0f, 2.85f, -1.25f), new Vector3(-1.8f, 0.95f, -0.25f), Vector3.Up);
         await ToSignal(GetTree().CreateTimer(2.1d), SceneTreeTimer.SignalName.Timeout);
-        main.GetNode<CabinetInteractable>("NeutralGameplay/sink_left_drawer_upper").SetOpen(true, true);
-        camera.LookAtFromPosition(new Vector3(0f, 2.8f, -0.9f), new Vector3(0f, 0.68f, -2.24f), Vector3.Up);
+        main.GetNode<CabinetInteractable>("NeutralGameplay/back_cabinet_2_left").SetOpen(true, true);
+        camera.LookAtFromPosition(new Vector3(0f, 2.3f, -0.85f), new Vector3(0f, 3.85f, -2.85f), Vector3.Up);
     }
 }

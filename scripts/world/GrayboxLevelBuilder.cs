@@ -5,33 +5,37 @@ namespace GlassesBar;
 
 public partial class GrayboxLevelBuilder : Node3D
 {
-    public const float FrontBarTopHeight = 1.18f;
-    public const float BackBarTopHeight = 1.11f;
-    public const float OperationAisleClearWidth = 1.8f;
+    public const float FrontBarTopHeight = 1.42f;
+    public const float RearShelfTopHeight = 1.58f;
+    public const float PlayerEyeHeight = 2f;
+    public const float OperationAisleClearWidth = 2.31f;
+    public const float BottleRackTopHeight = 3.2f;
+    public const float UpperCabinetCenterHeight = 3.9f;
 
     private const float FrontCounterZ = 0.2f;
-    private const float BackCounterZ = -2.46f;
+    private const float RearShelfZ = -2.92f;
+    private const float UpperCabinetFrontZ = -2.69f;
 
     private static readonly (string Id, StationKind Kind, Vector3 Position, Vector3 Size, string Label)[] Stations =
     {
-        ("customer", StationKind.Customer, new Vector3(0f, 1f, 2.6f), new Vector3(0.65f, 1.7f, 0.65f), "客人"),
-        ("coffee_beans", StationKind.CoffeeBeans, new Vector3(-3.75f, 1.34f, BackCounterZ + 0.06f), new Vector3(0.58f, 0.42f, 0.52f), "咖啡豆"),
-        ("hand_wash_sink", StationKind.HandWashSink, new Vector3(3.55f, 1.16f, BackCounterZ + 0.04f), new Vector3(1.05f, 0.16f, 0.54f), "每日洗手水槽"),
-        ("kettle", StationKind.Kettle, new Vector3(-4.75f, 1.41f, 0.2f), new Vector3(0.44f, 0.48f, 0.4f), "水壶｜量酒器水源"),
+        ("customer", StationKind.Customer, new Vector3(0f, 1.05f, 2.6f), new Vector3(0.65f, 1.95f, 0.65f), "客人"),
+        ("coffee_beans", StationKind.CoffeeBeans, new Vector3(-3.75f, 1.79f, RearShelfZ), new Vector3(0.58f, 0.42f, 0.42f), "咖啡豆"),
+        ("hand_wash_sink", StationKind.HandWashSink, new Vector3(4.35f, 1.5f, FrontCounterZ), new Vector3(1.45f, 0.16f, 0.62f), "每日洗手水槽"),
+        ("kettle", StationKind.Kettle, new Vector3(-4.75f, 1.66f, FrontCounterZ), new Vector3(0.44f, 0.48f, 0.4f), "水壶｜量酒器水源"),
         ("waste_bin", StationKind.WasteBin, new Vector3(5.05f, 0.58f, -0.86f), new Vector3(0.72f, 1.1f, 0.72f), "弃物桶")
     };
 
     private static readonly (string ToolId, Vector3 Position, Color Color)[] ToolLayouts =
     {
-        ("highball_glass", new Vector3(4.55f, 1.36f, 0.2f), new Color(0.62f, 0.82f, 0.94f, 0.62f)),
-        ("mortar", new Vector3(2.05f, 1.36f, 0.2f), new Color("786859")),
-        ("pestle", new Vector3(2.75f, 1.38f, 0.2f), new Color("6c5546")),
-        ("traditional_filter", new Vector3(-1.25f, 1.4f, 0.2f), new Color("aaa08b")),
-        ("bean_scoop", new Vector3(-2.05f, 1.34f, 0.2f), new Color("9a8b72")),
-        ("ice_tongs", new Vector3(-2.7f, 1.34f, 0.2f), new Color("8797a1")),
-        ("jigger_small", new Vector3(-3.3f, 1.34f, 0.2f), new Color("aab3b7")),
-        ("jigger_medium", new Vector3(-3.75f, 1.35f, 0.2f), new Color("909da3")),
-        ("jigger_large", new Vector3(-4.2f, 1.36f, 0.2f), new Color("76878f"))
+        ("highball_glass", new Vector3(3.45f, 1.6f, FrontCounterZ), new Color(0.62f, 0.82f, 0.94f, 0.62f)),
+        ("mortar", new Vector3(2.05f, 1.6f, FrontCounterZ), new Color("786859")),
+        ("pestle", new Vector3(2.75f, 1.62f, FrontCounterZ), new Color("6c5546")),
+        ("traditional_filter", new Vector3(-1.25f, 1.64f, FrontCounterZ), new Color("aaa08b")),
+        ("bean_scoop", new Vector3(-2.05f, 1.58f, FrontCounterZ), new Color("9a8b72")),
+        ("ice_tongs", new Vector3(-2.7f, 1.58f, FrontCounterZ), new Color("8797a1")),
+        ("jigger_small", new Vector3(-3.3f, 1.58f, FrontCounterZ), new Color("aab3b7")),
+        ("jigger_medium", new Vector3(-3.75f, 1.59f, FrontCounterZ), new Color("909da3")),
+        ("jigger_large", new Vector3(-4.2f, 1.6f, FrontCounterZ), new Color("76878f"))
     };
 
     private Node3D _neutral = null!;
@@ -116,7 +120,7 @@ public partial class GrayboxLevelBuilder : Node3D
             CreateBox(_glasses, wall.Item1, wall.Item2, wall.Item3, new Color("052b3a"), true);
         }
 
-        var frontBodySize = new Vector3(10.8f, 1.08f, 1f);
+        var frontBodySize = new Vector3(10.8f, 1.32f, 1f);
         var frontBodyPosition = new Vector3(0f, frontBodySize.Y * 0.5f, FrontCounterZ);
         AddStaticBox(_neutral, "FrontBarCollider", frontBodyPosition, frontBodySize, 2);
         CreateBox(_reality, "RaisedFrontBar", frontBodyPosition, frontBodySize, new Color("5b3524"));
@@ -126,23 +130,29 @@ public partial class GrayboxLevelBuilder : Node3D
         CreateBox(_glasses, "RaisedFrontBarTop", new Vector3(0f, FrontBarTopHeight - 0.07f, FrontCounterZ),
             new Vector3(11.1f, 0.14f, 1.08f), new Color("0f98a4"), true);
 
-        var backBodySize = new Vector3(10.8f, 0.98f, 0.72f);
-        var backBodyPosition = new Vector3(0f, backBodySize.Y * 0.5f, BackCounterZ);
-        AddStaticBox(_neutral, "MergedBackBarCollider", backBodyPosition, backBodySize, 2);
-        CreateBox(_reality, "MergedBackBar", backBodyPosition, backBodySize, new Color("3f2924"));
-        CreateBox(_glasses, "MergedBackBar", backBodyPosition, backBodySize, new Color("073f50"), true);
-        CreateBox(_reality, "MergedBackBarTop", new Vector3(0f, BackBarTopHeight - 0.07f, BackCounterZ),
-            new Vector3(11f, 0.14f, 0.8f), new Color("76503a"));
-        CreateBox(_glasses, "MergedBackBarTop", new Vector3(0f, BackBarTopHeight - 0.07f, BackCounterZ),
-            new Vector3(11f, 0.14f, 0.8f), new Color("0b8d9a"), true);
+        var rearShelfSize = new Vector3(10.6f, 0.12f, 0.44f);
+        var rearShelfPosition = new Vector3(0f, RearShelfTopHeight - rearShelfSize.Y * 0.5f, RearShelfZ);
+        AddStaticBox(_neutral, "RearWallShelfCollider", rearShelfPosition, rearShelfSize, 2);
+        CreateBox(_reality, "RearWallShelf", rearShelfPosition, rearShelfSize, new Color("76503a"));
+        CreateBox(_glasses, "RearWallShelf", rearShelfPosition, rearShelfSize, new Color("0b8d9a"), true);
+
+        var upperCabinetSize = new Vector3(10.6f, 1.12f, 0.48f);
+        var upperCabinetPosition = new Vector3(0f, UpperCabinetCenterHeight, -2.95f);
+        AddStaticBox(_neutral, "UpperBackCabinetCollider", upperCabinetPosition, upperCabinetSize, 2);
+        CreateBox(_reality, "UpperBackCabinet", upperCabinetPosition, upperCabinetSize, new Color("3f2924"));
+        CreateBox(_glasses, "UpperBackCabinet", upperCabinetPosition, upperCabinetSize, new Color("073f50"), true);
 
         foreach (var side in new[] { -1f, 1f })
         {
-            var returnPosition = new Vector3(side * 5.25f, 0.54f, -0.96f);
-            var returnSize = new Vector3(0.5f, 1.08f, 2.52f);
+            var returnPosition = new Vector3(side * 5.25f, 0.66f, -0.96f);
+            var returnSize = new Vector3(0.5f, 1.32f, 2.52f);
             AddStaticBox(_neutral, side < 0 ? "RightReturnCollider" : "LeftReturnCollider", returnPosition, returnSize, 2);
             CreateBox(_reality, side < 0 ? "RightCounterReturn" : "LeftCounterReturn", returnPosition, returnSize, new Color("4b3027"));
             CreateBox(_glasses, side < 0 ? "RightCounterReturn" : "LeftCounterReturn", returnPosition, returnSize, new Color("075064"), true);
+            CreateBox(_reality, side < 0 ? "RightCounterReturnTop" : "LeftCounterReturnTop",
+                new Vector3(side * 5.25f, FrontBarTopHeight - 0.07f, -0.96f), new Vector3(0.58f, 0.14f, 2.64f), new Color("76503a"));
+            CreateBox(_glasses, side < 0 ? "RightCounterReturnTop" : "LeftCounterReturnTop",
+                new Vector3(side * 5.25f, FrontBarTopHeight - 0.07f, -0.96f), new Vector3(0.58f, 0.14f, 2.64f), new Color("0b8d9a"), true);
         }
 
         BuildMergedBackRack(_reality, false);
@@ -160,8 +170,8 @@ public partial class GrayboxLevelBuilder : Node3D
             new Vector3(10.3f, 0.08f, 0.84f));
         _neutral.AddChild(front);
         var back = new CounterSurfaceInteractable();
-        back.Configure(workstation, "back_counter_surface", new Vector3(0f, BackBarTopHeight + 0.03f, BackCounterZ),
-            new Vector3(10.2f, 0.08f, 0.58f));
+        back.Configure(workstation, "rear_shelf_surface", new Vector3(0f, RearShelfTopHeight + 0.03f, RearShelfZ),
+            new Vector3(10.2f, 0.08f, 0.38f));
         _neutral.AddChild(back);
     }
 
@@ -180,11 +190,11 @@ public partial class GrayboxLevelBuilder : Node3D
     private void BuildWorkboard(DrinkWorkstation workstation)
     {
         var board = new WorkboardInteractable();
-        board.Configure(workstation, new Vector3(0.35f, 1.26f, FrontCounterZ), new Vector3(2.05f, 0.14f, 0.72f), new[]
+        board.Configure(workstation, new Vector3(0.35f, 1.5f, FrontCounterZ), new Vector3(2.05f, 0.14f, 0.72f), new[]
         {
-            new Vector3(-0.35f, 1.43f, FrontCounterZ),
-            new Vector3(0.35f, 1.43f, FrontCounterZ),
-            new Vector3(1.05f, 1.43f, FrontCounterZ)
+            new Vector3(-0.35f, 1.67f, FrontCounterZ),
+            new Vector3(0.35f, 1.67f, FrontCounterZ),
+            new Vector3(1.05f, 1.67f, FrontCounterZ)
         });
         _neutral.AddChild(board);
     }
@@ -204,22 +214,23 @@ public partial class GrayboxLevelBuilder : Node3D
     {
         BuildFrontDoubleDrawers();
         BuildBackCabinetDoors();
-        BuildSinkLeftNarrowDrawers();
     }
 
     private void BuildFrontDoubleDrawers()
     {
-        var moduleCenters = new[] { -4f, -2f, 0f, 2f, 4f };
+        // The world +X bay is intentionally absent: the front-bar sink owns that full width,
+        // and its underside must remain free of drawers and cabinet fronts.
+        var moduleCenters = new[] { -4f, -2f, 0f, 2f };
         for (var moduleIndex = 0; moduleIndex < moduleCenters.Length; moduleIndex++)
         for (var layerIndex = 0; layerIndex < 2; layerIndex++)
         {
             var upper = layerIndex == 0;
             var id = $"front_drawer_{moduleIndex + 1}_{(upper ? "upper" : "lower")}";
-            var center = new Vector3(moduleCenters[moduleIndex], upper ? 0.83f : 0.48f, -0.34f);
+            var center = new Vector3(moduleCenters[moduleIndex], upper ? 1.02f : 0.57f, -0.34f);
             CreateBox(_neutral, id + "_cavity", center + new Vector3(0f, 0f, 0.055f),
-                new Vector3(1.72f, 0.28f, 0.05f), new Color("171112"));
+                new Vector3(1.72f, 0.38f, 0.05f), new Color("171112"));
             var drawer = new CabinetInteractable();
-            drawer.Configure(id, CabinetPartKind.Drawer, center, new Vector3(1.72f, 0.28f, 0.1f), false,
+            drawer.Configure(id, CabinetPartKind.Drawer, center, new Vector3(1.72f, 0.38f, 0.1f), false,
                 Vector3.Forward, 0.76f);
             _neutral.AddChild(drawer);
 
@@ -247,30 +258,17 @@ public partial class GrayboxLevelBuilder : Node3D
 
     private void BuildBackCabinetDoors()
     {
-        var centers = new[] { -3f, -1.8f, -0.6f, 0.6f, 1.8f, 2.75f };
+        var centers = new[] { -3.5f, 0f, 3.5f };
         for (var moduleIndex = 0; moduleIndex < centers.Length; moduleIndex++)
         for (var leafIndex = 0; leafIndex < 2; leafIndex++)
         {
             var leftLeaf = leafIndex == 0;
-            var leafCenter = centers[moduleIndex] + (leftLeaf ? -0.2f : 0.2f);
+            var leafCenter = centers[moduleIndex] + (leftLeaf ? -0.76f : 0.76f);
             var door = new CabinetInteractable();
             door.Configure($"back_cabinet_{moduleIndex + 1}_{(leftLeaf ? "left" : "right")}", CabinetPartKind.Door,
-                new Vector3(leafCenter, 0.52f, BackCounterZ + 0.4f), new Vector3(0.38f, 0.78f, 0.08f), leftLeaf,
+                new Vector3(leafCenter, UpperCabinetCenterHeight, UpperCabinetFrontZ), new Vector3(1.48f, 0.92f, 0.08f), leftLeaf,
                 Vector3.Back);
             _neutral.AddChild(door);
-        }
-    }
-
-    private void BuildSinkLeftNarrowDrawers()
-    {
-        for (var layerIndex = 0; layerIndex < 2; layerIndex++)
-        {
-            var upper = layerIndex == 0;
-            var drawer = new CabinetInteractable();
-            drawer.Configure($"sink_left_drawer_{(upper ? "upper" : "lower")}", CabinetPartKind.Drawer,
-                new Vector3(4.65f, upper ? 0.8f : 0.47f, BackCounterZ + 0.4f), new Vector3(0.68f, 0.26f, 0.08f), false,
-                Vector3.Back, 0.58f);
-            _neutral.AddChild(drawer);
         }
     }
 
@@ -308,9 +306,9 @@ public partial class GrayboxLevelBuilder : Node3D
     {
         var wood = glasses ? new Color("074a5e") : new Color("402821");
         var shelf = glasses ? new Color("0ba0a8") : new Color("795038");
-        CreateBox(parent, "MergedBottleRackBack", new Vector3(0f, 2.15f, BackCounterZ - 0.67f), new Vector3(10.5f, 2.1f, 0.12f), wood, glasses);
+        CreateBox(parent, "MergedBottleRackBack", new Vector3(0f, 2.15f, -3.13f), new Vector3(10.5f, 2.1f, 0.12f), wood, glasses);
         for (var row = 0; row < 3; row++)
-            CreateBox(parent, $"MergedShelf{row}", new Vector3(0f, 1.32f + row * 0.55f, BackCounterZ - 0.5f),
+            CreateBox(parent, $"MergedShelf{row}", new Vector3(0f, 1.32f + row * 0.55f, -2.96f),
                 new Vector3(10.2f, 0.09f, 0.42f), shelf, glasses);
         if (glasses)
             return;
@@ -318,35 +316,37 @@ public partial class GrayboxLevelBuilder : Node3D
         {
             var x = -4.55f + index % 7 * 1.52f;
             var y = 1.55f + index / 7 * 0.56f;
-            CreateCylinder(parent, $"BackLiquor{index}", new Vector3(x, y, BackCounterZ - 0.41f), 0.11f, 0.38f, BottleColor(index));
+            CreateCylinder(parent, $"BackLiquor{index}", new Vector3(x, y, -2.87f), 0.11f, 0.38f, BottleColor(index));
         }
     }
 
     private static void BuildFrontWorktop(Node3D parent, bool glasses)
     {
         var accent = glasses ? new Color("28d5c6") : new Color("845531");
-        CreateBox(parent, "CuttingBoard", new Vector3(0.35f, 1.22f, FrontCounterZ), new Vector3(2.25f, 0.08f, 0.82f), accent, glasses);
+        CreateBox(parent, "CuttingBoard", new Vector3(0.35f, 1.46f, FrontCounterZ), new Vector3(2.25f, 0.08f, 0.82f), accent, glasses);
         if (glasses)
         {
             parent.AddChild(new Label3D
             {
                 Name = "CuttingBoardLabel",
                 Text = "砧板｜能力由已放置工具组合决定",
-                Position = new Vector3(0.35f, 1.72f, FrontCounterZ),
+                Position = new Vector3(0.35f, 1.96f, FrontCounterZ),
                 FontSize = 25,
                 OutlineSize = 8,
+                PixelSize = 0.002f,
                 Modulate = new Color("c6fff5"),
                 Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
                 NoDepthTest = true
             });
-            CreateBox(parent, "OperationManual", new Vector3(-4.55f, 1.24f, FrontCounterZ), new Vector3(0.75f, 0.08f, 0.68f), new Color("45f1d4"), true);
+            CreateBox(parent, "OperationManual", new Vector3(-5.25f, 1.49f, -1.04f), new Vector3(0.42f, 0.07f, 0.72f), new Color("45f1d4"), true);
             parent.AddChild(new Label3D
             {
                 Name = "OperationManualLabel",
                 Text = "操作手册",
-                Position = new Vector3(-4.55f, 1.58f, FrontCounterZ),
+                Position = new Vector3(-5.25f, 1.9f, -1.04f),
                 FontSize = 28,
                 OutlineSize = 8,
+                PixelSize = 0.0022f,
                 Modulate = new Color("c6fff5"),
                 Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
                 NoDepthTest = true
@@ -368,7 +368,7 @@ public partial class GrayboxLevelBuilder : Node3D
         for (var stool = 0; stool < 4; stool++)
         {
             var x = -3.2f + stool * 2.1f;
-            CreateCylinder(parent, $"FrontStool{stool}", new Vector3(x, 0.7f, 1.35f), 0.27f, 0.12f, table, glasses);
+            CreateCylinder(parent, $"FrontStool{stool}", new Vector3(x, 0.94f, 1.35f), 0.27f, 0.12f, table, glasses);
         }
         for (var window = 0; window < 3; window++)
         {
@@ -401,6 +401,7 @@ public partial class GrayboxLevelBuilder : Node3D
                 Position = new Vector3(0f, size.Y * 0.65f + 0.25f, 0f),
                 FontSize = 30,
                 OutlineSize = 8,
+                PixelSize = 0.002f,
                 Modulate = new Color("b8fff4"),
                 Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
                 NoDepthTest = true

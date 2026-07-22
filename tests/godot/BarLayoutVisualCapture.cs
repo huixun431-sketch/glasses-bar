@@ -13,11 +13,9 @@ public partial class BarLayoutVisualCapture : Node
         main.GetNode<HudController>("HUD").Visible = false;
         main.GetNode<MyopiaEffectController>("MyopiaEffectController").SetMyopiaDegrees(0f, false);
         main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper").SetOpen(true, true);
-        main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_4_lower").SetOpen(true, true);
-        main.GetNode<CabinetInteractable>("NeutralGameplay/back_cabinet_3_left").SetOpen(true, true);
 
-        var camera = new Camera3D { Name = "LayoutReviewCamera", Current = true, Fov = 68f };
+        var camera = new Camera3D { Name = "LayoutReviewCamera", Current = true, Fov = 72f };
         main.AddChild(camera);
-        camera.LookAtFromPosition(new Vector3(6.2f, 3.25f, 5.2f), new Vector3(0f, 0.95f, -0.65f), Vector3.Up);
+        camera.LookAtFromPosition(new Vector3(6.25f, 3.55f, 5.45f), new Vector3(0f, 1.55f, -1.05f), Vector3.Up);
     }
 }

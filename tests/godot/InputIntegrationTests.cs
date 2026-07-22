@@ -53,7 +53,9 @@ public partial class InputIntegrationTests : Node
             await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
 
             Require(Math.Abs(player.GlobalPosition.Z - (-1.2f)) < 0.01f, "player starts centered inside the two-person bartender aisle");
-            player.GlobalPosition = new Vector3(4.8f, 0.96f, -1.2f);
+            Require(Math.Abs(player.GetNode<Node3D>("Head").GlobalPosition.Y - GrayboxLevelBuilder.PlayerEyeHeight) < 0.01f,
+                "player starts with the coordinated two-metre eye height");
+            player.GlobalPosition = new Vector3(4.8f, 1.045f, -1.2f);
             Input.ActionPress("move_left");
             for (var frame = 0; frame < 30; frame++)
                 await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);

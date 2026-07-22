@@ -42,6 +42,7 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
             Position = new Vector3(0f, 0.34f, 0f),
             FontSize = 24,
             OutlineSize = 7,
+            PixelSize = 0.0018f,
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest = true,
             Visible = GameSession.Instance.WorldMode == WorldMode.Glasses

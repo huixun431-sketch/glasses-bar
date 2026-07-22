@@ -129,7 +129,7 @@ public partial class FlowIntegrationTests : Node
             glass.Interact(context);
 
             Require(!customer.CanInteract(context), "expanded bar keeps customer delivery outside the initial work position");
-            player.GlobalPosition = new Vector3(0f, 0.96f, -0.2f);
+            player.GlobalPosition = new Vector3(0f, 1.045f, -0.2f);
             Require(customer.CanInteract(context), "finished drink can be submitted only after approaching the customer");
             customer.Interact(context);
             Require(_evaluationPassed && GameSession.Instance.Flow.Current == DayPhase.DaySummary,
@@ -169,15 +169,18 @@ public partial class FlowIntegrationTests : Node
     private static void VerifyLayout(Node3D main, DrinkWorkstation workstation, StationInteractable sink,
         StationInteractable ice, InteractionContext context)
     {
-        Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.18f) < 0.001f &&
-                Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 1.8f) < 0.001f &&
+        Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.42f) < 0.001f &&
+                Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 2.31f) < 0.001f &&
                 GrayboxLevelBuilder.OperationAisleClearWidth >= 0.7f * 2f + 0.3f,
-            "bar is raised and the internal operation aisle comfortably fits two player-width people");
-        Require(Math.Abs(main.GetNode<Node3D>("Player/Head").GlobalPosition.Y - 1.76f) < 0.01f,
-            "player camera height rises with the counter");
+            "low rear bar is removed and the taller internal operation aisle comfortably fits two player-width people");
+        Require(Math.Abs(main.GetNode<Node3D>("Player/Head").GlobalPosition.Y - GrayboxLevelBuilder.PlayerEyeHeight) < 0.01f,
+            "player capsule and camera rise together to the doubled playtest increment");
         Require(main.GetNode<Node3D>("RealityWorld").HasNode("MergedBottleRackBack") &&
+                main.GetNode<Node3D>("RealityWorld").HasNode("UpperBackCabinet") &&
+                main.GetNode<Node3D>("RealityWorld").HasNode("RearWallShelf") &&
+                !main.GetNode<Node3D>("NeutralGameplay").HasNode("MergedBackBarCollider") &&
                 main.GetNode<Node3D>("RealityWorld").HasNode("RearBooth"),
-            "back bar merges with bottle rack and the outside customer area is expanded");
+            "the low rear bar becomes a shallow shelf plus an overhead cabinet above the bottle rack");
         foreach (var toolId in new[] { "highball_glass", "mortar", "traditional_filter", "pestle", "bean_scoop", "ice_tongs", "jigger_small", "jigger_medium", "jigger_large" })
             Require(Math.Abs(Tool(main, toolId).Position.Z - 0.2f) < 0.01f, $"{toolId} starts on the front bar");
         Require(Tool(main, "ice_tongs").GetNode<CollisionShape3D>("CollisionShape3D").Shape is BoxShape3D &&
@@ -195,36 +198,34 @@ public partial class FlowIntegrationTests : Node
             if (name.StartsWith("front_drawer_", StringComparison.Ordinal))
             {
                 frontDrawerCount++;
-                Require(cabinet.OpenPosition.Z < cabinet.ClosedPosition.Z && cabinet.OutwardDirection.Z < 0f,
-                    "front drawers pull outward into the work aisle and have deep trays");
-                // The opposite closed back storage face is z=-2.02 in this widened graybox.
+                Require(cabinet.OpenPosition.Z < cabinet.ClosedPosition.Z && cabinet.OutwardDirection.Z < 0f &&
+                        cabinet.OpenTravelDistance >= 0.6f,
+                    "front drawers pull substantially farther outward and keep deep trays");
+                // The rear wall shelf begins at z=-2.70 after the low rear bar is removed.
                 var openFrontDrawerBackEdge = cabinet.OpenPosition.Z - cabinet.PanelSize.Z * 0.5f;
-                narrowestWalkingLane = Math.Min(narrowestWalkingLane, openFrontDrawerBackEdge - (-2.02f));
+                narrowestWalkingLane = Math.Min(narrowestWalkingLane, openFrontDrawerBackEdge - (-2.70f));
             }
             if (name.StartsWith("back_cabinet_", StringComparison.Ordinal))
             {
                 backDoorCount++;
-                Require(cabinet.OutwardDirection.Z > 0f && Math.Abs(cabinet.OpenRotationY) > 1.4f,
-                    "back cabinet doors swing outward toward the aisle");
-                // The opposite closed front drawer face is z=-0.39. Include the rotated leaf thickness.
-                var rotation = Math.Abs(cabinet.OpenRotationY);
-                var openDoorFrontEdge = cabinet.ClosedPosition.Z +
-                    cabinet.PanelSize.X * Math.Abs(MathF.Sin(rotation)) +
-                    cabinet.PanelSize.Z * 0.5f * Math.Abs(MathF.Cos(rotation));
-                narrowestWalkingLane = Math.Min(narrowestWalkingLane, -0.39f - openDoorFrontEdge);
+                Require(cabinet.OutwardDirection.Z > 0f && Math.Abs(cabinet.OpenRotationY) > 1.4f &&
+                        cabinet.ClosedPosition.Y - cabinet.PanelSize.Y * 0.5f >= GrayboxLevelBuilder.BottleRackTopHeight + 0.2f &&
+                        cabinet.PanelSize.X >= 1.4f && cabinet.PanelSize.Y >= 0.9f,
+                    "larger back cabinet doors swing outward from above the bottle rack instead of occupying the walking lane");
             }
         }
-        Require(frontDrawerCount == 10 && backDoorCount == 12,
-            "front bar uses five bays of double-layer drawers while six back cabinets use paired narrow outward doors");
-        var sinkUpper = main.GetNode<CabinetInteractable>("NeutralGameplay/sink_left_drawer_upper");
-        var sinkLower = main.GetNode<CabinetInteractable>("NeutralGameplay/sink_left_drawer_lower");
-        Require(sinkUpper.Position.X > sink.Position.X && sinkLower.Position.X > sink.Position.X &&
-                sinkUpper.ClosedPosition.Z - 0.58f > -3.17f,
-            "sink-left double narrow drawers remain clear of the back wall");
-        var openSinkDrawerFrontEdge = sinkUpper.OpenPosition.Z + sinkUpper.PanelSize.Z * 0.5f;
-        narrowestWalkingLane = Math.Min(narrowestWalkingLane, -0.39f - openSinkDrawerFrontEdge);
-        Require(narrowestWalkingLane >= 1.2f,
-            "every individual open door or drawer still leaves a comfortably passable lane after opposite closed fronts are included");
+        Require(frontDrawerCount == 8 && backDoorCount == 6,
+            "front bar keeps four double-drawer bays with a clear sink bay while three overhead cabinets use paired large doors");
+        Require(Math.Abs(sink.Position.Z - 0.2f) < 0.01f && sink.Position.X > 3.5f &&
+                !main.GetNode<Node3D>("NeutralGameplay").HasNode("sink_left_drawer_upper") &&
+                !main.GetNode<Node3D>("NeutralGameplay").HasNode("sink_left_drawer_lower"),
+            "the wash sink is back on the screen-left front bar with no drawer or cabinet underneath");
+        var manual = main.GetNode<Node3D>("GlassesWorld/OperationManual");
+        Require(manual.Position.X < -5f && manual.Position.Z < -0.6f &&
+                !main.GetNode<Node3D>("RealityWorld").HasNode("OperationManual"),
+            "the glasses-only manual sits on the side enclosure away from the kettle and front tools");
+        Require(narrowestWalkingLane >= 1.65f,
+            "a fully opened long front drawer still leaves a comfortably passable lane to the shallow rear shelf");
         var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
         Require(ice.GetParent() == iceDrawer && !ice.CanInteract(context),
             "ice bucket is physically stored in the cutting-board-right upper drawer and is inaccessible while closed");
@@ -309,13 +310,13 @@ public partial class FlowIntegrationTests : Node
 
     private static Vector3 Position(string id) => id switch
     {
-        "scoop_free" => new Vector3(-2.8f, 1.2f, -2.46f),
-        "tongs_free" => new Vector3(-2.05f, 1.2f, -2.46f),
-        "pestle_free" => new Vector3(-1.3f, 1.2f, -2.46f),
-        "mortar_free" => new Vector3(-0.45f, 1.2f, -2.46f),
-        "jigger_free" => new Vector3(1.2f, 1.2f, -2.46f),
-        "jigger_large_free" => new Vector3(1.9f, 1.2f, -2.46f),
-        "glass_free" => new Vector3(2.6f, 1.2f, -2.46f),
+        "scoop_free" => new Vector3(-2.8f, 1.82f, -2.92f),
+        "tongs_free" => new Vector3(-2.05f, 1.82f, -2.92f),
+        "pestle_free" => new Vector3(-1.3f, 1.82f, -2.92f),
+        "mortar_free" => new Vector3(-0.45f, 1.82f, -2.92f),
+        "jigger_free" => new Vector3(1.2f, 1.82f, -2.92f),
+        "jigger_large_free" => new Vector3(1.9f, 1.82f, -2.92f),
+        "glass_free" => new Vector3(2.6f, 1.82f, -2.92f),
         _ => throw new InvalidOperationException($"Unknown test placement: {id}")
     };
 
