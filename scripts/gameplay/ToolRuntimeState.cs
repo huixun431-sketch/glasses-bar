@@ -22,6 +22,7 @@ public sealed class ToolRuntimeState
     public int BoardSlot { get; set; } = -1;
     public bool ContentsAreWaste { get; set; }
     public double ContentCompletionRatio { get; set; } = 1d;
+    public bool UseLargeMeasureSide { get; set; } = true;
     public Dictionary<string, double> Contents { get; } = new(StringComparer.Ordinal);
 
     public double ContentAmount

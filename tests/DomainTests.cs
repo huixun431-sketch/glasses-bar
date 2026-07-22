@@ -132,6 +132,36 @@ public sealed class DomainTests
     }
 
     [Test]
+    public void ProcessRules_AcceptThreeJiggersAndApplyDailyHygienePenalty()
+    {
+        var operation = new OperationSpec { Id = "measured_water", RequiredAction = 0d };
+        operation.AllowedHandheldToolIds.UnionWith(new[] { "jigger_small", "jigger_medium", "jigger_large" });
+        operation.InputTargets["water"] = 30d;
+
+        var washed = ProcessRules.Evaluate(operation, "jigger_small",
+            new Dictionary<string, double> { ["water"] = 30d }, 1d, 0.98d);
+        var unwashed = ProcessRules.Evaluate(operation, "jigger_small",
+            new Dictionary<string, double> { ["water"] = 30d }, 1d, 0.98d, 0.04d);
+        var wrongTool = ProcessRules.Evaluate(operation, "bean_scoop",
+            new Dictionary<string, double> { ["water"] = 30d }, 1d, 0d);
+
+        Assert.That(washed.Completed, Is.True);
+        Assert.That(unwashed.Failure, Is.EqualTo(ProcessFailure.ProportionCheckFailed));
+        Assert.That(unwashed.SuccessProbability, Is.EqualTo(0.96d).Within(0.000001d));
+        Assert.That(wrongTool.Failure, Is.EqualTo(ProcessFailure.WrongHandheldTool));
+    }
+
+    [Test]
+    public void RepeatRecovery_IsPartialAndCapped()
+    {
+        var first = ProcessRules.RecoverCompletion(0.72d, 0.96d, 0.42d);
+        var second = ProcessRules.RecoverCompletion(first, 0.96d, 0.42d);
+        Assert.That(first, Is.GreaterThan(0.72d).And.LessThan(0.96d));
+        Assert.That(second, Is.GreaterThan(first).And.LessThanOrEqualTo(0.96d));
+        Assert.That(ProcessRules.RecoverCompletion(0.96d, 0.96d, 1d), Is.EqualTo(0.96d));
+    }
+
+    [Test]
     public void MyopiaProgression_UsesThirtyDayCampaignCurve()
     {
         Assert.That(MyopiaProgression.DegreesForDay(1), Is.EqualTo(50f));

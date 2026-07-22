@@ -24,6 +24,24 @@ public partial class InputIntegrationTests : Node
 
             Require(menu.Visible && !GameSession.Instance.GameStarted, "opening menu is visible before play begins");
             Require(!GameSession.Instance.CanMove, "opening menu gates player movement");
+            var startButton = main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start");
+            var settingsButton = main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Settings");
+            var selector = main.GetNode<TextureRect>("OpeningMenu/Backdrop/Selector");
+            Require(main.GetNode<TextureRect>("OpeningMenu/Backdrop/Background").Texture is not null &&
+                    main.GetNode<TextureRect>("OpeningMenu/Backdrop/TitleArtwork").Texture is not null && selector.Texture is not null,
+                "approved artwork is split into no-text background, independent title and movable selector layers");
+            Require(GetViewport().GuiGetFocusOwner() == startButton && !menu.IsSelectorVisible,
+                "start may own initial keyboard focus while mouse mode shows no permanent highlight");
+            menu.ActivateKeyboardNavigationForTests(startButton);
+            var startSelectorY = selector.Position.Y;
+            Require(menu.IsSelectorVisible && startButton.GetThemeFontSize("font_size") > settingsButton.GetThemeFontSize("font_size"),
+                "keyboard navigation reveals the focused live Godot menu control");
+            menu.ActivateKeyboardNavigationForTests(settingsButton);
+            Require(selector.Position.Y > startSelectorY && settingsButton.GetThemeFontSize("font_size") > startButton.GetThemeFontSize("font_size"),
+                "selector and highlight move instead of staying fixed on start");
+            menu.ActivateMouseNavigationForTests();
+            Require(!menu.IsSelectorVisible && startButton.GetThemeFontSize("font_size") == settingsButton.GetThemeFontSize("font_size"),
+                "mouse mode outside buttons removes every focus highlight");
             main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Settings").EmitSignal(Button.SignalName.Pressed);
             Require(main.GetNode<Control>("OpeningMenu/Backdrop/SettingsPanel").Visible,
                 "main menu settings button opens an interactive settings panel");
@@ -34,8 +52,8 @@ public partial class InputIntegrationTests : Node
                 "starting the game enables movement and gameplay HUD");
             await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
 
-            Require(player.GlobalPosition.Z < -1f, "player starts inside the bartender work area");
-            player.GlobalPosition = new Vector3(4.6f, 0.9f, -3f);
+            Require(Math.Abs(player.GlobalPosition.Z - (-0.92f)) < 0.01f, "player starts inside the single-person bartender aisle");
+            player.GlobalPosition = new Vector3(4.8f, 0.96f, -0.92f);
             Input.ActionPress("move_left");
             for (var frame = 0; frame < 30; frame++)
                 await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
@@ -66,7 +84,7 @@ public partial class InputIntegrationTests : Node
             console._Input(new InputEventKey { PhysicalKeycode = Key.Quoteleft, Pressed = true });
             Require(!DeveloperConsole.IsOpen, "built-in developer console closes with the quote-left key");
 
-            foreach (var action in new[] { "move_forward", "interact", "toggle_glasses", "operate", "use_held_tool", "next_day", "pause_game" })
+            foreach (var action in new[] { "move_forward", "interact", "toggle_glasses", "operate", "use_held_tool", "toggle_jigger_side", "next_day", "pause_game" })
             {
                 Require(InputMap.HasAction(action), $"input action exists: {action}");
                 Require(InputMap.ActionGetEvents(action).Count > 0, $"input action has binding: {action}");

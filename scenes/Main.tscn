@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3]
+[gd_scene load_steps=33 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/GrayboxLevelBuilder.cs" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/world/RealityWorld.tscn" id="2_reality"]
@@ -11,6 +11,9 @@
 [ext_resource type="Script" path="res://scripts/ui/DeveloperConsole.cs" id="9_console"]
 [ext_resource type="Script" path="res://scripts/ui/OpeningMenuController.cs" id="10_menu"]
 [ext_resource type="Script" path="res://scripts/ui/PauseMenuController.cs" id="11_pause"]
+[ext_resource type="Texture2D" path="res://assets/ui/main_menu/main_menu_background.png" id="12_menu_background"]
+[ext_resource type="Texture2D" path="res://assets/ui/main_menu/main_menu_title.png" id="13_menu_title"]
+[ext_resource type="Texture2D" path="res://assets/ui/main_menu/main_menu_selector.png" id="14_menu_selector"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -22,7 +25,7 @@ tonemap_mode = 2
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape_player"]
 radius = 0.35
-height = 1.75
+height = 1.92
 
 [sub_resource type="SphereShape3D" id="SphereShape_interaction_probe"]
 radius = 0.32
@@ -130,21 +133,13 @@ corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button"]
-bg_color = Color(0.09, 0.055, 0.045, 0.72)
-border_width_left = 3
-border_color = Color(0.76, 0.48, 0.23, 0.6)
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-content_margin_left = 24.0
+[sub_resource type="SystemFont" id="SystemFont_menu"]
+font_names = PackedStringArray("Microsoft YaHei UI Light", "Microsoft YaHei UI", "Noto Sans CJK SC")
+font_weight = 300
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button_hover"]
-bg_color = Color(0.32, 0.16, 0.07, 0.92)
-border_width_left = 6
-border_color = Color(1, 0.7, 0.28, 1)
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-content_margin_left = 28.0
+[sub_resource type="StyleBoxEmpty" id="StyleBox_menu_button"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBox_menu_button_hover"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_pause"]
 bg_color = Color(0.025, 0.022, 0.028, 0.97)
@@ -196,7 +191,7 @@ script = ExtResource("8_myopia")
 InitialMyopiaDegrees = 50.0
 
 [node name="Player" type="CharacterBody3D" parent="."]
-position = Vector3(0, 0.9, -3)
+position = Vector3(0, 0.96, -0.92)
 rotation_degrees = Vector3(0, 180, 0)
 collision_mask = 3
 script = ExtResource("5_player")
@@ -205,7 +200,7 @@ script = ExtResource("5_player")
 shape = SubResource("CapsuleShape_player")
 
 [node name="Head" type="Node3D" parent="Player"]
-position = Vector3(0, 0.62, 0)
+position = Vector3(0, 0.8, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Player/Head"]
 current = true
@@ -300,7 +295,7 @@ theme_override_colors/font_color = Color(0.67, 1, 0.94, 1)
 theme_override_colors/font_outline_color = Color(0.01, 0.08, 0.1, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 19
-text = "眼镜世界 // 查询信息（非制作前置）\n冰美式开发占位流程\n左手放研钵 → 右手原料勺放豆 → 研杵研磨\n原料勺转移咖啡粉 → 左手放滤具 → 水壶萃取\n滤具 + 高球杯 → 普通过滤\n左手拿杯，冰夹/水壶携料后按 R 加入\n\n错误工具、材料或比例可能报废｜按 G 返回现实"
+text = "眼镜世界 // 查询信息（非制作前置）\n冰美式开发占位流程\n每天先在水槽洗手（漏做会小幅降低成功率）\n左手放研钵 → 右手原料勺放豆 → 研杵研磨\n原料勺转移咖啡粉 → 左手放滤具\n双头量酒器从水壶接水并倒入滤具 → 萃取\n滤具 + 高球杯 → 过滤；损失可重复工序有限补救\n左手拿杯，冰夹/量酒器携料后按 R 加入\nF 切换量酒器端｜原料勺禁止取冰｜按 G 返回现实"
 
 [node name="HUD" type="CanvasLayer" parent="."]
 layer = 10
@@ -536,149 +531,145 @@ caret_blink = true
 layer = 40
 script = ExtResource("10_menu")
 
-[node name="Backdrop" type="ColorRect" parent="OpeningMenu"]
+[node name="Backdrop" type="Control" parent="OpeningMenu"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.015, 0.018, 0.028, 0.46)
 
-[node name="CoolTint" type="ColorRect" parent="OpeningMenu/Backdrop"]
+[node name="Background" type="TextureRect" parent="OpeningMenu/Backdrop"]
 mouse_filter = 2
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.02, 0.09, 0.16, 0.38)
+texture = ExtResource("12_menu_background")
+expand_mode = 1
+stretch_mode = 6
 
-[node name="WarmPanel" type="ColorRect" parent="OpeningMenu/Backdrop"]
+[node name="TitleArtwork" type="TextureRect" parent="OpeningMenu/Backdrop"]
 mouse_filter = 2
-anchor_right = 0.52
-anchor_bottom = 1.0
-grow_vertical = 2
-color = Color(0.08, 0.027, 0.016, 0.93)
+offset_left = 106.0
+offset_top = 90.0
+offset_right = 556.0
+offset_bottom = 332.0
+texture = ExtResource("13_menu_title")
+expand_mode = 1
 
-[node name="Divider" type="ColorRect" parent="OpeningMenu/Backdrop"]
+[node name="Selector" type="TextureRect" parent="OpeningMenu/Backdrop"]
+visible = false
 mouse_filter = 2
-anchor_left = 0.52
-anchor_right = 0.52
-anchor_bottom = 1.0
-offset_left = -2.0
-offset_right = 2.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.72, 0.46, 0.24, 0.78)
+offset_left = 53.0
+offset_top = 481.0
+offset_right = 163.0
+offset_bottom = 548.0
+texture = ExtResource("14_menu_selector")
+expand_mode = 1
 
 [node name="MenuPanel" type="Control" parent="OpeningMenu/Backdrop"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 0.52
-anchor_bottom = 1.0
-offset_left = 78.0
-offset_top = 54.0
-offset_right = -72.0
-offset_bottom = -46.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Margin" type="MarginContainer" parent="OpeningMenu/Backdrop/MenuPanel"]
-layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 36
-theme_override_constants/margin_top = 34
-theme_override_constants/margin_right = 40
-theme_override_constants/margin_bottom = 28
 
-[node name="Stack" type="VBoxContainer" parent="OpeningMenu/Backdrop/MenuPanel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 12
+[node name="Margin" type="Control" parent="OpeningMenu/Backdrop/MenuPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Title" type="Label" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.77, 0.45, 1)
-theme_override_colors/font_outline_color = Color(0.08, 0.03, 0.02, 1)
-theme_override_constants/outline_size = 10
-theme_override_font_sizes/font_size = 68
-text = "眼镜酒馆"
-horizontal_alignment = 0
-
-[node name="Subtitle" type="Label" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.82, 0.76, 0.7, 1)
-theme_override_font_sizes/font_size = 20
-text = "GLASSES BAR  ──  ◉─◉\n观察 · 记忆 · 摘镜 · 手工调制"
-horizontal_alignment = 0
-
-[node name="Spacer" type="Control" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-custom_minimum_size = Vector2(0, 46)
-layout_mode = 2
+[node name="Stack" type="Control" parent="OpeningMenu/Backdrop/MenuPanel/Margin"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Continue" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-custom_minimum_size = Vector2(0, 54)
-layout_mode = 2
+offset_left = 157.0
+offset_top = 366.0
+offset_right = 467.0
+offset_bottom = 452.0
+mouse_default_cursor_shape = 2
+focus_mode = 2
 disabled = true
-theme_override_colors/font_disabled_color = Color(0.44, 0.39, 0.36, 1)
-theme_override_font_sizes/font_size = 23
+theme_override_fonts/font = SubResource("SystemFont_menu")
+theme_override_font_sizes/font_size = 36
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/hover = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button")
 theme_override_styles/disabled = SubResource("StyleBox_menu_button")
-text = "继续游戏（暂无存档）"
+theme_override_styles/focus = SubResource("StyleBox_menu_button")
+text = "继续游戏"
 alignment = 0
 
 [node name="Start" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.58, 1)
-theme_override_font_sizes/font_size = 30
+offset_left = 157.0
+offset_top = 461.0
+offset_right = 496.0
+offset_bottom = 562.0
+mouse_default_cursor_shape = 2
+focus_mode = 2
+theme_override_fonts/font = SubResource("SystemFont_menu")
+theme_override_font_sizes/font_size = 36
 theme_override_styles/normal = SubResource("StyleBox_menu_button")
-theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
-theme_override_styles/pressed = SubResource("StyleBox_menu_button_hover")
-theme_override_styles/focus = SubResource("StyleBox_menu_button_hover")
-text = "一、开始游戏"
+theme_override_styles/hover = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button")
+theme_override_styles/focus = SubResource("StyleBox_menu_button")
+text = "开始游戏"
 alignment = 0
 
 [node name="Settings" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-custom_minimum_size = Vector2(0, 54)
-layout_mode = 2
-theme_override_font_sizes/font_size = 23
+offset_left = 157.0
+offset_top = 583.0
+offset_right = 420.0
+offset_bottom = 669.0
+mouse_default_cursor_shape = 2
+focus_mode = 2
+theme_override_fonts/font = SubResource("SystemFont_menu")
+theme_override_font_sizes/font_size = 36
 theme_override_styles/normal = SubResource("StyleBox_menu_button")
-theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
-theme_override_styles/pressed = SubResource("StyleBox_menu_button_hover")
-theme_override_styles/focus = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/hover = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button")
+theme_override_styles/focus = SubResource("StyleBox_menu_button")
 text = "设置"
 alignment = 0
 
 [node name="Credits" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-custom_minimum_size = Vector2(0, 54)
-layout_mode = 2
-theme_override_font_sizes/font_size = 23
+offset_left = 157.0
+offset_top = 686.0
+offset_right = 461.0
+offset_bottom = 772.0
+mouse_default_cursor_shape = 2
+focus_mode = 2
+theme_override_fonts/font = SubResource("SystemFont_menu")
+theme_override_font_sizes/font_size = 36
 theme_override_styles/normal = SubResource("StyleBox_menu_button")
-theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
-theme_override_styles/pressed = SubResource("StyleBox_menu_button_hover")
-theme_override_styles/focus = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/hover = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button")
+theme_override_styles/focus = SubResource("StyleBox_menu_button")
 text = "制作人员"
 alignment = 0
 
 [node name="Quit" type="Button" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-custom_minimum_size = Vector2(0, 58)
-layout_mode = 2
-theme_override_font_sizes/font_size = 22
+offset_left = 157.0
+offset_top = 790.0
+offset_right = 461.0
+offset_bottom = 876.0
+mouse_default_cursor_shape = 2
+focus_mode = 2
+theme_override_fonts/font = SubResource("SystemFont_menu")
+theme_override_font_sizes/font_size = 36
 theme_override_styles/normal = SubResource("StyleBox_menu_button")
-theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
-theme_override_styles/pressed = SubResource("StyleBox_menu_button_hover")
-theme_override_styles/focus = SubResource("StyleBox_menu_button_hover")
+theme_override_styles/hover = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button")
+theme_override_styles/focus = SubResource("StyleBox_menu_button")
 text = "退出游戏"
 alignment = 0
-
-[node name="Version" type="Label" parent="OpeningMenu/Backdrop/MenuPanel/Margin/Stack"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.51, 0.48, 1)
-theme_override_font_sizes/font_size = 15
-text = "开发灰盒版本｜30 天单周目"
 
 [node name="SettingsPanel" type="PanelContainer" parent="OpeningMenu/Backdrop"]
 visible = false

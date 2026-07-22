@@ -14,7 +14,10 @@
     {"id": "traditional_filter", "path": "models/traditional_filter.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "Spout", "Interaction"]},
     {"id": "bean_scoop", "path": "models/bean_scoop.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "FillOrigin"]},
     {"id": "ice_tongs", "path": "models/ice_tongs.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "Interaction"]},
-    {"id": "water_carafe", "path": "models/water_carafe.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "FillOrigin", "Spout"]},
+    {"id": "water_kettle", "path": "models/water_kettle.glb", "placeholder": true, "required_anchors": ["Placement", "FillOrigin", "Spout", "Interaction"]},
+    {"id": "jigger_small", "path": "models/jigger_small.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "FillOrigin", "Spout"]},
+    {"id": "jigger_medium", "path": "models/jigger_medium.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "FillOrigin", "Spout"]},
+    {"id": "jigger_large", "path": "models/jigger_large.glb", "placeholder": true, "required_anchors": ["Grip", "Placement", "FillOrigin", "Spout"]},
     {"id": "coffee_beans", "path": "models/coffee_beans.glb", "placeholder": true, "required_anchors": ["Placement", "Interaction"]},
     {"id": "waste_bin", "path": "models/waste_bin.glb", "placeholder": true, "required_anchors": ["Placement", "Interaction"]}
   ]

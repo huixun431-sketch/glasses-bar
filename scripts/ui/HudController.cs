@@ -43,7 +43,7 @@ public partial class HudController : CanvasLayer
         GameSession.Instance.GameStartedChanged += OnGameStartedChanged;
         GameSession.Instance.StatusMessage += OnStatusMessage;
         GameSession.Instance.EvaluationFinished += OnEvaluationFinished;
-        _status.Text = "需求未知，可自由准备但不能交付。E 拿取/摆放｜R 双手简易工序｜Esc 暂停";
+        _status.Text = "每天先洗手｜E 拿取/摆放｜R 双手简易工序｜F 切换量酒器端｜Esc 暂停";
         OnPhaseChanged((int)GameSession.Instance.Flow.Current);
         OnDayChanged(GameSession.Instance.CurrentDay);
         Visible = GameSession.Instance.GameStarted;
@@ -80,7 +80,7 @@ public partial class HudController : CanvasLayer
         };
         _phase.Text = $"当前阶段｜{label}";
         if ((DayPhase)phase == DayPhase.WaitingForOrder)
-            _status.Text = "顾客需求未知｜可自由操作并允许犯错，但接单前无法交付。";
+            _status.Text = "顾客需求未知｜可自由操作并允许犯错；记得每日洗手，水只能用量酒器从水壶取得。";
     }
 
     private void OnDayChanged(int day)

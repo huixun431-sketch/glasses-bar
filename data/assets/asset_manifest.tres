@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="AssetManifest" load_steps=18 format=3]
+[gd_resource type="Resource" script_class="AssetManifest" load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/AssetManifest.cs" id="1_manifest"]
 [ext_resource type="Script" path="res://scripts/data/AssetEntry.cs" id="2_entry"]
@@ -53,9 +53,24 @@ script = ExtResource("2_entry")
 Id = &"ice_tongs"
 IsPlaceholder = true
 
-[sub_resource type="Resource" id="Asset_carafe"]
+[sub_resource type="Resource" id="Asset_kettle"]
 script = ExtResource("2_entry")
-Id = &"water_carafe"
+Id = &"water_kettle"
+IsPlaceholder = true
+
+[sub_resource type="Resource" id="Asset_jigger_small"]
+script = ExtResource("2_entry")
+Id = &"jigger_small"
+IsPlaceholder = true
+
+[sub_resource type="Resource" id="Asset_jigger_medium"]
+script = ExtResource("2_entry")
+Id = &"jigger_medium"
+IsPlaceholder = true
+
+[sub_resource type="Resource" id="Asset_jigger_large"]
+script = ExtResource("2_entry")
+Id = &"jigger_large"
 IsPlaceholder = true
 
 [sub_resource type="Resource" id="Asset_bean"]
@@ -70,4 +85,4 @@ IsPlaceholder = true
 
 [resource]
 script = ExtResource("1_manifest")
-Entries = Array[ExtResource("2_entry")]([SubResource("Asset_bar"), SubResource("Asset_glass"), SubResource("Asset_ice"), SubResource("Asset_water"), SubResource("Asset_board"), SubResource("Asset_mortar"), SubResource("Asset_pestle"), SubResource("Asset_filter"), SubResource("Asset_scoop"), SubResource("Asset_tongs"), SubResource("Asset_carafe"), SubResource("Asset_bean"), SubResource("Asset_waste")])
+Entries = Array[ExtResource("2_entry")]([SubResource("Asset_bar"), SubResource("Asset_glass"), SubResource("Asset_ice"), SubResource("Asset_water"), SubResource("Asset_board"), SubResource("Asset_mortar"), SubResource("Asset_pestle"), SubResource("Asset_filter"), SubResource("Asset_scoop"), SubResource("Asset_tongs"), SubResource("Asset_kettle"), SubResource("Asset_jigger_small"), SubResource("Asset_jigger_medium"), SubResource("Asset_jigger_large"), SubResource("Asset_bean"), SubResource("Asset_waste")])

@@ -25,7 +25,7 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
         _collision = new CollisionShape3D
         {
             Name = "CollisionShape3D",
-            Shape = new SphereShape3D { Radius = (float)Mathf.Max(0.11f, (float)spec.FootprintRadius) }
+            Shape = CollisionShapeForMesh(mesh, (float)spec.FootprintRadius)
         };
         AddChild(_collision);
         _visual = new MeshInstance3D
@@ -100,5 +100,17 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
         Metallic = 0.08f,
         EmissionEnabled = color.G > 0.7f,
         Emission = color * 0.25f
+    };
+
+    private static Shape3D CollisionShapeForMesh(Mesh mesh, float fallbackRadius) => mesh switch
+    {
+        BoxMesh box => new BoxShape3D { Size = box.Size },
+        CylinderMesh cylinder => new CylinderShape3D
+        {
+            Radius = Mathf.Max(cylinder.TopRadius, cylinder.BottomRadius),
+            Height = cylinder.Height
+        },
+        SphereMesh sphere => new SphereShape3D { Radius = Mathf.Max(sphere.Radius, sphere.Height * 0.5f) },
+        _ => new SphereShape3D { Radius = Mathf.Max(0.08f, fallbackRadius) }
     };
 }

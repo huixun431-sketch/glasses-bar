@@ -98,6 +98,10 @@ public partial class PlayerController : CharacterBody3D
                 GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, result.Feedback);
         }
 
+        if (@event.IsActionPressed("toggle_jigger_side") && _workstation is not null && _operation is null &&
+            !_workstation.ToggleRightHandMeasureSide(out var measureFeedback))
+            GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, measureFeedback);
+
         if (@event.IsActionReleased("operate") && _operation is not null)
             CompleteOperation();
 
@@ -269,7 +273,9 @@ public partial class PlayerController : CharacterBody3D
         _rightHandVisual.Mesh = rightToolId switch
         {
             "pestle" => new CylinderMesh { TopRadius = 0.034f, BottomRadius = 0.049f, Height = 0.3f },
-            "water_carafe" => new CylinderMesh { TopRadius = 0.07f, BottomRadius = 0.11f, Height = 0.27f },
+            "jigger_small" => new CylinderMesh { TopRadius = 0.055f, BottomRadius = 0.055f, Height = 0.15f },
+            "jigger_medium" => new CylinderMesh { TopRadius = 0.065f, BottomRadius = 0.065f, Height = 0.18f },
+            "jigger_large" => new CylinderMesh { TopRadius = 0.075f, BottomRadius = 0.075f, Height = 0.21f },
             "ice_tongs" => new BoxMesh { Size = new Vector3(0.08f, 0.06f, 0.4f) },
             _ => new BoxMesh { Size = new Vector3(0.14f, 0.08f, 0.3f) }
         };

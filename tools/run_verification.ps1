@@ -17,13 +17,16 @@ if (Get-Command dotnet -ErrorAction SilentlyContinue) {
     Write-Warning 'dotnet is missing; domain tests were not run.'
 }
 
-$godot = Get-Command godot -ErrorAction SilentlyContinue
-if (-not $godot) { $godot = Get-Command godot4 -ErrorAction SilentlyContinue }
-if ($godot) {
-    & $godot.Source --headless --path $root --editor --quit
-    & $godot.Source --headless --path $root --quit-after 300 res://tests/godot/SmokeTests.tscn
-    & $godot.Source --headless --path $root --quit-after 300 res://tests/godot/InputIntegrationTests.tscn
-    & $godot.Source --headless --path $root --quit-after 300 res://tests/godot/FlowIntegrationTests.tscn
+$godotCommand = Get-Command godot -ErrorAction SilentlyContinue
+if (-not $godotCommand) { $godotCommand = Get-Command godot4 -ErrorAction SilentlyContinue }
+$godotPath = if ($godotCommand) { $godotCommand.Source } else { $null }
+$portableGodot = 'D:\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe'
+if (-not $godotPath -and (Test-Path -LiteralPath $portableGodot)) { $godotPath = $portableGodot }
+if ($godotPath) {
+    & $godotPath --headless --path $root --editor --quit
+    & $godotPath --headless --path $root --quit-after 300 res://tests/godot/SmokeTests.tscn
+    & $godotPath --headless --path $root --quit-after 300 res://tests/godot/InputIntegrationTests.tscn
+    & $godotPath --headless --path $root --quit-after 300 res://tests/godot/FlowIntegrationTests.tscn
 } else {
     Write-Warning 'Godot is missing; import and smoke tests were not run.'
 }

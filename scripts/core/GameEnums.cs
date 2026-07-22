@@ -29,7 +29,8 @@ public enum StationKind
 {
     Customer,
     IceBucket,
-    WaterDispenser,
+    HandWashSink,
+    Kettle,
     CoffeeBeans,
     WasteBin
 }

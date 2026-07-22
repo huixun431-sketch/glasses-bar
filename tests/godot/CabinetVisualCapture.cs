@@ -11,12 +11,12 @@ public partial class CabinetVisualCapture : Node
         var main = GetNode<Node3D>("Main");
         main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
         var player = main.GetNode<PlayerController>("Player");
-        player.GlobalPosition = new Vector3(-3.75f, 0.9f, -2.75f);
+        player.GlobalPosition = new Vector3(-1.8f, 0.96f, -0.92f);
         player.Rotation = new Vector3(0f, Mathf.Pi, 0f);
         player.GetNode<Node3D>("Head").Rotation = new Vector3(-0.34f, 0f, 0f);
         var workstation = main.GetNode<DrinkWorkstation>("NeutralGameplay/DrinkWorkstation");
         var context = new InteractionContext { Player = player, Workstation = workstation };
-        main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_1").Interact(context);
-        main.GetNode<CabinetInteractable>("NeutralGameplay/front_cabinet_2_left").Interact(context);
+        main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper").Interact(context);
+        main.GetNode<CabinetInteractable>("NeutralGameplay/back_cabinet_3_left").Interact(context);
     }
 }

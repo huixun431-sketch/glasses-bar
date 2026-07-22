@@ -16,7 +16,7 @@ script = ExtResource("2_step")
 Id = &"add_water"
 DisplayName = "手工倒水"
 IngredientId = &"water"
-TargetAmount = 0.5
+TargetAmount = 30.0
 
 [sub_resource type="Resource" id="Step_grind"]
 script = ExtResource("2_step")
@@ -33,7 +33,7 @@ script = ExtResource("2_step")
 Id = &"filter_coffee"
 DisplayName = "过滤咖啡液入杯"
 IngredientId = &"espresso"
-TargetAmount = 0.5
+TargetAmount = 30.0
 
 [sub_resource type="Resource" id="Tolerance_prototype"]
 script = ExtResource("3_tolerance")

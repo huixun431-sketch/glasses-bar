@@ -17,6 +17,8 @@ public partial class ToolDefinition : Resource
     [Export] public bool UsedInHand { get; set; }
     [Export] public string BoardConflictGroup { get; set; } = string.Empty;
     [Export(PropertyHint.Range, "0.05,0.6,0.01")] public double FootprintRadius { get; set; } = 0.18d;
+    [Export(PropertyHint.Range, "0,200,1")] public double SmallMeasureAmount { get; set; }
+    [Export(PropertyHint.Range, "0,200,1")] public double LargeMeasureAmount { get; set; }
     [Export] public Array<StringName> AllowedIngredientIds { get; set; } = new();
 
     public ToolSpec BuildSpec()
@@ -30,7 +32,9 @@ public partial class ToolDefinition : Resource
             CanCarryIngredients = CanCarryIngredients,
             UsedInHand = UsedInHand,
             BoardConflictGroup = BoardConflictGroup,
-            FootprintRadius = FootprintRadius
+            FootprintRadius = FootprintRadius,
+            SmallMeasureAmount = SmallMeasureAmount,
+            LargeMeasureAmount = LargeMeasureAmount
         };
         foreach (var ingredientId in AllowedIngredientIds)
             spec.AllowedIngredientIds.Add(ingredientId.ToString());

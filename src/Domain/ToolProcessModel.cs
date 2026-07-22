@@ -38,7 +38,11 @@ public sealed class ToolSpec
     public bool UsedInHand { get; init; }
     public string BoardConflictGroup { get; init; } = string.Empty;
     public double FootprintRadius { get; init; } = 0.18d;
+    public double SmallMeasureAmount { get; init; }
+    public double LargeMeasureAmount { get; init; }
     public HashSet<string> AllowedIngredientIds { get; } = new(StringComparer.Ordinal);
+
+    public bool HasDualMeasure => SmallMeasureAmount > 0d && LargeMeasureAmount > SmallMeasureAmount;
 
     public ToolCategory ResolveCategory()
     {
@@ -60,8 +64,12 @@ public sealed class OperationSpec
     public bool IsPrototype { get; init; } = true;
     public string RequiredHandheldToolId { get; init; } = string.Empty;
     public string ResultTargetToolId { get; init; } = string.Empty;
+    public string RepeatRecoveryInputIngredientId { get; init; } = string.Empty;
+    public double RepeatRecoveryCap { get; init; } = 0.96d;
+    public double RepeatRecoveryFraction { get; init; } = 0.42d;
     public double RequiredAction { get; init; } = 0.5d;
     public HashSet<string> RequiredPlacementToolIds { get; } = new(StringComparer.Ordinal);
+    public HashSet<string> AllowedHandheldToolIds { get; } = new(StringComparer.Ordinal);
     public Dictionary<string, double> InputTargets { get; } = new(StringComparer.Ordinal);
     public Dictionary<string, double> Outputs { get; } = new(StringComparer.Ordinal);
 
@@ -71,10 +79,18 @@ public sealed class OperationSpec
             return Complexity;
         if (CanRunOffBoard)
             return OperationComplexity.Simple;
-        return string.IsNullOrWhiteSpace(RequiredHandheldToolId)
+        return !RequiresHandheldTool
             ? OperationComplexity.Normal
             : OperationComplexity.Complex;
     }
+
+    public bool RequiresHandheldTool =>
+        !string.IsNullOrWhiteSpace(RequiredHandheldToolId) || AllowedHandheldToolIds.Count > 0;
+
+    public bool AcceptsHandheldTool(string toolId) => AllowedHandheldToolIds.Count > 0
+        ? AllowedHandheldToolIds.Contains(toolId)
+        : string.IsNullOrWhiteSpace(RequiredHandheldToolId) ||
+          string.Equals(RequiredHandheldToolId, toolId, StringComparison.Ordinal);
 
     public bool IsEnabledBy(ISet<string> placementToolIds) =>
         RequiredPlacementToolIds.Count > 0 && RequiredPlacementToolIds.All(placementToolIds.Contains);
@@ -101,7 +117,8 @@ public static class ProcessRules
         string heldHandheldToolId,
         IReadOnlyDictionary<string, double> ingredients,
         double action,
-        double randomRoll)
+        double randomRoll,
+        double successProbabilityPenalty = 0d)
     {
         if (Math.Max(0d, action) < Math.Max(0d, operation.RequiredAction))
         {
@@ -113,8 +130,7 @@ public static class ProcessRules
             };
         }
 
-        if (!string.IsNullOrWhiteSpace(operation.RequiredHandheldToolId) &&
-            !string.Equals(operation.RequiredHandheldToolId, heldHandheldToolId, StringComparison.Ordinal))
+        if (!operation.AcceptsHandheldTool(heldHandheldToolId))
         {
             return Failed(ProcessFailure.WrongHandheldTool);
         }
@@ -136,7 +152,8 @@ public static class ProcessRules
         var completion = Math.Clamp(1d - averageDeviation, 0d, 1d);
         // Exact prototype amounts can arrive through continuous input as tiny floating-point
         // deviations. Treat numerical noise as exact so a normal operation never fails at random.
-        var probability = averageDeviation <= 0.0001d ? 1d : completion;
+        var probability = Math.Clamp((averageDeviation <= 0.0001d ? 1d : completion) -
+                                     Math.Max(0d, successProbabilityPenalty), 0d, 1d);
         if (Math.Clamp(randomRoll, 0d, 1d) > probability)
         {
             return new ProcessAttemptResult
@@ -154,6 +171,14 @@ public static class ProcessRules
             SuccessProbability = probability,
             CompletionRatio = completion
         };
+    }
+
+    public static double RecoverCompletion(double current, double cap, double recoveryFraction)
+    {
+        var safeCurrent = Math.Clamp(current, 0d, 1d);
+        var safeCap = Math.Clamp(cap, safeCurrent, 1d);
+        var safeFraction = Math.Clamp(recoveryFraction, 0d, 1d);
+        return Math.Min(safeCap, safeCurrent + (safeCap - safeCurrent) * safeFraction);
     }
 
     private static ProcessAttemptResult Failed(ProcessFailure failure) => new()

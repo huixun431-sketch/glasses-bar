@@ -17,8 +17,11 @@ public partial class FlowIntegrationTests : Node
             var main = GetNode<Node3D>("Main");
             var workstation = main.GetNode<DrinkWorkstation>("NeutralGameplay/DrinkWorkstation");
             var player = main.GetNode<PlayerController>("Player");
-            var customer = Station(main, "customer");
             var board = main.GetNode<WorkboardInteractable>("NeutralGameplay/workboard");
+            var customer = Station(main, "customer");
+            var sink = Station(main, "hand_wash_sink");
+            var kettle = Station(main, "kettle");
+            var ice = Station(main, "ice_bucket");
             var bin = Station(main, "waste_bin");
             var reality = main.GetNode<Node3D>("RealityWorld");
             var glasses = main.GetNode<Node3D>("GlassesWorld");
@@ -27,216 +30,118 @@ public partial class FlowIntegrationTests : Node
             GameSession.Instance.EvaluationFinished += (passed, _) => _evaluationPassed = passed;
 
             main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
-            Require(GameSession.Instance.GameStarted, "opening menu starts the gameplay session");
-            Require(main.HasNode("NeutralGameplay/workboard") && !main.HasNode("NeutralGameplay/grinding_station"),
-                "one compositional workboard replaces fixed operation stations");
-            Require(reality.HasNode("CuttingBoard") && !reality.HasNode("OperationManual") && glasses.HasNode("OperationManual"),
-                "cutting board and glasses-only manual remain in the approved layout");
-            var sink = Station(main, "water_dispenser");
-            var operationManual = glasses.GetNode<Node3D>("OperationManual");
-            // The player faces +Z, so +X renders on the player's left side.
-            Require(sink.Position.X > 0f && operationManual.Position.X < 0f,
-                "player-facing layout keeps the sink on the left and manual on the right");
-            Require(reality.HasNode("coffee_beans") && !glasses.HasNode("coffee_beans"),
-                "raw ingredients remain hidden in the glasses world");
-
-            Require(workstation.GetToolSpec("highball_glass").ResolveCategory() == ToolCategory.Placement &&
-                    workstation.GetToolSpec("mortar").ResolveCategory() == ToolCategory.Placement,
-                "glass and mortar auto-classify as placement tools");
-            Require(workstation.GetToolSpec("pestle").ResolveCategory() == ToolCategory.Handheld &&
-                    workstation.GetToolSpec("ice_tongs").ResolveCategory() == ToolCategory.Handheld,
-                "pestle and tongs auto-classify as handheld tools");
-            Require(workstation.GetOperationComplexity("add_water") == OperationComplexity.Simple &&
-                    workstation.GetOperationComplexity("add_ice") == OperationComplexity.Simple &&
-                    workstation.GetOperationComplexity("filter_coffee") == OperationComplexity.Normal &&
-                    workstation.GetOperationComplexity("grind_coffee") == OperationComplexity.Complex,
-                "operation complexity is derived from board and handheld requirements");
-
+            Require(GameSession.Instance.GameStarted, "approved split main menu starts the gameplay session");
             var context = Context(player, workstation);
-            var drawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_1");
-            foreach (var cabinetNode in GetTree().GetNodesInGroup("cabinet_storage"))
-                if (cabinetNode is CabinetInteractable cabinet && cabinet.Name.ToString().Contains("drawer"))
-                    Require(Math.Abs(cabinet.Position.X - sink.Position.X) > 1f,
-                        "the left-side sink bay has no drawer or cabinet module beneath it");
-            drawer.Interact(context);
-            Require(drawer.IsOpen, "empty under-counter drawers are interactable and open with animation state");
-            drawer.Interact(context);
-            Require(!drawer.IsOpen, "drawer interaction toggles closed again");
-            var scoop = Tool(main, "bean_scoop");
-            scoop.Interact(context);
-            LoadBeans(main, context, 1);
-            Require(GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder &&
-                    Math.Abs(workstation.GetRightHandIngredientAmount("coffee_beans") - 0.25d) < 0.000001d,
-                "player can freely prepare before accepting the order while customer demand remains unknown");
+
+            VerifyLayout(main, workstation, sink, ice, context);
+            VerifyDailyWaterAndIceRules(main, workstation, sink, kettle, ice, bin, context);
+
             GameSession.Instance.AcceptOrder();
-            Require(GameSession.Instance.Flow.Current == DayPhase.Preparation && !GameSession.Instance.RecipeObserved &&
-                    Math.Abs(workstation.GetRightHandIngredientAmount("coffee_beans") - 0.25d) < 0.000001d,
-                "accepting an order reveals demand without resetting pre-order preparation or mistakes");
+            Require(GameSession.Instance.Flow.Current == DayPhase.Preparation,
+                "accepting an order keeps manual crafting available without requiring glasses");
             GameSession.Instance.ToggleWorld();
-            Require(GameSession.Instance.WorldMode == WorldMode.Glasses && GameSession.Instance.Flow.Current == DayPhase.Preparation,
-                "glasses are optional information lookup and do not own the crafting phase");
-            Require(!Tool(main, "mortar").CanInteract(Context(player, workstation)),
-                "physical tool interaction remains disabled while glasses are worn");
+            Require(GameSession.Instance.WorldMode == WorldMode.Glasses && !Tool(main, "mortar").CanInteract(context),
+                "glasses remain a movable information world but physical interaction stays disabled");
             GameSession.Instance.ToggleWorld();
 
+            var scoop = Tool(main, "bean_scoop");
             var mortar = Tool(main, "mortar");
-            var glass = Tool(main, "highball_glass");
-            var frontSurface = main.GetNode<CounterSurfaceInteractable>("NeutralGameplay/front_counter_surface");
-            var frontPlacementContext = new InteractionContext
-            {
-                Player = player,
-                Workstation = workstation,
-                InteractionPoint = Position("front_left_free")
-            };
-            Require(!frontSurface.CanInteract(frontPlacementContext) &&
-                    frontSurface.GetUnavailablePrompt(frontPlacementContext).Contains("不能直接搁在台面"),
-                "loaded handheld carrier cannot be placed directly on an ordinary counter");
-            mortar.Interact(context);
-            Require(workstation.LeftHandToolId == "mortar" && !mortar.Visible,
-                "picked placement tool occupies the left hand and disappears from its old position");
-            Require(!glass.CanInteract(context), "only one placement tool can be held at once");
-            frontSurface.Interact(frontPlacementContext);
-            Require(mortar.Visible && workstation.GetToolLocation("mortar") == ToolLocation.Counter &&
-                    workstation.RightHandToolId == "bean_scoop",
-                "ordinary counter places the left-hand tool first while keeping the loaded right-hand carrier held");
-            glass.Interact(context);
-            Require(!frontSurface.CanInteract(frontPlacementContext),
-                "continuous counter placement rejects footprint overlap");
-            PlaceAt(workstation, "back_free_far");
-            mortar.Interact(context);
-            board.Interact(context);
-            Require(workstation.IsToolOnBoard("mortar") && workstation.GetBoardCapabilityText().Contains("研磨"),
-                "mortar on board enables its data-defined grinding capability");
-            board.Interact(context);
-            Require(Math.Abs(workstation.GetToolContentAmount("mortar", "coffee_beans") - 0.25d) < 0.000001d,
-                "pre-order ingredient can be transferred after the order is accepted");
-            PlaceAt(workstation, "back_scoop");
-
             var filter = Tool(main, "traditional_filter");
-            filter.Interact(context);
-            Require(!workstation.CanPlaceLeftHandOnBoard(out var conflictReason) && conflictReason.Contains("冲突"),
-                "conflicting placement tools cannot share the board");
-            PlaceAt(workstation, "front_filter");
-
-            var tongs = Tool(main, "ice_tongs");
+            var glass = Tool(main, "highball_glass");
             scoop.Interact(context);
-            Require(workstation.RightHandToolId == "bean_scoop" && !tongs.CanInteract(context),
-                "only one handheld tool can be held at once");
-            LoadBeans(main, context, 1);
-            Require(!Station(main, "ice_bucket").CanInteract(context),
-                "one handheld tool cannot mix a second ingredient while carrying the first");
-            LoadBeans(main, context, 2);
-            board.Interact(context);
-            Require(workstation.GetToolContentAmount("mortar", "coffee_beans") == 1d,
-                "raw material is deposited only after a placement tool is on the board");
-            PlaceAt(workstation, "back_free_left");
-
-            tongs.Interact(context);
-            workstation.QueueAttemptRollForTests(0d);
-            CompleteBoard(board, context, 0.7d);
-            Require(workstation.LastProcessResult?.Failure == ProcessFailure.WrongHandheldTool && workstation.IsToolContentWaste("mortar"),
-                "wrong handheld tool is allowed to operate, then fails and turns material into waste");
-            PlaceAt(workstation, "back_tongs");
+            LoadBeans(main, context, 4);
             mortar.Interact(context);
-            bin.Interact(context);
-            Require(!workstation.IsToolContentWaste("mortar") && workstation.TotalWaste > 0d,
-                "failed material remains until the player manually empties its container into the waste bin");
             board.Interact(context);
-
-            tongs.Interact(context);
-            Station(main, "ice_bucket").Interact(context);
             board.Interact(context);
-            PlaceAt(workstation, "back_tongs");
+            PlaceAt(workstation, "scoop_free");
             Tool(main, "pestle").Interact(context);
             workstation.QueueAttemptRollForTests(0d);
-            CompleteBoard(board, context, 0.7d);
-            Require(workstation.LastProcessResult?.Failure == ProcessFailure.WrongIngredients && workstation.IsToolContentWaste("mortar"),
-                "ingredient combination that matches no recipe is attempted and then becomes waste");
-            PlaceAt(workstation, "front_pestle");
-            mortar.Interact(context);
-            bin.Interact(context);
-            board.Interact(context);
+            Require(CompleteBoard(board, context, 0.7d).Completed, "mortar, beans and pestle complete prototype grinding");
+            PlaceAt(workstation, "pestle_free");
 
             scoop.Interact(context);
-            LoadBeans(main, context, 3);
             board.Interact(context);
-            PlaceAt(workstation, "back_free_left");
-            Tool(main, "pestle").Interact(context);
-            workstation.QueueAttemptRollForTests(0d);
-            Require(CompleteBoard(board, context, 0.7d).Completed &&
-                    Math.Abs((workstation.LastProcessResult?.CompletionRatio ?? 0d) - 0.75d) < 0.000001d &&
-                    Math.Abs((workstation.LastProcessResult?.SuccessProbability ?? 0d) - 0.75d) < 0.000001d,
-                "quantity deviation passes probabilistic judgment and assigns matching operation completion");
-            PlaceAt(workstation, "front_pestle");
-            scoop.Interact(context);
-            board.Interact(context);
-            Require(workstation.GetRightHandIngredientAmount("ground_coffee") == 1d,
-                "handheld carrier transfers one processed ingredient at a time");
-
             mortar.Interact(context);
-            PlaceAt(workstation, "back_free_left");
-            Require(workstation.RightHandToolId == "bean_scoop" &&
-                    workstation.GetRightHandIngredientAmount("ground_coffee") > 0d,
-                "left-first counter placement keeps the loaded scoop in hand while moving the mortar away");
+            PlaceAt(workstation, "mortar_free");
             filter.Interact(context);
             board.Interact(context);
             board.Interact(context);
-            Require(workstation.GetToolContentAmount("traditional_filter", "ground_coffee") == 1d,
-                "ground coffee is placed into the board-mounted filter");
-            PlaceAt(workstation, "back_scoop");
-            Tool(main, "water_carafe").Interact(context);
-            Require(workstation.TryLoadIngredient("water", 0.5d, out _), "water must first be carried by a handheld carafe");
+            PlaceAt(workstation, "scoop_free");
+            Require(Math.Abs(workstation.GetToolContentAmount("traditional_filter", "ground_coffee") - 1d) < 0.000001d,
+                "ground coffee reaches the board-mounted traditional filter");
+
+            var largeJigger = Tool(main, "jigger_large");
+            largeJigger.Interact(context);
+            workstation.SetKettleWaterForTests(0d);
+            workstation.QueueAttemptRollForTests(0d);
+            Require(!CompleteBoard(board, context, 0.8d).Completed &&
+                    workstation.LastOperationFeedback.Contains("水壶无水") &&
+                    !workstation.IsToolContentWaste("traditional_filter"),
+                "dry extraction identifies the empty kettle without destroying the coffee");
+            workstation.SetKettleWaterForTests(DrinkWorkstation.PrototypeKettleCapacityMl);
+            Require(workstation.ToggleRightHandMeasureSide(out _) && Math.Abs(workstation.RightHandMeasureAmount - 25d) < 0.001d,
+                "large double-ended jigger can switch to its 25 ml prototype side");
+            kettle.Interact(context);
             board.Interact(context);
             workstation.QueueAttemptRollForTests(0d);
-            Require(CompleteBoard(board, context, 0.8d).Completed, "filter, ground coffee, water and carafe complete extraction");
-            Require(workstation.GetBoardCapabilityText().Contains("中间产物已完成") &&
-                    workstation.GetBoardAttemptWarning().Contains("再次执行"),
-                "completed extraction clearly points to filtering and warns that repeating extraction will be a deliberate mistake");
-            PlaceAt(workstation, "back_carafe");
+            Require(CompleteBoard(board, context, 0.8d).Completed, "measured jigger water enables manual extraction");
+            var firstExtraction = workstation.GetToolContentCompletionRatio("traditional_filter");
+            Require(firstExtraction > 0.8d && firstExtraction < 1d,
+                "25 ml against the 30 ml prototype target creates a recoverable completion loss");
+            workstation.QueueAttemptRollForTests(0d);
+            Require(CompleteBoard(board, context, 0.8d).Completed, "repeat extraction is a valid recovery attempt");
+            var recoveredExtraction = workstation.GetToolContentCompletionRatio("traditional_filter");
+            Require(recoveredExtraction > firstExtraction && recoveredExtraction <= 0.96d,
+                "repeat extraction restores part of the loss but stays capped");
+            PlaceAt(workstation, "jigger_large_free");
 
             glass.Interact(context);
             board.Interact(context);
-            Require(workstation.GetBoardCapabilityText().Contains("过滤"),
-                "filter and glass combination enables the normal filtering operation");
             workstation.QueueAttemptRollForTests(0d);
-            Require(CompleteBoard(board, context, 0.6d).Completed, "normal filtering succeeds without a handheld tool");
-            glass.Interact(context);
-            Require(workstation.HasGlass && workstation.Glass.Ingredients.ContainsKey("espresso"),
-                "finished glass returns to the player's left hand");
+            Require(CompleteBoard(board, context, 0.6d).Completed, "filter and highball glass complete normal filtering");
+            var firstFiltration = workstation.GetToolContentCompletionRatio("highball_glass");
+            workstation.QueueAttemptRollForTests(0d);
+            Require(CompleteBoard(board, context, 0.6d).Completed, "repeat filtering is a valid recovery attempt");
+            var recoveredFiltration = workstation.GetToolContentCompletionRatio("highball_glass");
+            Require(recoveredFiltration > firstFiltration && recoveredFiltration <= 0.96d,
+                "repeat filtering also provides bounded completion recovery");
 
-            tongs.Interact(context);
-            Station(main, "ice_bucket").Interact(context);
-            workstation.QueueAttemptRollForTests(0d);
-            Require(workstation.TryUseSimpleOperation().Completed && workstation.IcePieces == 1,
-                "ice is a simple off-board operation using left-hand glass and right-hand tongs");
-            PlaceAt(workstation, "back_free_far");
-            PlaceAt(workstation, "back_tongs");
             glass.Interact(context);
-            Tool(main, "water_carafe").Interact(context);
-            workstation.TryLoadIngredient("water", 0.5d, out _);
+            Tool(main, "jigger_small").Interact(context);
+            Require(Math.Abs(workstation.RightHandMeasureAmount - 30d) < 0.001d,
+                "small jigger defaults to its 30 ml end for keyboard-accessible measured water");
+            kettle.Interact(context);
             workstation.QueueAttemptRollForTests(0d);
-            Require(workstation.TryUseSimpleOperation().Completed && workstation.Glass.Ingredients.ContainsKey("water"),
-                "water is a simple off-board operation using the two hand slots");
-            Require(Math.Abs(workstation.DrinkCompletionRatio - 0.75d) < 0.000001d,
-                "deviation-derived completion persists as a property of the finished drink");
-            PlaceAt(workstation, "back_free_far");
-            PlaceAt(workstation, "back_carafe");
+            Require(workstation.TryUseSimpleOperation().Completed &&
+                    Math.Abs(workstation.Glass.Ingredients["water"] - 30d) < 0.001d,
+                "jigger water replaces the old direct-kettle pour operation");
+            PlaceAt(workstation, "glass_free");
+            PlaceAt(workstation, "jigger_free");
+            glass.Interact(context);
+            Tool(main, "ice_tongs").Interact(context);
+            ice.Interact(context);
+            workstation.QueueAttemptRollForTests(0d);
+            var iceResult = workstation.TryUseSimpleOperation();
+            Require(iceResult.Completed && workstation.IcePieces == 1,
+                $"only ice tongs can load ice from the opened upper drawer into the glass: {iceResult.Feedback} | {workstation.GetDebugText()}");
+            PlaceAt(workstation, "glass_free");
+            PlaceAt(workstation, "tongs_free");
             glass.Interact(context);
 
-            Require(!customer.CanInteract(context), "finished drink cannot be submitted from the initial distant position");
-            player.GlobalPosition = new Vector3(0f, 0.9f, -0.9f);
-            Require(customer.CanInteract(context), "finished drink can be submitted after approaching the customer");
+            Require(!customer.CanInteract(context), "expanded bar keeps customer delivery outside the initial work position");
+            player.GlobalPosition = new Vector3(0f, 0.96f, -0.2f);
+            Require(customer.CanInteract(context), "finished drink can be submitted only after approaching the customer");
             customer.Interact(context);
             Require(_evaluationPassed && GameSession.Instance.Flow.Current == DayPhase.DaySummary,
-                "valid drink reaches evaluation even after recoverable failed attempts");
+                "prototype drink reaches evaluation with bounded recovery preserved");
 
             player._UnhandledInput(new InputEventAction { Action = "next_day", Pressed = true, Strength = 1f });
-            Require(GameSession.Instance.CurrentDay == 2 && GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder,
-                "next day resets the flow");
-            Require(string.IsNullOrEmpty(workstation.LeftHandToolId) && string.IsNullOrEmpty(workstation.RightHandToolId) && workstation.BoardToolCount == 0,
-                "next day returns all tools from hands and board to their initial positions");
-            Require(Tool(main, "mortar").Visible && Tool(main, "pestle").Visible && Math.Abs(player.GlobalPosition.Z - (-3f)) < 0.01f,
-                "tool entities and player transform reset visibly for the new day");
+            var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
+            Require(GameSession.Instance.CurrentDay == 2 && !workstation.HandsWashedToday &&
+                    Math.Abs(workstation.KettleWaterAmountMl - DrinkWorkstation.PrototypeKettleCapacityMl) < 0.001d &&
+                    !iceDrawer.IsOpen && Math.Abs(player.GlobalPosition.Z - (-0.92f)) < 0.01f,
+                "next day resets hand washing, kettle, drawer state, tools and raised-camera player position");
+
             for (var expectedDay = 2; expectedDay <= GameSession.MaxCampaignDays; expectedDay++)
             {
                 GameSession.Instance.AcceptOrder();
@@ -246,13 +151,11 @@ public partial class FlowIntegrationTests : Node
                     Require(GameSession.Instance.AdvanceToNextDay() && GameSession.Instance.CurrentDay == expectedDay + 1,
                         $"campaign advances from day {expectedDay}");
             }
-            Require(!GameSession.Instance.AdvanceToNextDay() && GameSession.Instance.CurrentDay == GameSession.MaxCampaignDays &&
-                    !GameSession.Instance.GameStarted && main.GetNode<OpeningMenuController>("OpeningMenu").Visible,
-                "day 30 ends the campaign and returns to the main menu instead of creating day 31");
-            Require(Math.Abs(main.GetNode<MyopiaEffectController>("MyopiaEffectController").MyopiaDegrees - 350f) < 0.01f,
-                "day progression updates reality myopia through the 30-day curve");
+            Require(!GameSession.Instance.AdvanceToNextDay() && !GameSession.Instance.GameStarted &&
+                    main.GetNode<OpeningMenuController>("OpeningMenu").Visible,
+                "day 30 ends the campaign and returns to the split main menu");
             Require(reality.GetChildCount() == realityChildren && glasses.GetChildCount() == glassesChildren,
-                "world switching never duplicates presentation nodes");
+                "world switching and day resets never duplicate presentation nodes");
             GD.Print("FLOW_INTEGRATION_PASS");
             GetTree().Quit(0);
         }
@@ -261,6 +164,113 @@ public partial class FlowIntegrationTests : Node
             GD.PushError(exception.ToString());
             GetTree().Quit(1);
         }
+    }
+
+    private static void VerifyLayout(Node3D main, DrinkWorkstation workstation, StationInteractable sink,
+        StationInteractable ice, InteractionContext context)
+    {
+        Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.18f) < 0.001f &&
+                Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 1.24f) < 0.001f,
+            "bar is raised and the internal operation aisle is explicitly single-person width");
+        Require(Math.Abs(main.GetNode<Node3D>("Player/Head").GlobalPosition.Y - 1.76f) < 0.01f,
+            "player camera height rises with the counter");
+        Require(main.GetNode<Node3D>("RealityWorld").HasNode("MergedBottleRackBack") &&
+                main.GetNode<Node3D>("RealityWorld").HasNode("RearBooth"),
+            "back bar merges with bottle rack and the outside customer area is expanded");
+        foreach (var toolId in new[] { "highball_glass", "mortar", "traditional_filter", "pestle", "bean_scoop", "ice_tongs", "jigger_small", "jigger_medium", "jigger_large" })
+            Require(Math.Abs(Tool(main, toolId).Position.Z - 0.2f) < 0.01f, $"{toolId} starts on the front bar");
+        Require(Tool(main, "ice_tongs").GetNode<CollisionShape3D>("CollisionShape3D").Shape is BoxShape3D &&
+                Tool(main, "jigger_small").GetNode<CollisionShape3D>("CollisionShape3D").Shape is CylinderShape3D,
+            "tool collision shapes now match their visible graybox families");
+
+        var frontDrawerCount = 0;
+        var backDoorCount = 0;
+        var narrowestWalkingLane = float.MaxValue;
+        foreach (var node in main.GetTree().GetNodesInGroup("cabinet_storage"))
+        {
+            if (node is not CabinetInteractable cabinet)
+                continue;
+            var name = cabinet.Name.ToString();
+            if (name.StartsWith("front_drawer_", StringComparison.Ordinal))
+            {
+                frontDrawerCount++;
+                Require(cabinet.OpenPosition.Z < cabinet.ClosedPosition.Z && cabinet.OutwardDirection.Z < 0f,
+                    "front drawers pull outward into the work aisle and have deep trays");
+                // The opposite closed back storage face is z=-1.46 in this graybox.
+                var openFrontDrawerBackEdge = cabinet.OpenPosition.Z - cabinet.PanelSize.Z * 0.5f;
+                narrowestWalkingLane = Math.Min(narrowestWalkingLane, openFrontDrawerBackEdge - (-1.46f));
+            }
+            if (name.StartsWith("back_cabinet_", StringComparison.Ordinal))
+            {
+                backDoorCount++;
+                Require(cabinet.OutwardDirection.Z > 0f && Math.Abs(cabinet.OpenRotationY) > 1.4f,
+                    "back cabinet doors swing outward toward the aisle");
+                // The opposite closed front drawer face is z=-0.39. Include the rotated leaf thickness.
+                var rotation = Math.Abs(cabinet.OpenRotationY);
+                var openDoorFrontEdge = cabinet.ClosedPosition.Z +
+                    cabinet.PanelSize.X * Math.Abs(MathF.Sin(rotation)) +
+                    cabinet.PanelSize.Z * 0.5f * Math.Abs(MathF.Cos(rotation));
+                narrowestWalkingLane = Math.Min(narrowestWalkingLane, -0.39f - openDoorFrontEdge);
+            }
+        }
+        Require(frontDrawerCount == 10 && backDoorCount == 12,
+            "front bar uses five bays of double-layer drawers while six back cabinets use paired narrow outward doors");
+        var sinkUpper = main.GetNode<CabinetInteractable>("NeutralGameplay/sink_left_drawer_upper");
+        var sinkLower = main.GetNode<CabinetInteractable>("NeutralGameplay/sink_left_drawer_lower");
+        Require(sinkUpper.Position.X > sink.Position.X && sinkLower.Position.X > sink.Position.X &&
+                sinkUpper.ClosedPosition.Z - 0.58f > -3.17f,
+            "sink-left double narrow drawers remain clear of the back wall");
+        var openSinkDrawerFrontEdge = sinkUpper.OpenPosition.Z + sinkUpper.PanelSize.Z * 0.5f;
+        narrowestWalkingLane = Math.Min(narrowestWalkingLane, -0.39f - openSinkDrawerFrontEdge);
+        Require(narrowestWalkingLane >= 0.7f,
+            "every individual open door or drawer leaves at least one player-diameter walking lane after opposite closed fronts are included");
+        var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
+        Require(ice.GetParent() == iceDrawer && !ice.CanInteract(context),
+            "ice bucket is physically stored in the cutting-board-right upper drawer and is inaccessible while closed");
+        var backDoor = main.GetNode<CabinetInteractable>("NeutralGameplay/back_cabinet_3_left");
+        iceDrawer.SetOpen(true, false);
+        backDoor.SetOpen(true, false);
+        Require(backDoor.IsOpen && !iceDrawer.IsOpen,
+            "opening another storage front auto-closes the previous one so the single-person aisle cannot be pinched from both sides");
+        backDoor.SetOpen(false, false);
+    }
+
+    private static void VerifyDailyWaterAndIceRules(Node3D main, DrinkWorkstation workstation,
+        StationInteractable sink, StationInteractable kettle, StationInteractable ice, StationInteractable bin,
+        InteractionContext context)
+    {
+        Require(!workstation.HandsWashedToday && Math.Abs(workstation.SuccessProbabilityPenalty - 0.04d) < 0.000001d,
+            "each day begins unwashed with a small prototype success-rate penalty");
+        sink.Interact(context);
+        Require(workstation.HandsWashedToday && workstation.SuccessProbabilityPenalty == 0d,
+            "sink interaction records the required daily hand wash and is no longer a crafting water source");
+        Require(workstation.GetToolSpec("jigger_small").HasDualMeasure &&
+                workstation.GetToolSpec("jigger_medium").HasDualMeasure &&
+                workstation.GetToolSpec("jigger_large").HasDualMeasure,
+            "three data-defined double-ended jiggers replace direct kettle pouring");
+
+        var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
+        iceDrawer.Interact(context);
+        Require(iceDrawer.IsOpen, "upper ice drawer opens before using its contents");
+        Tool(main, "bean_scoop").Interact(context);
+        Require(!ice.CanInteract(context) && ice.GetUnavailablePrompt(context).Contains("无法在物理上携带冰块"),
+            "ingredient scoop is explicitly forbidden from taking ice");
+        PlaceAt(workstation, "scoop_free");
+        Tool(main, "ice_tongs").Interact(context);
+        ice.Interact(context);
+        Require(Math.Abs(workstation.GetRightHandIngredientAmount("ice") - 1d) < 0.001d,
+            "ice tongs can take one piece from the opened drawer bucket");
+        bin.Interact(context);
+        PlaceAt(workstation, "tongs_free");
+
+        Tool(main, "jigger_small").Interact(context);
+        var before = workstation.KettleWaterAmountMl;
+        kettle.Interact(context);
+        Require(Math.Abs(workstation.GetRightHandIngredientAmount("water") - 30d) < 0.001d &&
+                Math.Abs(workstation.KettleWaterAmountMl - (before - 30d)) < 0.001d,
+            "jigger takes its selected measured amount from the kettle");
+        bin.Interact(context);
+        PlaceAt(workstation, "jigger_free");
     }
 
     private static OperationResult CompleteBoard(WorkboardInteractable board, InteractionContext context, double action)
@@ -279,8 +289,18 @@ public partial class FlowIntegrationTests : Node
 
     private static InteractionContext Context(PlayerController player, DrinkWorkstation workstation) =>
         new() { Player = player, Workstation = workstation };
-    private static ToolInteractable Tool(Node3D main, string id) => main.GetNode<ToolInteractable>($"NeutralGameplay/{id}");
-    private static StationInteractable Station(Node3D main, string id) => main.GetNode<StationInteractable>($"NeutralGameplay/{id}");
+
+    private static ToolInteractable Tool(Node3D main, string id) =>
+        main.GetNode<ToolInteractable>($"NeutralGameplay/{id}");
+
+    private static StationInteractable Station(Node3D main, string id)
+    {
+        foreach (var node in main.GetTree().GetNodesInGroup("interactable"))
+            if (node is StationInteractable station && station.EntityId == id)
+                return station;
+        throw new InvalidOperationException($"Station not found: {id}");
+    }
+
     private static void PlaceAt(DrinkWorkstation workstation, string id)
     {
         Require(workstation.TryPlaceHeldToolAtPosition(Position(id), out var feedback), feedback);
@@ -288,15 +308,13 @@ public partial class FlowIntegrationTests : Node
 
     private static Vector3 Position(string id) => id switch
     {
-        "front_filter" => new Vector3(-1.62f, 1.24f, 0.12f),
-        "front_mortar" => new Vector3(1.62f, 1.24f, 0.12f),
-        "front_pestle" => new Vector3(2.22f, 1.24f, 0.12f),
-        "front_left_free" => new Vector3(-2.35f, 1.24f, 0.12f),
-        "back_tongs" => new Vector3(-3.55f, 1.13f, -5.42f),
-        "back_free_left" => new Vector3(-0.45f, 1.13f, -5.42f),
-        "back_scoop" => new Vector3(0.35f, 1.13f, -5.42f),
-        "back_carafe" => new Vector3(1.25f, 1.13f, -5.42f),
-        "back_free_far" => new Vector3(4.2f, 1.13f, -5.42f),
+        "scoop_free" => new Vector3(-2.8f, 1.2f, -1.9f),
+        "tongs_free" => new Vector3(-2.05f, 1.2f, -1.9f),
+        "pestle_free" => new Vector3(-1.3f, 1.2f, -1.9f),
+        "mortar_free" => new Vector3(-0.45f, 1.2f, -1.9f),
+        "jigger_free" => new Vector3(1.2f, 1.2f, -1.9f),
+        "jigger_large_free" => new Vector3(1.9f, 1.2f, -1.9f),
+        "glass_free" => new Vector3(2.6f, 1.2f, -1.9f),
         _ => throw new InvalidOperationException($"Unknown test placement: {id}")
     };
 
