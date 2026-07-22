@@ -52,8 +52,8 @@ public partial class InputIntegrationTests : Node
                 "starting the game enables movement and gameplay HUD");
             await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
 
-            Require(Math.Abs(player.GlobalPosition.Z - (-0.92f)) < 0.01f, "player starts inside the single-person bartender aisle");
-            player.GlobalPosition = new Vector3(4.8f, 0.96f, -0.92f);
+            Require(Math.Abs(player.GlobalPosition.Z - (-1.2f)) < 0.01f, "player starts centered inside the two-person bartender aisle");
+            player.GlobalPosition = new Vector3(4.8f, 0.96f, -1.2f);
             Input.ActionPress("move_left");
             for (var frame = 0; frame < 30; frame++)
                 await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);

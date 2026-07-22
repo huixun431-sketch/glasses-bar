@@ -191,7 +191,7 @@ script = ExtResource("8_myopia")
 InitialMyopiaDegrees = 50.0
 
 [node name="Player" type="CharacterBody3D" parent="."]
-position = Vector3(0, 0.96, -0.92)
+position = Vector3(0, 0.96, -1.2)
 rotation_degrees = Vector3(0, 180, 0)
 collision_mask = 3
 script = ExtResource("5_player")

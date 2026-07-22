@@ -53,8 +53,8 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
         {
             Position = center;
             // Deep trays stay mostly supported by the cabinet carcass. Limiting the pull-out
-            // distance keeps the deliberately single-person aisle passable while still exposing
-            // the useful front section of the drawer.
+            // distance keeps a comfortable walking lane in the widened two-person aisle while
+            // still exposing the useful front section of the drawer.
             var openTravel = Mathf.Clamp(storageDepth * 0.46f, 0.3f, 0.34f);
             _openPosition = center + _outwardDirection * openTravel;
         }
@@ -123,8 +123,8 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
     {
         if (open)
         {
-            // The work aisle is intentionally narrow. Only one storage front may project into it
-            // at a time, matching a safe real-world bar workflow and preserving a walking lane.
+            // Only one storage front may project into the work aisle at a time, matching a safe
+            // real-world bar workflow and preserving the extra clearance added for two people.
             foreach (var node in GetTree().GetNodesInGroup("cabinet_storage"))
                 if (node is CabinetInteractable other && other != this && other.IsOpen)
                     other.SetOpen(false, animate);

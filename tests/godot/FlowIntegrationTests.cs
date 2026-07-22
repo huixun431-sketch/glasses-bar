@@ -139,7 +139,7 @@ public partial class FlowIntegrationTests : Node
             var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
             Require(GameSession.Instance.CurrentDay == 2 && !workstation.HandsWashedToday &&
                     Math.Abs(workstation.KettleWaterAmountMl - DrinkWorkstation.PrototypeKettleCapacityMl) < 0.001d &&
-                    !iceDrawer.IsOpen && Math.Abs(player.GlobalPosition.Z - (-0.92f)) < 0.01f,
+                    !iceDrawer.IsOpen && Math.Abs(player.GlobalPosition.Z - (-1.2f)) < 0.01f,
                 "next day resets hand washing, kettle, drawer state, tools and raised-camera player position");
 
             for (var expectedDay = 2; expectedDay <= GameSession.MaxCampaignDays; expectedDay++)
@@ -170,8 +170,9 @@ public partial class FlowIntegrationTests : Node
         StationInteractable ice, InteractionContext context)
     {
         Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.18f) < 0.001f &&
-                Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 1.24f) < 0.001f,
-            "bar is raised and the internal operation aisle is explicitly single-person width");
+                Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 1.8f) < 0.001f &&
+                GrayboxLevelBuilder.OperationAisleClearWidth >= 0.7f * 2f + 0.3f,
+            "bar is raised and the internal operation aisle comfortably fits two player-width people");
         Require(Math.Abs(main.GetNode<Node3D>("Player/Head").GlobalPosition.Y - 1.76f) < 0.01f,
             "player camera height rises with the counter");
         Require(main.GetNode<Node3D>("RealityWorld").HasNode("MergedBottleRackBack") &&
@@ -196,9 +197,9 @@ public partial class FlowIntegrationTests : Node
                 frontDrawerCount++;
                 Require(cabinet.OpenPosition.Z < cabinet.ClosedPosition.Z && cabinet.OutwardDirection.Z < 0f,
                     "front drawers pull outward into the work aisle and have deep trays");
-                // The opposite closed back storage face is z=-1.46 in this graybox.
+                // The opposite closed back storage face is z=-2.02 in this widened graybox.
                 var openFrontDrawerBackEdge = cabinet.OpenPosition.Z - cabinet.PanelSize.Z * 0.5f;
-                narrowestWalkingLane = Math.Min(narrowestWalkingLane, openFrontDrawerBackEdge - (-1.46f));
+                narrowestWalkingLane = Math.Min(narrowestWalkingLane, openFrontDrawerBackEdge - (-2.02f));
             }
             if (name.StartsWith("back_cabinet_", StringComparison.Ordinal))
             {
@@ -222,8 +223,8 @@ public partial class FlowIntegrationTests : Node
             "sink-left double narrow drawers remain clear of the back wall");
         var openSinkDrawerFrontEdge = sinkUpper.OpenPosition.Z + sinkUpper.PanelSize.Z * 0.5f;
         narrowestWalkingLane = Math.Min(narrowestWalkingLane, -0.39f - openSinkDrawerFrontEdge);
-        Require(narrowestWalkingLane >= 0.7f,
-            "every individual open door or drawer leaves at least one player-diameter walking lane after opposite closed fronts are included");
+        Require(narrowestWalkingLane >= 1.2f,
+            "every individual open door or drawer still leaves a comfortably passable lane after opposite closed fronts are included");
         var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
         Require(ice.GetParent() == iceDrawer && !ice.CanInteract(context),
             "ice bucket is physically stored in the cutting-board-right upper drawer and is inaccessible while closed");
@@ -231,7 +232,7 @@ public partial class FlowIntegrationTests : Node
         iceDrawer.SetOpen(true, false);
         backDoor.SetOpen(true, false);
         Require(backDoor.IsOpen && !iceDrawer.IsOpen,
-            "opening another storage front auto-closes the previous one so the single-person aisle cannot be pinched from both sides");
+            "opening another storage front auto-closes the previous one so the widened aisle cannot be pinched from both sides");
         backDoor.SetOpen(false, false);
     }
 
@@ -308,13 +309,13 @@ public partial class FlowIntegrationTests : Node
 
     private static Vector3 Position(string id) => id switch
     {
-        "scoop_free" => new Vector3(-2.8f, 1.2f, -1.9f),
-        "tongs_free" => new Vector3(-2.05f, 1.2f, -1.9f),
-        "pestle_free" => new Vector3(-1.3f, 1.2f, -1.9f),
-        "mortar_free" => new Vector3(-0.45f, 1.2f, -1.9f),
-        "jigger_free" => new Vector3(1.2f, 1.2f, -1.9f),
-        "jigger_large_free" => new Vector3(1.9f, 1.2f, -1.9f),
-        "glass_free" => new Vector3(2.6f, 1.2f, -1.9f),
+        "scoop_free" => new Vector3(-2.8f, 1.2f, -2.46f),
+        "tongs_free" => new Vector3(-2.05f, 1.2f, -2.46f),
+        "pestle_free" => new Vector3(-1.3f, 1.2f, -2.46f),
+        "mortar_free" => new Vector3(-0.45f, 1.2f, -2.46f),
+        "jigger_free" => new Vector3(1.2f, 1.2f, -2.46f),
+        "jigger_large_free" => new Vector3(1.9f, 1.2f, -2.46f),
+        "glass_free" => new Vector3(2.6f, 1.2f, -2.46f),
         _ => throw new InvalidOperationException($"Unknown test placement: {id}")
     };
 

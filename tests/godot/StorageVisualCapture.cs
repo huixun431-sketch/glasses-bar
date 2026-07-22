@@ -21,6 +21,6 @@ public partial class StorageVisualCapture : Node
         camera.LookAtFromPosition(new Vector3(0f, 2.8f, -1.22f), new Vector3(0f, 0.58f, -0.18f), Vector3.Up);
         await ToSignal(GetTree().CreateTimer(2.1d), SceneTreeTimer.SignalName.Timeout);
         main.GetNode<CabinetInteractable>("NeutralGameplay/sink_left_drawer_upper").SetOpen(true, true);
-        camera.LookAtFromPosition(new Vector3(0f, 2.8f, -0.62f), new Vector3(0f, 0.68f, -1.68f), Vector3.Up);
+        camera.LookAtFromPosition(new Vector3(0f, 2.8f, -0.9f), new Vector3(0f, 0.68f, -2.24f), Vector3.Up);
     }
 }

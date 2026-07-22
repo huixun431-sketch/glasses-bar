@@ -9,6 +9,9 @@ python $assetValidator $manifest --allow-placeholders
 if (Get-Command dotnet -ErrorAction SilentlyContinue) {
     $sdkList = dotnet --list-sdks
     if ($sdkList) {
+        # Godot's editor import may reuse a loaded desktop editor's C# assembly. Build the
+        # game/test assembly explicitly so headless integration scenes never run stale code.
+        dotnet build (Join-Path $root 'GlassesBar.csproj') --configuration Debug --nologo
         dotnet test (Join-Path $root 'tests\GlassesBar.Domain.Tests.csproj')
     } else {
         Write-Warning '.NET SDK is missing; domain tests were not run.'
