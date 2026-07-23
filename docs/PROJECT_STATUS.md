@@ -51,7 +51,8 @@
 - 2026-07-23 本轮回归通过：资产 16 项 0 错误、领域测试 11/11、Debug/Release 0 警告/0 错误、Godot 导入/主场景/冒烟/输入/完整流程全部 PASS；新高度、长抽屉、前台水槽净空、上方吊柜/酒架净空和侧面手册均已用 Forward+ 实际截图检查。
 - Windows Debug/Release 包已按 2026-07-23 最新布局重导出并实际无头启动，退出码均为 0；Release 目录只有主程序、Debug 目录另含控制台包装器。
 - 已基于提交 `fcc6546` 导出 Windows 64 位 Release 测试版原型，并打包为 `builds/windows/GlassesBar-Prototype-Test-20260723.zip`；ZIP 包含主程序、完整 .NET 运行数据和中文测试说明，共 189 个条目、74,242,112 字节，SHA-256 为 `4F7291BA1420ED83ADEA346BA06F775C2A97E6FACEE3533E7BBE902E6123C1B4`。导出日志无错误匹配，包内对应程序实际无头启动退出码为 0。
-- Git 仓库位于 `main`；本轮变更按用户授权在文档同步后创建提交。未授权推送、合并、发布或历史重写；构建目录与本机导入缓存保持忽略。
+- 已创建公开 GitHub 仓库 `https://github.com/huixun431-sketch/glasses-bar`，本地 `main` 已推送并跟踪 `origin/main`；构建产物继续由 `.gitignore` 排除，未提交的本机导出预设自动补全差异未进入远程历史。
+- Git 仓库位于 `main`；本轮变更按用户授权创建提交并推送到公开远程仓库。未授权合并、创建 GitHub Release 或历史重写；构建目录与本机导入缓存保持忽略。
 
 ## 待人工/内容验收
 

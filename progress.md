@@ -59,6 +59,7 @@
   - Debug：`builds/windows/debug/GlassesBar.exe`，104,523,416 字节
   - Release：`builds/windows/release/GlassesBar.exe`，110,614,680 字节
 - 已基于提交 `fcc6546` 生成可直接交付的 Windows 64 位 Release 测试包 `builds/windows/GlassesBar-Prototype-Test-20260723.zip`。包内包含 `GlassesBar.exe`、完整 .NET 运行数据目录和中文测试说明，共 189 个条目、74,242,112 字节；SHA-256 为 `4F7291BA1420ED83ADEA346BA06F775C2A97E6FACEE3533E7BBE902E6123C1B4`。导出日志无错误匹配，实际无头启动退出码为 `0`。
+- 已按用户要求创建公开 GitHub 仓库 `https://github.com/huixun431-sketch/glasses-bar`，完整 `main` 历史已推送，本地分支跟踪 `origin/main`。`builds/` 测试包继续保持忽略，既存未提交的 `export_presets.cfg` 自动补全差异没有进入远程历史。
 
 ## 二、关键决策
 
@@ -72,8 +73,9 @@
 - 水槽只用于每日洗手，水壶只作为量酒器水源；制作用水必须经过三种双头量酒器。原料勺不能取冰，冰桶必须位于指定上层抽屉。
 - “允许玩家犯错”仍是核心。系统只阻止物理不成立的动作；重复萃取/过滤是有限补救，不是无损刷满完成度。
 - 所有新增容量、`4%` 卫生惩罚、`0.96` 恢复上限、吧台尺寸和概率仍是开发占位，不能当作正式平衡或正式配方。
-- 用户已明确要求本轮更新 `progress.md` 并创建 Git 提交；没有授权推送、合并、发布或历史重写。
+- 用户已明确授权创建公开 GitHub 仓库并推送完整 `main`，该操作已经完成；仍未授权合并、创建 GitHub Release 或历史重写。
 - 测试版原型采用 Windows 64 位 Release ZIP 交付，构建产物继续保持 Git 忽略；包内保留中文测试说明，明确灰盒、配方和数值均非最终内容。
+- 远程仓库按用户明确要求设为公开；当前以 `main` 作为默认分支和直接同步分支，未额外创建发布分支或 GitHub Release。
 
 ### P1｜技术结构
 

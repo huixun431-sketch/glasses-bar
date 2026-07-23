@@ -11,6 +11,7 @@
 - 回归验证为资产 16 项 0 错误、领域测试 11/11、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入和流程全部 PASS；Forward+ 已检查全景、长抽屉/水槽净空、吊柜/酒架净空、玩家视角和侧面手册。
 - Windows Debug/Release 包已重导出并实际无头启动，退出码均为 0。
 - 基于提交 `fcc6546` 生成 Windows 64 位 Release 测试版原型 `builds/windows/GlassesBar-Prototype-Test-20260723.zip`，随包加入中文启动、操作与重点测试说明；ZIP 共 189 个条目、74,242,112 字节，SHA-256 为 `4F7291BA1420ED83ADEA346BA06F775C2A97E6FACEE3533E7BBE902E6123C1B4`。导出日志无错误匹配，导出程序实际无头启动退出码为 0。
+- 创建公开 GitHub 仓库 `https://github.com/huixun431-sketch/glasses-bar`，推送完整 `main` 历史并建立 `origin/main` 上游跟踪；忽略的测试构建和未提交的本机 `export_presets.cfg` 自动补全差异未上传。
 
 ## 2026-07-22
 
