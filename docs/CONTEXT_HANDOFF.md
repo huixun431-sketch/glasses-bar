@@ -11,8 +11,17 @@
 - 本轮交付必须包含脚本职责表、职责拆分建议、状态归属结论、验证证据、`progress.md` 更新和 Git 提交。
 - 不借架构整理发明正式配方、平衡值、顾客内容或最终美术；既有 `export_presets.cfg` 未提交改动属于用户工作，必须保留且不纳入本轮提交。
 
+## P0｜2026-07-29 当前重构任务
+
+- 用户已批准按照架构审查结论开始渐进式重构；必须保持现有功能与测试全部通过，不改变玩法逻辑。
+- 首批职责迁移以 `DrinkWorkstation` 为入口，优先把双手、工具实例、摆放、砧板槽位与内容转移迁入无 Godot 依赖的 `ToolInventoryService`；`DrinkWorkstation` 保留 signal facade、Godot 表现同步和跨服务编排。
+- 后续动画、IK、骨骼等均属于可替换表现实现。Gameplay 只能通过事件、signal 或动作结果通知表现层，不得直接依赖、查询或控制动画播放器、IK 求解器、Skeleton/Bone 或其他表现实现；表现层不得反向决定玩法结果。
+- 本轮仍须保留用户已有的 `export_presets.cfg` 未提交改动，不纳入重构提交。
+
 ## P1｜2026-07-29 活动状态
 
+- 已完成审查后首批重构：`ToolInventoryService` 接管工具集合、双手、拿放、防重叠、砧板槽、内容装载/转移、重置与工具快照；`DrinkWorkstation` 保留公开 API、signal、表现同步和尚未迁出的工序/饮品编排。
+- 已验证（2026-07-29 重构回归）：资产 16 项 0 错误、纯领域测试 19/19、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS；本轮无视觉改动，无需新增截图。
 - 已完成交互、物品、配方、工序、存档和眼镜系统结构审查；总体结论见 `docs/ARCHITECTURE_REVIEW_20260729.md`，脚本职责/拆分表见 `docs/SCRIPT_RESPONSIBILITIES.md`。
 - 已实现统一动作管线：玩家交互、切镜、简易/连续工序、量酒器切换和跨天命令统一经过检查、拒绝/开始、提交/取消；连续动作只在提交时写玩法状态。
 - 已把 `ToolInstanceState` 权威玩法实例与 `ToolPresentationBinding` Godot 表现绑定分开，连续摆放坐标进入可测试/可保存状态。
@@ -20,7 +29,7 @@
 - 已修复丢弃旧饮品后历史原料/完成度污染重做评价、`TotalWaste` 跨天不清零，以及原型标记与数量评分策略耦合的问题。
 - 已更新 `docs/TECHNICAL_DESIGN.md` 的旧柜体描述为当前 `2.31 m` 通道、8 抽屉、6 大门吊柜和 `1.69 m` 开抽屉通行带。
 - 已验证（2026-07-29）：资产 16 项 0 错误、纯领域测试 16/16、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS。
-- 下一代码拆分优先级：`DrinkWorkstation` → `GrayboxLevelBuilder` → `PlayerController` → `StationInteractable`；不得把 partial 文件拆分误报为已完成状态所有权拆分。
+- 下一代码拆分优先级：`DrinkWorkstation.ProcessExecutionService` → `DrinkAssemblyState` → `GrayboxLevelBuilder` → `PlayerController` → `StationInteractable`；不得把首批工具库存迁移误报为整个工作台拆分完成。
 
 ## P0｜不可丢失的决策与边界
 

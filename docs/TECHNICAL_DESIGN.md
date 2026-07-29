@@ -12,10 +12,12 @@
 
 - 定义层：Godot Resource 只定义工具、工序、配方、原料和资产；加载后转为 `ToolSpec`、`OperationSpec`、`RecipeTargets`。
 - 校验层：`GameplayCatalogValidator` 在创建实例前检查稳定 ID、工具分类、工序引用、输入输出、结果容器以及配方/工序漂移。
-- 实例层：`ToolInstanceState`、`LiquidContainer`、`DayFlow` 和 `GameSession` 保存权威运行时状态，不引用表现 Node。
+- 实例层：`ToolInstanceState`、`ToolInventoryService`、`LiquidContainer`、`DayFlow` 和 `GameSession` 保存权威运行时状态，不引用表现 Node。
 - 动作层：`GameplayActionPipeline` 统一执行“只读检查 → 拒绝/开始 → 提交/取消”，连续动作只在提交时修改玩法状态。
 - 表现层：`ToolPresentationBinding`、世界 controller、HUD、材质和标签只呈现权威状态。
 - 持久化边界：`GameSaveSnapshot` 按 schema version 保存会话、工作台、工具实例、玩家姿态和柜体开合；不保存 Node、材质、Tween、HUD 或活动动作。
+
+Gameplay 与表现之间的依赖只能单向流动：Gameplay 通过事件、Godot signal 或动作结果通知表现层，表现层读取结果并自行选择动画实现。Gameplay 不得引用、查询或控制 `AnimationPlayer`、AnimationTree、IK 求解器、Skeleton/Bone 或其他动画/骨骼表现对象；表现层也不得反向决定动作是否合法、工序结果、配方状态或存档内容。后续接入动画、IK 和正式角色资产时必须继续遵守此边界。
 
 ## 世界结构
 
@@ -28,8 +30,8 @@
 
 - `ToolCategory.Automatic` 是新增工具的默认分类。能搬运原料或必须手持使用的工具自动归为 `Handheld`，其余归为 `Placement`；也可在 Resource 中显式覆盖。
 - 左手至多持有一种放置类工具，右手至多持有一种手持类工具。高球杯、研钵、滤具属于放置类；研杵、原料勺、冰夹和三种双头量酒器属于手持类。水壶是固定供水站，不再作为可拿取直倒工具。
-- 每件工具只有一个 `ToolInstanceState` 权威实例，并以 `ToolPresentationBinding` 绑定一个 `ToolInteractable` 表现节点。拿起时原位置实体与碰撞消失，并在对应手部显示；放下后同一实例移动到新位置，不生成副本。连续摆放坐标属于实例状态，不从视觉节点反向读取。
-- 前后吧台使用连续放置表面。交互点直接作为摆放坐标，`DrinkWorkstation` 按工具占地半径检查重叠；双手都有物品时普通吧台与砧板都优先处理左手放置类工具。
+- 每件工具只有一个 `ToolInstanceState` 权威实例；`ToolInventoryService` 持有工具集合、双手槽、砧板槽、连续位置和内容转移。`DrinkWorkstation` 在适配层按稳定 ID 使用 `ToolPresentationBinding` 同步对应 `ToolInteractable` 表现节点。拿起时原位置实体与碰撞消失，并在对应手部显示；放下后同一实例移动到新位置，不生成副本。连续摆放坐标属于实例状态，不从视觉节点反向读取。
+- 前后吧台使用连续放置表面。交互点直接作为摆放坐标，`ToolInventoryService` 按工具占地半径检查重叠；`DrinkWorkstation` 只把结果同步到节点并发出 signal。双手都有物品时普通吧台与砧板都优先处理左手放置类工具。
 - 手持类工具一次只能携带一种原材料；允许继续累加同一种原料。原材料不能徒手拿取，也不能直接放在空砧板或裸吧台上；装有材料、产物或废品的手持工具不能落普通台面，必须先转移或清废。
 - 双手占满且要更换已清空的右手工具时，玩家先在普通台面放下左手工具，再放下右手工具，随后重新拿回左手工具；载料右手工具必须先完成转移，不能用落台绕过物理规则。
 
@@ -88,7 +90,7 @@
 ## 状态与验证
 
 - `ToolProcessModel` 是无 Godot 依赖的分类、冲突、材料集合、偏离度与结果规则层。
-- `ToolInstanceState` 管理单件工具的权威运行时状态；`DrinkWorkstation` 当前仍编排双手、连续摆放、砧板、材料、废品、液体和完成度。该 facade 是下一轮最高优先级拆分点，视觉节点只呈现权威状态。
+- `ToolInstanceState` 管理单件工具的权威运行时状态；`ToolInventoryService` 已接管工具集合、双手、连续摆放、砧板槽和内容转移，并能独立捕获/恢复工具快照。`DrinkWorkstation` 保留 Godot signal facade、表现同步、卫生/水壶、工序和饮品编排；下一步优先拆出 `ProcessExecutionService` 与 `DrinkAssemblyState`。
 - `GameSession` 管理菜单、天数、世界模式和日流程；接单直接进入 `Preparation`，`RecipeObservation` 只保留为兼容路径，不再是制作必经状态。
 - 自动化必须覆盖双手容量、实体移动、防重叠、复数砧板工具、冲突、单一载料、错误工具/材料、比例成功/失败、手动清废、每日洗手、双头量酒器、固定水壶、重复工序恢复、动作开始/提交/取消、存档往返、柜体通行、无戴镜制作、交付与跨天重置。
 

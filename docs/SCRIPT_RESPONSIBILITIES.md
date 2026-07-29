@@ -19,6 +19,7 @@
 | `src/Domain/RecipeEvaluation.cs` | 配方目标、饮品评价输入与评分 | 评价 DTO；不持有运行会话 | 保留 |
 | `src/Domain/ToolProcessModel.cs` | 工具/工序规格、分类、冲突、概率、补救规则 | 定义规格；无场景状态 | 待拆 P2：规格 DTO 与规则可分文件 |
 | `src/Domain/ToolInstanceState.cs` | 单件工具的可保存权威实例状态 | 工具位置、位置分类、内容、废品、完成度、端位 | 已拆 |
+| `src/Domain/ToolInventoryService.cs` | 工具实例集合、双手槽、拿放、防重叠、砧板槽、内容装载/转移、工具快照往返 | 工具集合、左右手 ID、砧板工具 ID | 已拆；无 Godot/表现依赖 |
 | `src/Domain/GameplayActionModel.cs` | 动作稳定定义、模式、阶段与 trace | 无运行时活动动作 | 保留 |
 | `src/Domain/GameplayCatalogValidation.cs` | 工具/工序/配方交叉引用校验 | 无 | 保留 |
 | `src/Domain/SaveGameSnapshot.cs` | 版本化存档 DTO、JSON、结构一致性校验 | 序列化副本，不是运行时 owner | 待拆 P2：DTO、validator、serializer 可在迁移器加入时分文件 |
@@ -48,8 +49,8 @@
 
 | 脚本 | 当前职责 | 权威状态 | 拆分结论 |
 |---|---|---|---|
-| `scripts/gameplay/DrinkWorkstation.cs` | 双手、拿放、砧板、材料转移、工序选择/结算、饮品、卫生、水壶、评价、反馈 | 大部分当日制作状态 | 待拆 P1（最高优先级） |
-| `scripts/gameplay/DrinkWorkstation.Persistence.cs` | 工作台状态与 `WorkstationSnapshot` 往返 | 不新增状态 | 已从主文件拆出；以后移入 coordinator/mapper |
+| `scripts/gameplay/DrinkWorkstation.cs` | Godot signal facade、工具表现同步、工序选择/结算、饮品、卫生、水壶、评价、反馈 | 工具库存已迁出；仍持有饮品与当日制作编排 | 已完成首批拆分；待拆 P1：`ProcessExecutionService`、`DrinkAssemblyState` |
+| `scripts/gameplay/DrinkWorkstation.Persistence.cs` | 聚合工作台快照；工具部分委托 `ToolInventoryService` 往返 | 不新增状态 | 已完成工具状态委托；以后移入 coordinator/mapper |
 | `scripts/gameplay/ToolPresentationBinding.cs` | 工具实例到 Godot 节点的表现绑定 | 无玩法状态 | 已拆 |
 | `scripts/gameplay/LiquidContainer.cs` | 当前液体组成、容量、溢出、恢复 | 杯中液体 | 保留；后续可移入纯 Domain |
 | `scripts/gameplay/ToolInteractable.cs` | 工具交互源、灰盒碰撞/材质/标签、实例表现应用 | 无工具玩法状态 | 待拆 P2：正式资产时分 source/presenter |
@@ -75,7 +76,7 @@
 
 | 脚本/目录 | 职责 | 结论 |
 |---|---|---|
-| `tests/DomainTests.cs` | 纯 C# 日流程、液体、评价、工序、动作定义、目录校验、存档 schema | 保留；当前 16 项 |
+| `tests/DomainTests.cs` | 纯 C# 日流程、液体、评价、工具库存、工序、动作定义、目录校验、存档 schema | 保留；当前 19 项 |
 | `tests/godot/InputIntegrationTests.cs` | 菜单、输入、移动、交互、切镜和动作管线 | 保留 |
 | `tests/godot/FlowIntegrationTests.cs` | 完整制作、错误/补救、柜体、存档往返、评价、跨天 | 待拆 P2：按系统拆成多个场景测试以降低单文件长度 |
 | `tests/godot/*VisualCapture.cs` | 指定状态的 Forward+ 视觉捕获 | 保留 |
@@ -89,3 +90,4 @@
 3. 新玩家动作先添加稳定动作定义，再接入 `GameplayActionPipeline`。
 4. 新交互节点只负责发现/适配，不直接成为跨系统状态 owner。
 5. 新视觉脚本只订阅状态或 signal，不反向决定配方、工序或存档结果。
+6. 动画、IK、骨骼等表现实现只能订阅 Gameplay 事件/signal 或读取动作结果；Gameplay 不得直接依赖或控制这些表现对象。

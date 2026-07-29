@@ -19,6 +19,17 @@
 - 将“是否为原型”和“是否启用数量评分”拆成两个定义字段，避免内容状态与评分策略互相污染。
 - 删除未参与运行逻辑的旧交互枚举、工具定义字段和重复容器状态类型。
 
+## 审查后重构进展
+
+2026-07-29 已完成 `DrinkWorkstation` 第一批职责迁移：
+
+- 新增无 Godot 依赖的 `ToolInventoryService`，接管工具实例集合、左右手槽、拿放、防重叠、砧板槽、材料装载/板上转移、每日重置及工具快照往返。
+- `DrinkWorkstation` 保留原有公开 API，转为 Godot signal facade、工具表现同步与跨服务编排入口；玩法逻辑和提示语义未改变。
+- 新增 3 项纯领域测试覆盖手位/防重叠、砧板内容转移、捕获/恢复/重置；完整回归现为领域 19/19，资产、Debug/Release、Godot 导入、冒烟、输入和流程全部 PASS。
+- 下一批仍是 `ProcessExecutionService` 与 `DrinkAssemblyState`；不得把工具库存首批迁移误报为整个 `DrinkWorkstation` 拆分完成。
+
+表现系统边界同步锁定：Gameplay 只允许通过事件、signal 或动作结果通知表现层，不得直接依赖或控制动画、IK、Skeleton/Bone 等表现实现；表现层不得反向决定玩法结果。
+
 ## 总体分层
 
 ```mermaid
@@ -133,8 +144,9 @@ flowchart TD
 
 - 唯一工具实体、双手槽、砧板槽、防重叠、单载料和废品规则继续成立。
 - 工具连续摆放坐标不再从视觉 Node 反向读取。
+- `ToolInventoryService` 已成为工具集合、双手、砧板槽和内容转移的权威 owner；`DrinkWorkstation` 只负责适配与编排。
 - 目录校验会拒绝错误分类、缺失工具引用、无效量酒器端位和不能容纳结果的目标工具。
-- 剩余风险：双手/摆放/内容转移/工序编排仍集中在 `DrinkWorkstation`。
+- 剩余风险：工序编排仍会直接修改工具内容，需由 `ProcessExecutionService` 接管。
 
 ### 配方系统
 
@@ -202,7 +214,7 @@ flowchart TD
 ### P1｜建议下一轮拆分
 
 1. `DrinkWorkstation`：
-   - `ToolInventoryService`：双手、拿放、位置、内容转移。
+   - `ToolInventoryService`：双手、拿放、位置、内容转移（第一批已完成）。
    - `ProcessExecutionService`：工序选择、规则调用、输出/废品/补救。
    - `DrinkAssemblyState`：当前杯、完成度、评价输入。
    - `DrinkWorkstation` 保留为 Godot signal facade 和组合入口。

@@ -169,6 +169,115 @@ public sealed class DomainTests
     }
 
     [Test]
+    public void ToolInventoryService_OwnsHandsAndRejectsInvalidCounterPlacement()
+    {
+        var inventory = new ToolInventoryService();
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "glass",
+            DisplayName = "Glass",
+            Category = ToolCategory.Placement,
+            FootprintRadius = 0.2d
+        }, new SpatialPosition(0d, 0d, 0d));
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "mortar",
+            DisplayName = "Mortar",
+            Category = ToolCategory.Placement,
+            FootprintRadius = 0.2d
+        }, new SpatialPosition(1d, 0d, 0d));
+        var scoop = new ToolSpec
+        {
+            Id = "scoop",
+            DisplayName = "Scoop",
+            Category = ToolCategory.Handheld,
+            CanCarryIngredients = true
+        };
+        scoop.AllowedIngredientIds.Add("coffee_beans");
+        inventory.RegisterTool(scoop, new SpatialPosition(2d, 0d, 0d));
+
+        inventory.PickUp("glass");
+        Assert.That(inventory.LeftHandToolId, Is.EqualTo("glass"));
+        Assert.That(inventory.CheckPickUp("mortar").Failure, Is.EqualTo(ToolInventoryFailure.HandOccupied));
+        Assert.That(inventory.CheckCounterPlacement(new SpatialPosition(1.1d, 0d, 0d)).Failure,
+            Is.EqualTo(ToolInventoryFailure.CounterOverlap));
+
+        inventory.PlaceHeldToolAt(new SpatialPosition(3d, 0d, 0d));
+        inventory.PickUp("scoop");
+        inventory.LoadIngredient("coffee_beans", 1d);
+        Assert.That(inventory.CheckCounterPlacement(new SpatialPosition(4d, 0d, 0d)).Failure,
+            Is.EqualTo(ToolInventoryFailure.LoadedHandheldCannotBePlaced));
+    }
+
+    [Test]
+    public void ToolInventoryService_MovesBoardContentsWithoutPresentationState()
+    {
+        var inventory = new ToolInventoryService();
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "mortar",
+            DisplayName = "Mortar",
+            Category = ToolCategory.Placement,
+            CanContainIngredients = true
+        }, new SpatialPosition(0d, 0d, 0d));
+        var scoop = new ToolSpec
+        {
+            Id = "scoop",
+            DisplayName = "Scoop",
+            Category = ToolCategory.Handheld,
+            CanCarryIngredients = true
+        };
+        scoop.AllowedIngredientIds.Add("coffee_beans");
+        inventory.RegisterTool(scoop, new SpatialPosition(1d, 0d, 0d));
+
+        inventory.PickUp("mortar");
+        inventory.PlaceLeftHandOnBoard(new[] { new SpatialPosition(5d, 0d, 5d) });
+        inventory.PickUp("scoop");
+        inventory.LoadIngredient("coffee_beans", 1d);
+        inventory.DepositRightHandContentsOnBoard();
+
+        Assert.That(inventory.GetRequiredTool("mortar").Contents["coffee_beans"], Is.EqualTo(1d));
+        Assert.That(inventory.GetRequiredTool("scoop").Contents, Is.Empty);
+
+        inventory.CollectBoardContents(new HashSet<string> { "coffee_beans" });
+        Assert.That(inventory.GetRequiredTool("mortar").Contents, Is.Empty);
+        Assert.That(inventory.GetRequiredTool("scoop").Contents["coffee_beans"], Is.EqualTo(1d));
+        Assert.That(inventory.BoardToolIds, Is.EqualTo(new[] { "mortar" }));
+    }
+
+    [Test]
+    public void ToolInventoryService_CapturesRestoresAndResetsAuthoritativeState()
+    {
+        var inventory = new ToolInventoryService();
+        var jigger = new ToolSpec
+        {
+            Id = "jigger",
+            DisplayName = "Jigger",
+            Category = ToolCategory.Handheld,
+            CanCarryIngredients = true,
+            SmallMeasureAmount = 15d,
+            LargeMeasureAmount = 30d
+        };
+        jigger.AllowedIngredientIds.Add("water");
+        inventory.RegisterTool(jigger, new SpatialPosition(1d, 2d, 3d));
+
+        inventory.PickUp("jigger");
+        inventory.LoadIngredient("water", 15d);
+        inventory.GetRequiredTool("jigger").UseLargeMeasureSide = false;
+        var snapshots = inventory.CaptureToolSnapshots();
+
+        inventory.ResetAll();
+        Assert.That(inventory.RightHandToolId, Is.Empty);
+        Assert.That(inventory.GetRequiredTool("jigger").Contents, Is.Empty);
+
+        inventory.RestoreState(snapshots, string.Empty, "jigger", new List<string>());
+        Assert.That(inventory.RightHandToolId, Is.EqualTo("jigger"));
+        Assert.That(inventory.GetRequiredTool("jigger").Location, Is.EqualTo(ToolLocation.RightHand));
+        Assert.That(inventory.GetRequiredTool("jigger").Contents["water"], Is.EqualTo(15d));
+        Assert.That(inventory.GetRequiredTool("jigger").UseLargeMeasureSide, Is.False);
+    }
+
+    [Test]
     public void MyopiaProgression_UsesThirtyDayCampaignCurve()
     {
         Assert.That(MyopiaProgression.DegreesForDay(1), Is.EqualTo(50f));
