@@ -21,6 +21,12 @@ public partial class InputIntegrationTests : Node
             var console = main.GetNode<DeveloperConsole>("DeveloperConsole");
             var menu = main.GetNode<OpeningMenuController>("OpeningMenu");
             var pauseMenu = main.GetNode<PauseMenuController>("PauseMenu");
+            var settingsService = main.GetNode<SettingsService>("SettingsService");
+            var openingVolume = main.GetNode<HSlider>("OpeningMenu/Backdrop/SettingsPanel/Margin/Stack/VolumeRow/MasterVolume");
+            var openingSensitivity = main.GetNode<HSlider>("OpeningMenu/Backdrop/SettingsPanel/Margin/Stack/SensitivityRow/MouseSensitivity");
+            var pauseVolume = main.GetNode<HSlider>("PauseMenu/Backdrop/SettingsPanel/Margin/Stack/VolumeRow/MasterVolume");
+            var pauseSensitivity = main.GetNode<HSlider>("PauseMenu/Backdrop/SettingsPanel/Margin/Stack/SensitivityRow/MouseSensitivity");
+            var initialSettings = settingsService.State;
 
             Require(menu.Visible && !GameSession.Instance.GameStarted, "opening menu is visible before play begins");
             Require(!GameSession.Instance.CanMove, "opening menu gates player movement");
@@ -45,6 +51,23 @@ public partial class InputIntegrationTests : Node
             main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Settings").EmitSignal(Button.SignalName.Pressed);
             Require(main.GetNode<Control>("OpeningMenu/Backdrop/SettingsPanel").Visible,
                 "main menu settings button opens an interactive settings panel");
+            openingVolume.Value = 73d;
+            openingSensitivity.Value = 3.1d;
+            Require(Math.Abs(settingsService.State.MasterVolumePercent - 73d) < 0.001d &&
+                    Math.Abs(settingsService.State.MouseSensitivitySliderValue - 3.1d) < 0.001d &&
+                    Math.Abs(player.MouseSensitivity - 0.0031f) < 0.00001f,
+                "opening settings panel writes normalized values through the shared settings service");
+            Require(Math.Abs(pauseVolume.Value - 73d) < 0.001d &&
+                    Math.Abs(pauseSensitivity.Value - 3.1d) < 0.001d &&
+                    main.GetNode<Label>("PauseMenu/Backdrop/SettingsPanel/Margin/Stack/VolumeValue").Text == "73%" &&
+                    main.GetNode<Label>("PauseMenu/Backdrop/SettingsPanel/Margin/Stack/SensitivityValue").Text == "3.1",
+                "opening settings changes synchronize the hidden pause settings controls and labels");
+            Require(Math.Abs(
+                        Mathf.DbToLinear(AudioServer.GetBusVolumeDb(AudioServer.GetBusIndex("Master"))) * 100d -
+                        73d) < 0.05d,
+                "shared settings service applies opening-menu volume to the Master bus");
+            settingsService.SetMasterVolumePercent(initialSettings.MasterVolumePercent);
+            settingsService.SetMouseSensitivitySliderValue(initialSettings.MouseSensitivitySliderValue);
             main.GetNode<Button>("OpeningMenu/Backdrop/SettingsPanel/Margin/Stack/Back").EmitSignal(Button.SignalName.Pressed);
             main.GetNode<Button>("OpeningMenu/Backdrop/MenuPanel/Margin/Stack/Start").EmitSignal(Button.SignalName.Pressed);
             Require(GameSession.Instance.GameStarted && !menu.Visible, "start button enters a new game and hides the menu");
@@ -151,10 +174,15 @@ public partial class InputIntegrationTests : Node
             main.GetNode<Button>("PauseMenu/Backdrop/PausePanel/Margin/Stack/Settings").EmitSignal(Button.SignalName.Pressed);
             Require(main.GetNode<Control>("PauseMenu/Backdrop/SettingsPanel").Visible,
                 "pause menu settings can be opened without leaving the day");
-            var sensitivity = main.GetNode<HSlider>("PauseMenu/Backdrop/SettingsPanel/Margin/Stack/SensitivityRow/MouseSensitivity");
-            sensitivity.Value = 3.4d;
+            pauseVolume.Value = 61d;
+            pauseSensitivity.Value = 3.4d;
             Require(Math.Abs(player.MouseSensitivity - 0.0034f) < 0.00001f,
                 "pause settings modify runtime mouse sensitivity");
+            Require(Math.Abs(openingVolume.Value - 61d) < 0.001d &&
+                    Math.Abs(openingSensitivity.Value - 3.4d) < 0.001d &&
+                    main.GetNode<Label>("OpeningMenu/Backdrop/SettingsPanel/Margin/Stack/VolumeValue").Text == "61%" &&
+                    main.GetNode<Label>("OpeningMenu/Backdrop/SettingsPanel/Margin/Stack/SensitivityValue").Text == "3.4",
+                "pause settings changes synchronize back to the opening settings controls and labels");
             main.GetNode<Button>("PauseMenu/Backdrop/SettingsPanel/Margin/Stack/Back").EmitSignal(Button.SignalName.Pressed);
             main.GetNode<Button>("PauseMenu/Backdrop/PausePanel/Margin/Stack/Continue").EmitSignal(Button.SignalName.Pressed);
             Require(!pauseMenu.IsOpen && !GetTree().Paused, "continue closes pause menu and resumes gameplay");

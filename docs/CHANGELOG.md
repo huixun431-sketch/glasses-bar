@@ -2,6 +2,9 @@
 
 ## 2026-07-29
 
+- 完成第七批架构迁移：新增纯 `SettingsState`、场景级 `SettingsService` 和共享 `SettingsPanelBinding`，消除主菜单/暂停菜单重复的 AudioServer、玩家灵敏度与标签同步逻辑。
+- 两个菜单现会通过单一设置 owner 实时双向同步，原范围、格式、默认值、控件路径、焦点和暂停行为不变；本批未新增磁盘设置持久化。
+- 新增设置范围领域测试、双面板/运行时集成回归和主/暂停设置视觉捕获；第七批完整验证为资产 16 项 0 错误、领域测试 28/28、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入和完整流程全部 PASS，两张 Forward+ 设置页已人工检查。
 - 完成第六批架构迁移：新增 6 项 `StationDefinition` Resource 原型目录及校验器，并以 5 类 `StationActionHandlerRegistry` 注册 handler 接管站点提示、动作、许可、不可用原因与执行。
 - `StationInteractable` 删除全部 Kind `switch`，保留通用会话/世界/柜体门控和 `IInteractable` facade；原节点/Kind/EntityId、提示/反馈、距离、份量与玩法结果不变。
 - 流程集成新增站点目录、handler 注册和运行时 definition 绑定不变量；第六批完整验证为资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入和完整流程全部 PASS。Forward+ 顾客交互截图已人工检查。

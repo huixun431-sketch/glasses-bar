@@ -80,9 +80,12 @@
 | `scripts/world/GrayboxLevelBuilder.cs` | 查找场景根并按固定顺序调用布局、建筑、柜体与玩法组合器 | 无 | 已拆；52 行 Godot 组合根 |
 | `scripts/world/WorldLayerController.cs` | 现实/眼镜世界、模糊层和信息层可见性 | 仅表现缓存 | 保留 |
 | `scripts/world/MyopiaEffectController.cs` | 度数 → Shader 参数、开发覆盖 | 当前表现参数 | 保留 |
+| `src/Domain/SettingsState.cs` | 主音量/鼠标灵敏度纯值、范围归一化与滑杆映射 | 当前设置值的数据形状 | 已拆；无 Godot |
+| `scripts/core/SettingsService.cs` | 初始化并应用 Master bus/玩家灵敏度，发布设置变更 | 当前运行时设置唯一 owner | 已拆 |
+| `scripts/ui/SettingsPanelBinding.cs` | 设置 service 与滑杆/标签的双向表现绑定 | 仅控件缓存 | 已拆；两个菜单共享 |
 | `scripts/ui/HudController.cs` | 阶段、提示、动作进度、反馈、双手、日结显示 | 仅 UI 状态 | 保留 |
-| `scripts/ui/OpeningMenuController.cs` | 主菜单页面、输入模式、选择器、设置控件 | 临时 UI/设置值 | 待拆 P1：设置逻辑复用 |
-| `scripts/ui/PauseMenuController.cs` | 暂停页面、重开/返回信号、设置控件 | 暂停 UI 状态 | 待拆 P1：与主菜单共享设置服务 |
+| `scripts/ui/OpeningMenuController.cs` | 主菜单页面、输入模式、选择器与设置页导航 | 临时 UI 导航状态 | 已拆设置；保留菜单职责 |
+| `scripts/ui/PauseMenuController.cs` | 暂停页面、重开/返回信号与设置页导航 | 暂停 UI 状态 | 已拆设置；保留暂停职责 |
 | `scripts/ui/DeveloperConsole.cs` | 开发命令输入与近视调节 | 控制台开关/文本 | 保留 |
 
 ## 测试与工具

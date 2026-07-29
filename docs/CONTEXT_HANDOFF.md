@@ -21,11 +21,14 @@
 - 第四批职责迁移目标为 `GrayboxLevelBuilder`：`BarLayoutDefinition` 集中当前灰盒尺寸/坐标与稳定节点 ID，`GrayboxArchitectureBuilder` 只创建现实/眼镜建筑和碰撞，`CabinetBuilder` 只组装柜体与冰桶节点，`GameplaySceneComposer` 创建工作台/工具/站点并绑定玩家、HUD、菜单和会话；`GrayboxLevelBuilder` 收敛为 Godot 组合根。必须保持所有现有节点名/路径、坐标、尺寸、颜色、碰撞层、创建顺序、signal 绑定与重置语义不变。
 - 第五批职责迁移目标为 `PlayerController`：`PlayerMotor` 只处理移动、重力、视角与玩家姿态快照；`InteractionSensor` 只从既有 RayCast/ShapeCast 节点返回目标和命中点；`PlayerActionInput` 只把既有输入映射转换为统一动作管线请求并驱动连续动作；`HeldToolPresenter` 只消费工作台的手部显示事件并更新现有手持灰盒。`PlayerController` 保留 Godot 生命周期、公开 API/signal 与组合编排。必须保持场景节点路径、导出参数、输入映射、动作 phase/提交时机、提示和反馈、探测优先级/范围、玩家快照 schema、手持 Mesh/可见性以及跨天复位语义不变。
 - 第六批职责迁移目标为 `StationInteractable`：以 `StationDefinition` Resource 目录集中稳定 ID、Kind、显示名、handler ID、原料/数量、动态提示模板、眼镜世界提示可见性和顾客交付距离；以 `StationActionHandlerRegistry` 按 handler ID 注册顾客、原料源、洗手、水壶和弃物桶规则。`StationInteractable` 只保留通用会话/世界/柜体门控、定义/handler 解析和 `IInteractable` facade。必须保持 6 类站点、节点名/路径/Kind/EntityId、动作定义、全部中文提示/反馈、Ray/ShapeCast 行为、顾客 `3.15 m` 距离、冰 `1` 块、咖啡豆 `0.25` 份、接单/交付/洗手/量水/清废结果及抽屉联动不变。
+- 第七批职责迁移目标为共用设置：无 Godot 依赖的 `SettingsState` 只保存主音量百分比和鼠标灵敏度并统一范围归一化；场景级 `SettingsService` 是读取/应用 Master bus 与 `PlayerController.MouseSensitivity` 的唯一入口；`SettingsPanelBinding` 只同步两个菜单的滑杆与标签。主/暂停菜单保留页面、焦点、暂停和返回行为。必须保持 Master bus、音量 `0–100`、实际线性音量下限 `0.001`、灵敏度滑杆 `1.0–6.0`、实际灵敏度 `0.001–0.006`、`0%`/`0.0` 标签格式、默认运行时值、控件路径和暂停状态可调语义不变。
 - 后续动画、IK、骨骼等均属于可替换表现实现。Gameplay 只能通过事件、signal 或动作结果通知表现层，不得直接依赖、查询或控制动画播放器、IK 求解器、Skeleton/Bone 或其他表现实现；表现层不得反向决定玩法结果。
 - 本轮仍须保留用户已有的 `export_presets.cfg` 未提交改动，不纳入重构提交。
 
 ## P1｜2026-07-29 活动状态
 
+- 已完成审查后第七批重构：纯 `SettingsState` 统一范围和值，场景级 `SettingsService` 是 Master bus/玩家灵敏度唯一运行时 owner，`SettingsPanelBinding` 负责两个菜单滑杆/标签同步；主/暂停菜单已删除重复设置读写并保留原导航、焦点和暂停职责。
+- 已验证（2026-07-29 第七批回归）：资产 16 项 0 错误、纯领域测试 28/28、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS；新增设置上下界、主→暂停/暂停→主双向同步、Master bus 与玩家实际值断言。Forward+ 主菜单/暂停设置页均已人工检查，SHA-256 分别为 `1CD5A778FB75C78D667A4AEFA111DD757BD0E82563875D626B9AD0D23FD31D8F`、`8A819249AD8E7C58B056F723BF4C984C1312FE4E8FE995870A00D01D91785B7C`。
 - 已完成审查后第六批重构：6 项 `StationDefinition` Resource 原型目录接管站点配置，目录校验 ID/Kind/handler/交互参数及布局绑定；`StationActionHandlerRegistry` 的顾客、原料源、洗手、水壶和弃物桶 handler 接管提示/许可/动作，`StationInteractable` 已删除全部 Kind `switch` 并保留兼容 facade。
 - 已验证（2026-07-29 第六批回归）：资产 16 项 0 错误、纯领域测试 27/27、Debug/Release 0 警告/0 错误，Godot Resource 导入、冒烟、输入、完整流程全部 PASS；新增 6 定义/6 唯一 Kind/handler 注册/运行时 definition 绑定及原交互值断言。Forward+ `InteractionFeedbackVisualCapture` 已人工检查，接单反馈、阶段切换和交付不可用提示正常，SHA-256 为 `5C95D1B6B5A1489226F07F5D1319C6F6AA503B99C05DAFAC412198A2E7403173`。
 - 已完成审查后第五批重构：`PlayerMotor` 接管移动/视角/姿态快照，`InteractionSensor` 接管 RayCast 优先/ShapeCast 兜底探测，`PlayerActionInput` 接管输入到统一动作管线/连续动作/提示，`HeldToolPresenter` 单向消费 hand signal 并更新灰盒手持表现；`PlayerController` 已从 382 行收敛为 98 行稳定 Godot facade。
@@ -45,7 +48,7 @@
 - 已修复丢弃旧饮品后历史原料/完成度污染重做评价、`TotalWaste` 跨天不清零，以及原型标记与数量评分策略耦合的问题。
 - 已更新 `docs/TECHNICAL_DESIGN.md` 的旧柜体描述为当前 `2.31 m` 通道、8 抽屉、6 大门吊柜和 `1.69 m` 开抽屉通行带。
 - 已验证（2026-07-29）：资产 16 项 0 错误、纯领域测试 16/16、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS。
-- 下一代码拆分优先级：共用 `SettingsState/SettingsService`；随后进入审查列出的 P2 配方组合条件/效果、存档迁移器与表现映射工作。不得把前六批迁移误报为全部架构重构完成。
+- 审查列出的 P1 渐进拆分已全部完成。下一代码迁移优先级：P2 可组合配方条件/效果 → 显式存档迁移器/损坏回退 → 工具/站点表现映射集中化；仍须逐批验证，不得把 P1 完成误报为全部长期架构工作完成。
 
 ## P0｜不可丢失的决策与边界
 

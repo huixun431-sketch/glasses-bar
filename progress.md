@@ -4,6 +4,32 @@
 
 用途：新对话先读本文件，再读 `docs/CONTEXT_HANDOFF.md`。正式配方、平衡值、顾客内容和最终美术仍未批准；下述数值与灰盒均为开发占位。
 
+## 2026-07-29｜第七批职责迁移：共用设置状态与服务
+
+### 已完成的事项
+
+- 新增无 Godot 依赖的 `SettingsState`，统一保存并归一化主音量 `0–100%` 与鼠标灵敏度 `0.001–0.006`，同时提供既有 `1.0–6.0` 滑杆映射。
+- 在 `Main.tscn` 新增单一场景级 `SettingsService`，从现有 Master bus/`PlayerController` 初始化，并成为运行时应用音量和灵敏度的唯一入口。
+- 新增表现侧 `SettingsPanelBinding`，统一同步滑杆、`0%`/`0.0` 标签与 service change event；主菜单和暂停菜单不再直接读写 AudioServer 或玩家灵敏度。
+- `OpeningMenuController` 从 254 行降为 237 行，`PauseMenuController` 从 114 行降为 99 行；两者只保留各自页面、焦点、暂停、重开和返回行为，原节点路径与 UI 结构未改。
+- 新增 1 项领域测试覆盖设置上下界归一化；输入集成新增主菜单 → 暂停菜单、暂停菜单 → 主菜单的双向实时同步，以及 Master bus 和玩家实际灵敏度断言。
+- 新增可复用 `SettingsVisualCapture` 与主/暂停两个捕获场景，便于后续设置 UI 回归。
+- 完整验证通过：资产 16 项 0 错误、领域测试 28/28、Debug/Release 0 警告/0 错误、Godot 导入、`SMOKE_TESTS_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS`。
+- 已人工检查两张 Forward+ 最终帧：主菜单设置页 `opening_settings00000044.png` SHA-256 `1CD5A778FB75C78D667A4AEFA111DD757BD0E82563875D626B9AD0D23FD31D8F`，暂停设置页 `pause_settings00000044.png` SHA-256 `8A819249AD8E7C58B056F723BF4C984C1312FE4E8FE995870A00D01D91785B7C`；默认 `100% / 2.2`、滑杆、按钮和暂停遮罩均正常。
+
+### 关键决策
+
+- `SettingsState` 是纯值对象，`SettingsService` 是当前运行时设置的唯一 owner；菜单与 binding 只展示/发起修改，不各自持有第二份设置值。
+- 当前只统一运行时状态，不自行新增磁盘设置持久化；退出重开后的保存仍与正式存档产品层一起规划。
+- 音量线性下限 `0.001`、灵敏度范围/格式、默认值和暂停时可调语义均为原行为迁移，不新增选项或平衡。
+- 动画、IK、骨骼等表现隔离约束继续有效；设置服务不扩大 Gameplay 对表现实现的依赖。
+
+### 未完成的待办
+
+1. P2：按架构审查继续处理可组合配方条件/效果，需先保持当前原型配方与评价完全等价。
+2. P2：为 schema version 增加显式迁移器和损坏存档回退；磁盘槽/继续游戏仍属于后续产品层。
+3. P2/M3：集中工具/站点眼镜材质与标签到 presenter，并等待正式 GLB；正式配方/平衡和真实键鼠手感验收仍是外部阻塞。
+
 ## 2026-07-29｜第六批职责迁移：站点定义与动作 handler
 
 ### 已完成的事项

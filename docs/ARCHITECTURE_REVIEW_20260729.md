@@ -35,7 +35,9 @@
 - `PlayerController` 已按审查结论拆成 `PlayerMotor`、`InteractionSensor`、`PlayerActionInput` 与单向消费 hand signal 的 `HeldToolPresenter`；原类只保留 Godot 生命周期、公开 API/signal 与组合编排。
 - 玩家节点路径、导出参数、输入、探测、动作 phase/提交时机、提示/反馈、姿态快照和手持灰盒保持原行为；完整回归仍为领域 27/27 及所有 Godot 测试 PASS，Forward+ 手持截图已人工检查。
 - `StationInteractable` 已按审查结论改为 6 项 `StationDefinition` Resource 目录与 5 类注册动作 handler；节点类删除全部 Kind `switch`，只保留通用门控和 adapter。
-- 站点目录/handler/运行时绑定不变量及完整旧流程均通过，Forward+ 顾客交互截图已人工检查；下一拆分目标是共用 `SettingsState/SettingsService`，前六批完成仍不等于全部架构重构完成。
+- 站点目录/handler/运行时绑定不变量及完整旧流程均通过，Forward+ 顾客交互截图已人工检查。
+- 共用设置已按审查结论拆为纯 `SettingsState`、场景级 `SettingsService` 与共享 `SettingsPanelBinding`；主/暂停菜单不再重复读写 AudioServer、玩家灵敏度或数值标签，双向同步与暂停状态修改已通过回归。
+- 审查列出的 P1 渐进拆分已完成，完整回归现为领域 28/28 及所有 Godot 测试 PASS，两张 Forward+ 设置页已人工检查；下一目标进入 P2 可组合配方条件/效果，不得把 P1 完成误报为全部长期架构工作完成。
 
 表现系统边界同步锁定：Gameplay 只允许通过事件、signal 或动作结果通知表现层，不得直接依赖或控制动画、IK、Skeleton/Bone 等表现实现；表现层不得反向决定玩法结果。
 
@@ -237,7 +239,7 @@ flowchart TD
 4. `StationInteractable`：
    - Resource 化站点定义；动作 handler 注册表替代 Kind `switch`（第六批已完成）。
 5. 设置：
-   - 抽出 `SettingsState/SettingsService`，消除主菜单和暂停菜单重复音量/灵敏度逻辑。
+   - 抽出 `SettingsState/SettingsService`，消除主菜单和暂停菜单重复音量/灵敏度逻辑（第七批已完成）。
 
 ### P2｜内容扩展前完成
 
@@ -252,7 +254,7 @@ flowchart TD
 
 - 资产验证器自测：好/坏 manifest 均 PASS。
 - 资产清单：16 项，0 错误。
-- 纯领域测试：27/27 PASS。
+- 纯领域测试：28/28 PASS。
 - Debug/Release 构建：0 警告、0 错误。
 - Godot 编辑器导入：PASS。
 - `SMOKE_TESTS_PASS`。

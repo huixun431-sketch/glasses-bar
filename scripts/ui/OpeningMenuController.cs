@@ -25,11 +25,7 @@ public partial class OpeningMenuController : CanvasLayer
     private Control _mainPanel = null!;
     private Control _settingsPanel = null!;
     private Control _creditsPanel = null!;
-    private HSlider _masterVolume = null!;
-    private HSlider _mouseSensitivity = null!;
-    private Label _volumeValue = null!;
-    private Label _sensitivityValue = null!;
-    private PlayerController _player = null!;
+    private SettingsPanelBinding _settingsBinding = null!;
     private Button? _hoveredButton;
     private Button? _pageReturnFocus;
     private bool _keyboardNavigation;
@@ -48,11 +44,12 @@ public partial class OpeningMenuController : CanvasLayer
         _settings = GetNode<Button>("Backdrop/MenuPanel/Margin/Stack/Settings");
         _credits = GetNode<Button>("Backdrop/MenuPanel/Margin/Stack/Credits");
         _quit = GetNode<Button>("Backdrop/MenuPanel/Margin/Stack/Quit");
-        _masterVolume = GetNode<HSlider>("Backdrop/SettingsPanel/Margin/Stack/VolumeRow/MasterVolume");
-        _mouseSensitivity = GetNode<HSlider>("Backdrop/SettingsPanel/Margin/Stack/SensitivityRow/MouseSensitivity");
-        _volumeValue = GetNode<Label>("Backdrop/SettingsPanel/Margin/Stack/VolumeValue");
-        _sensitivityValue = GetNode<Label>("Backdrop/SettingsPanel/Margin/Stack/SensitivityValue");
-        _player = GetNode<PlayerController>("../Player");
+        _settingsBinding = new SettingsPanelBinding(
+            GetNode<SettingsService>("../SettingsService"),
+            GetNode<HSlider>("Backdrop/SettingsPanel/Margin/Stack/VolumeRow/MasterVolume"),
+            GetNode<HSlider>("Backdrop/SettingsPanel/Margin/Stack/SensitivityRow/MouseSensitivity"),
+            GetNode<Label>("Backdrop/SettingsPanel/Margin/Stack/VolumeValue"),
+            GetNode<Label>("Backdrop/SettingsPanel/Margin/Stack/SensitivityValue"));
 
         _menuButtons.AddRange(new[] { _continue, _start, _settings, _credits, _quit });
         BindMenuButtons();
@@ -62,14 +59,12 @@ public partial class OpeningMenuController : CanvasLayer
         _quit.Pressed += () => EmitSignal(SignalName.QuitRequested);
         GetNode<Button>("Backdrop/SettingsPanel/Margin/Stack/Back").Pressed += ShowMainPanel;
         GetNode<Button>("Backdrop/CreditsPanel/Margin/Stack/Back").Pressed += ShowMainPanel;
-        _masterVolume.ValueChanged += ApplyVolume;
-        _mouseSensitivity.ValueChanged += ApplyMouseSensitivity;
-        _masterVolume.Value = Mathf.DbToLinear(AudioServer.GetBusVolumeDb(AudioServer.GetBusIndex("Master"))) * 100d;
-        _mouseSensitivity.Value = _player.MouseSensitivity * 1000d;
         _selector.Visible = false;
         GameSession.Instance.GameStartedChanged += OnGameStartedChanged;
         OnGameStartedChanged(GameSession.Instance.GameStarted);
     }
+
+    public override void _ExitTree() => _settingsBinding.Dispose();
 
     public override void _Input(InputEvent @event)
     {
@@ -239,16 +234,4 @@ public partial class OpeningMenuController : CanvasLayer
         return @event is InputEventJoypadMotion motion && Math.Abs(motion.AxisValue) > 0.45f;
     }
 
-    private void ApplyVolume(double value)
-    {
-        var linear = Mathf.Clamp((float)value / 100f, 0.001f, 1f);
-        AudioServer.SetBusVolumeDb(AudioServer.GetBusIndex("Master"), Mathf.LinearToDb(linear));
-        _volumeValue.Text = $"{value:0}%";
-    }
-
-    private void ApplyMouseSensitivity(double value)
-    {
-        _player.MouseSensitivity = Mathf.Clamp((float)value / 1000f, 0.001f, 0.006f);
-        _sensitivityValue.Text = $"{value:0.0}";
-    }
 }

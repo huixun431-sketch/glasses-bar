@@ -745,4 +745,20 @@ public sealed class DomainTests
             Throws.TypeOf<GameplayCatalogValidationException>());
     }
 
+    [Test]
+    public void SettingsState_NormalizesSharedMenuRanges()
+    {
+        var minimum = SettingsState.Create(-20d, -1d);
+        Assert.That(minimum.MasterVolumePercent, Is.EqualTo(0d));
+        Assert.That(minimum.MouseSensitivity, Is.EqualTo(0.001d));
+        Assert.That(minimum.MouseSensitivitySliderValue, Is.EqualTo(1d));
+
+        var maximum = minimum
+            .WithMasterVolumePercent(140d)
+            .WithMouseSensitivity(0.02d);
+        Assert.That(maximum.MasterVolumePercent, Is.EqualTo(100d));
+        Assert.That(maximum.MouseSensitivity, Is.EqualTo(0.006d));
+        Assert.That(maximum.MouseSensitivitySliderValue, Is.EqualTo(6d));
+    }
+
 }

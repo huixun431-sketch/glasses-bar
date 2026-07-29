@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3]
+[gd_scene load_steps=34 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/GrayboxLevelBuilder.cs" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/world/RealityWorld.tscn" id="2_reality"]
@@ -14,6 +14,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/main_menu/main_menu_background.png" id="12_menu_background"]
 [ext_resource type="Texture2D" path="res://assets/ui/main_menu/main_menu_title.png" id="13_menu_title"]
 [ext_resource type="Texture2D" path="res://assets/ui/main_menu/main_menu_selector.png" id="14_menu_selector"]
+[ext_resource type="Script" path="res://scripts/core/SettingsService.cs" id="15_settings"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -253,6 +254,9 @@ font_size = 20
 outline_size = 4
 pixel_size = 0.001
 text = "右手"
+
+[node name="SettingsService" type="Node" parent="."]
+script = ExtResource("15_settings")
 
 [node name="RealityEffects" type="CanvasLayer" parent="."]
 layer = 5
