@@ -57,7 +57,11 @@
 | `scripts/gameplay/ToolInteractable.cs` | 工具交互源、灰盒碰撞/材质/标签、实例表现应用 | 无工具玩法状态 | 待拆 P2：正式资产时分 source/presenter |
 | `scripts/gameplay/CounterSurfaceInteractable.cs` | 连续台面交互与摆放点计算 | 无 | 保留 |
 | `scripts/gameplay/WorkboardInteractable.cs` | 砧板交互决策、连续手势过程、提交到工作台 | 活动手势过程 | 待拆 P1：交互 adapter 与 manual process 分离 |
-| `scripts/gameplay/StationInteractable.cs` | 顾客/冰桶/水槽/水壶/豆源/弃物桶的提示、许可与执行分派 | 无独立长期状态 | 待拆 P1：Resource + handler 注册表 |
+| `scripts/data/StationDefinition.cs` | 站点稳定 ID、Kind、显示名、handler、原料/数量、提示模板与交互参数 Resource | 不可变定义；无运行时进度 | 已拆 |
+| `scripts/data/StationCatalogDefinition.cs` | 站点定义集合与 ID/Kind/配置一致性校验 | 无 | 已拆 |
+| `scripts/data/StationDefinitionCatalog.cs` | 加载原型站点目录并按布局 ID/Kind 解析 | 只缓存 Resource | 已拆 |
+| `scripts/gameplay/StationActionHandlers.cs` | 注册并执行顾客、原料源、洗手、水壶、弃物桶的提示/许可/动作规则 | 无独立长期状态 | 已拆；不依赖表现 |
+| `scripts/gameplay/StationInteractable.cs` | 通用会话/世界/柜体门控、definition/handler 解析与 `IInteractable` facade | 无 | 已拆；无 Kind switch |
 | `scripts/gameplay/CabinetInteractable.cs` | 门/抽屉开合、动画、碰撞、互锁、内容说明 | 柜体开合实例状态 | 待拆 P2：状态/动画 presenter 可分离 |
 
 ## 玩家、世界与 UI

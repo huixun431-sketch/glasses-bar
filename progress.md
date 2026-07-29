@@ -4,6 +4,32 @@
 
 用途：新对话先读本文件，再读 `docs/CONTEXT_HANDOFF.md`。正式配方、平衡值、顾客内容和最终美术仍未批准；下述数值与灰盒均为开发占位。
 
+## 2026-07-29｜第六批职责迁移：站点定义与动作 handler
+
+### 已完成的事项
+
+- 新增 `StationDefinition`/`StationCatalogDefinition` Resource 与 `prototype_station_catalog.tres`，集中 6 类站点的稳定 ID、Kind、显示名、handler ID、原料/数量、动态提示模板、眼镜世界提示可见性和交付距离。
+- 新增 `StationDefinitionCatalog`，加载并校验站点 ID/Kind 唯一性、必填显示名/handler、原料源配置与顾客正交互距离；布局 ID/Kind 与定义不一致时构建立即失败。
+- 新增 `StationActionHandlerRegistry`，注册顾客、原料源、每日洗手、水壶和弃物桶 5 类 handler；提示、动作定义、许可、不可用原因和执行结果均从 `StationInteractable` 的 Kind `switch` 迁出。
+- `StationInteractable` 从 140 行收敛为 94 行通用会话/世界/柜体门控、definition/handler 解析和 `IInteractable` facade；公开 `Kind`/`EntityId`、动态建站方式和直接测试调用保持兼容。
+- `GameplaySceneComposer` 在创建站点时绑定已校验 Resource；冰桶随原抽屉创建/开合，不改变节点路径、碰撞或表现构建。
+- 流程集成新增 6 个定义、6 个唯一 Kind、全部 handler 已注册、顾客 `3.15 m`、冰 `1` 块、咖啡豆 `0.25` 份以及 6 个运行时节点/定义一致性断言；既有流程继续实际覆盖接单、交付、洗手、量水、取冰/豆和清废。
+- 完整验证通过：资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误、Godot Resource 导入、`SMOKE_TESTS_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS`。
+- 已运行 Forward+ `InteractionFeedbackVisualCapture` 并人工检查，最终帧为 `artifacts/visual_review_20260729_station_refactor/feedback00000044.png`，SHA-256 `5C95D1B6B5A1489226F07F5D1319C6F6AA503B99C05DAFAC412198A2E7403173`；接单反馈、阶段切换和交付不可用提示显示正常。
+
+### 关键决策
+
+- Resource 只描述站点配置，不保存运行时玩法状态；handler 只通过 `GameSession`/`DrinkWorkstation` 的既有 API 评估并执行动作，站点 Node 不再按 Kind 决定规则。
+- 顾客交付距离、原料份量和全部中文提示是原值迁移，不属于新平衡或正式内容；咖啡豆 `0.25` 仍显式标记开发占位。
+- `StationKind` 暂时保留为布局/表现和旧调用兼容字段，但新增玩法站点必须先添加定义与已注册 handler，不能重新扩大节点 `switch`。
+- 后续动画、IK、骨骼等表现仍只能单向消费事件、signal 或动作结果；站点 handler 不得引用或控制表现实现。
+
+### 未完成的待办
+
+1. P1：下一批抽出主菜单与暂停菜单共用的 `SettingsState/SettingsService`，保持音量、鼠标灵敏度和 UI 交互不变。
+2. P2：继续按审查处理可组合配方条件/效果、显式存档迁移器，以及正式资产到 presenter 的集中映射。
+3. P2/M3 与外部阻塞不变：正式存档产品层、正式配方/平衡、首批 GLB 和真实键鼠手感验收仍待后续。
+
 ## 2026-07-29｜第五批职责迁移：玩家控制器
 
 ### 已完成的事项

@@ -143,11 +143,13 @@ public sealed class GameplaySceneComposer
         Vector3 position,
         Vector3 size)
     {
+        var definition = StationDefinitionCatalog.GetPrototype(id, kind);
         var gameplay = new StationInteractable
         {
             Name = id,
             EntityId = id,
             Kind = kind,
+            Definition = definition,
             Position = position
         };
         gameplay.AddToGroup("interactable");

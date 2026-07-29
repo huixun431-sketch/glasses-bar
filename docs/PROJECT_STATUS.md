@@ -4,6 +4,10 @@
 
 ## 已完成
 
+- 完成 `StationInteractable` 第六批职责迁移：新增 `StationDefinition`/`StationCatalogDefinition` Resource 和 6 项原型站点目录，集中稳定 ID、Kind、显示名、handler、原料/数量、提示模板、眼镜提示可见性与交付距离；目录会校验唯一性、必填字段和布局/定义一致性。
+- 新增 `StationActionHandlerRegistry`，以 5 类注册 handler 接管顾客、原料源、洗手、水壶和弃物桶的提示、动作定义、许可、不可用原因与执行；`StationInteractable` 不再包含 Kind `switch`，只保留通用门控与 `IInteractable` facade。
+- 原节点路径/碰撞/Kind/EntityId、全部中文提示/反馈、顾客 `3.15 m`、冰 `1` 块、咖啡豆 `0.25` 份、接单/交付/洗手/量水/清废和抽屉联动保持不变；handler 不依赖任何表现实现。
+- 2026-07-29 第六批回归：资产 16 项 0 错误、纯领域测试 27/27、Debug/Release 0 警告/0 错误，Godot Resource 导入、冒烟、输入与完整流程全部 PASS；新增目录/handler/运行时绑定不变量回归。Forward+ 顾客交互反馈截图已人工检查。
 - 完成 `PlayerController` 第五批职责迁移：新增 `PlayerMotor`、`InteractionSensor`、`PlayerActionInput` 与 `HeldToolPresenter`，分别接管移动/视角/姿态快照、RayCast/ShapeCast 目标探测、输入到动作管线/连续动作/提示，以及手持灰盒表现；原类从 382 行收敛为 98 行 Godot 生命周期、公开 API、signal 和组合 facade。
 - 原场景挂载、节点路径、导出参数、输入映射、探测优先级/范围、动作 trace/提交时机、提示/反馈、玩家快照 schema、手持 Mesh/可见性和跨天复位语义保持不变；Gameplay 不依赖 `HeldToolPresenter` 或动画、IK、骨骼实现。
 - 2026-07-29 第五批回归：资产 16 项 0 错误、纯领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS；新增姿态快照和手持 signal/Mesh 回归。Forward+ `ToolHandsVisualCapture` 已人工检查，左右手灰盒、HUD 手位和反馈正常。
@@ -86,7 +90,7 @@
 
 ## 计划中
 
-- 下一批按 P1 顺序拆分 `StationInteractable`，随后提取主/暂停菜单共用设置服务，避免新增内容继续扩大交互分派与重复 UI 设置逻辑。
+- 下一批按 P1 顺序提取主/暂停菜单共用 `SettingsState/SettingsService`，消除重复音量与鼠标灵敏度逻辑；随后进入审查列出的 P2 边界工作。
 - 长期存档进入产品实现时，在现有 schema 基础上补充磁盘槽、原子写入、备份、显式迁移器、损坏回退与“继续游戏”，不把 Node 或表现状态写入存档。
 - 由用户在新版 Windows 包中至少完整游玩两天，主动覆盖提前制作/误猜、正确流程、载料落台提示、左手优先、拿错工具、放错材料、比例偏差、手动清废、暂停重开、柜体和跨天近视，按反馈调整双手切换、摆放半径、砧板操作、UI 节奏、封闭空间和模糊强度。
 - 使用固定的 Blender 4.5.5 LTS 开始首批物品建模，并按资产规范交付 GLB。

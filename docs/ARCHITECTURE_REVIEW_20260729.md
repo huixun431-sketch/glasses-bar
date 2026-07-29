@@ -34,7 +34,8 @@
 - Forward+ 布局最终帧与重构前已验收基线 SHA-256 完全一致，证明节点、几何、材质和画面未发生漂移。
 - `PlayerController` 已按审查结论拆成 `PlayerMotor`、`InteractionSensor`、`PlayerActionInput` 与单向消费 hand signal 的 `HeldToolPresenter`；原类只保留 Godot 生命周期、公开 API/signal 与组合编排。
 - 玩家节点路径、导出参数、输入、探测、动作 phase/提交时机、提示/反馈、姿态快照和手持灰盒保持原行为；完整回归仍为领域 27/27 及所有 Godot 测试 PASS，Forward+ 手持截图已人工检查。
-- 下一拆分目标是 `StationInteractable`；前五批完成仍不等于全部架构重构完成。
+- `StationInteractable` 已按审查结论改为 6 项 `StationDefinition` Resource 目录与 5 类注册动作 handler；节点类删除全部 Kind `switch`，只保留通用门控和 adapter。
+- 站点目录/handler/运行时绑定不变量及完整旧流程均通过，Forward+ 顾客交互截图已人工检查；下一拆分目标是共用 `SettingsState/SettingsService`，前六批完成仍不等于全部架构重构完成。
 
 表现系统边界同步锁定：Gameplay 只允许通过事件、signal 或动作结果通知表现层，不得直接依赖或控制动画、IK、Skeleton/Bone 等表现实现；表现层不得反向决定玩法结果。
 
@@ -143,8 +144,8 @@ flowchart TD
 
 - 优点：目标发现、可用性提示和反馈链路完整；现实/眼镜交互权限明确。
 - 本轮改进：玩家输入不再分别直接调用多套系统，统一产生动作定义和生命周期记录。
-- 剩余风险：各 `IInteractable` 仍同时实现提示、许可和执行适配；新增站点继续扩大 `StationInteractable` 的 `switch` 会降低可扩展性。
-- 下一拆分：引入 `StationDefinition` 与按动作 ID 注册的 handler，把提示文本与规则返回值从节点类移入动作处理器。
+- 已完成：`StationDefinition` Resource 保存站点配置，`StationActionHandlerRegistry` 按稳定 handler ID 路由提示、许可和执行；`StationInteractable` 不再包含 Kind `switch`。
+- 剩余风险：其他 `IInteractable` 仍可能同时实现提示、许可和执行适配；新增站点必须使用定义 + handler，不得回退到集中式节点分派。
 
 ### 物品系统
 
@@ -234,7 +235,7 @@ flowchart TD
 3. `PlayerController`：
    - `PlayerMotor`、`InteractionSensor`、`PlayerActionInput`、`HeldToolPresenter`（第五批已完成）。
 4. `StationInteractable`：
-   - Resource 化站点定义；动作 handler 注册表替代 Kind `switch`。
+   - Resource 化站点定义；动作 handler 注册表替代 Kind `switch`（第六批已完成）。
 5. 设置：
    - 抽出 `SettingsState/SettingsService`，消除主菜单和暂停菜单重复音量/灵敏度逻辑。
 

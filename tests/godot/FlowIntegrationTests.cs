@@ -175,6 +175,9 @@ public partial class FlowIntegrationTests : Node
     {
         var layout = BarLayoutDefinition.Prototype;
         layout.Validate();
+        var stationDefinitions = StationDefinitionCatalog
+            .LoadPrototypeCatalog()
+            .BuildValidatedIndex();
         Require(layout.Stations.Count == 5 &&
                 layout.Tools.Count == 9 &&
                 layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.Drawer) == 8 &&
@@ -182,6 +185,26 @@ public partial class FlowIntegrationTests : Node
                 layout.Cabinets.Single(cabinet => cabinet.ContainsIceBucket).Id == "front_drawer_2_upper" &&
                 layout.Workboard.Slots.Count == 3,
             "immutable bar layout definition retains every stable gameplay node and cabinet slot");
+        Require(stationDefinitions.Count == 6 &&
+                stationDefinitions.Values.Select(definition => definition.Kind).Distinct().Count() == 6 &&
+                stationDefinitions.Values.All(definition =>
+                    StationActionHandlerRegistry.IsRegistered(definition.HandlerId)) &&
+                Math.Abs(stationDefinitions["customer"].InteractionDistance - 3.15f) < 0.001f &&
+                stationDefinitions["ice_bucket"].IngredientId.ToString() == "ice" &&
+                Math.Abs(stationDefinitions["ice_bucket"].IngredientAmount - 1d) < 0.000001d &&
+                stationDefinitions["coffee_beans"].IngredientId.ToString() == "coffee_beans" &&
+                Math.Abs(stationDefinitions["coffee_beans"].IngredientAmount - 0.25d) < 0.000001d,
+            "station resource catalog retains six unique kinds, registered handlers and existing interaction values");
+        var runtimeStations = main.GetTree()
+            .GetNodesInGroup("interactable")
+            .OfType<StationInteractable>()
+            .ToArray();
+        Require(runtimeStations.Length == 6 &&
+                runtimeStations.All(station =>
+                    station.Definition is not null &&
+                    station.Definition.Id.ToString() == station.EntityId &&
+                    station.Definition.Kind == station.Kind),
+            "every runtime station adapter is bound to its matching validated resource definition");
         Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.42f) < 0.001f &&
                 Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 2.31f) < 0.001f &&
                 GrayboxLevelBuilder.OperationAisleClearWidth >= 0.7f * 2f + 0.3f,

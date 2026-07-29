@@ -97,7 +97,8 @@ Gameplay 与表现之间的依赖只能单向流动：Gameplay 通过事件、Go
 - `ToolProcessModel` 是无 Godot 依赖的分类、冲突、材料集合、偏离度与结果规则层。
 - `ToolInstanceState` 管理单件工具的权威运行时状态；`ToolInventoryService` 已接管工具集合、双手、连续摆放、砧板槽和内容转移；`ProcessExecutionService` 已接管工序选择与提交；`DrinkAssemblyState` 已接管当前杯、饮品统计、评价和快照映射。`DrinkWorkstation` 保留 Godot signal facade、表现同步、卫生/水壶、反馈与跨服务编排。
 - `GrayboxLevelBuilder` 已收敛为场景组合根；布局、建筑/碰撞、柜体节点和玩法 adapter 绑定分别由四个无玩法状态的协作者负责。
-- `PlayerController` 已收敛为稳定 Godot facade：`PlayerMotor` 持有玩家姿态读写，`InteractionSensor` 只探测目标，`PlayerActionInput` 把输入路由到统一动作管线，`HeldToolPresenter` 单向消费 hand signal。下一职责迁移目标为 `StationInteractable`。
+- `PlayerController` 已收敛为稳定 Godot facade：`PlayerMotor` 持有玩家姿态读写，`InteractionSensor` 只探测目标，`PlayerActionInput` 把输入路由到统一动作管线，`HeldToolPresenter` 单向消费 hand signal。
+- 六类站点由 `prototype_station_catalog.tres` 的 `StationDefinition` 描述，并经目录校验后绑定到运行时节点；`StationActionHandlerRegistry` 按 handler ID 路由提示、许可和执行，`StationInteractable` 只做通用门控，不再按 Kind 分派规则。下一职责迁移目标为共用 `SettingsState/SettingsService`。
 - `GameSession` 管理菜单、天数、世界模式和日流程；接单直接进入 `Preparation`，`RecipeObservation` 只保留为兼容路径，不再是制作必经状态。
 - 自动化必须覆盖双手容量、实体移动、防重叠、复数砧板工具、冲突、单一载料、错误工具/材料、比例成功/失败、手动清废、每日洗手、双头量酒器、固定水壶、重复工序恢复、动作开始/提交/取消、存档往返、柜体通行、无戴镜制作、交付与跨天重置。
 

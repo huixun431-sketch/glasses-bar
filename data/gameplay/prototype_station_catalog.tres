@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="StationCatalogDefinition" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/StationCatalogDefinition.cs" id="1_catalog"]
+[ext_resource type="Script" path="res://scripts/data/StationDefinition.cs" id="2_station"]
+
+[sub_resource type="Resource" id="Station_customer"]
+script = ExtResource("2_station")
+Id = &"customer"
+DisplayName = "客人"
+HandlerId = &"customer"
+HideUnavailablePromptInGlassesWorld = true
+InteractionDistance = 3.15
+
+[sub_resource type="Resource" id="Station_ice_bucket"]
+script = ExtResource("2_station")
+Id = &"ice_bucket"
+Kind = 1
+DisplayName = "抽屉冰桶"
+HandlerId = &"ingredient_source"
+IngredientId = &"ice"
+IngredientAmount = 1.0
+PromptTemplate = "[E] 用{right_hand}从已打开的上层抽屉冰桶夹取一块冰"
+HideUnavailablePromptInGlassesWorld = true
+
+[sub_resource type="Resource" id="Station_hand_wash_sink"]
+script = ExtResource("2_station")
+Id = &"hand_wash_sink"
+Kind = 2
+DisplayName = "洗手水槽"
+HandlerId = &"hand_wash"
+
+[sub_resource type="Resource" id="Station_kettle"]
+script = ExtResource("2_station")
+Id = &"kettle"
+Kind = 3
+DisplayName = "水壶"
+HandlerId = &"kettle"
+
+[sub_resource type="Resource" id="Station_coffee_beans"]
+script = ExtResource("2_station")
+Id = &"coffee_beans"
+Kind = 4
+DisplayName = "咖啡豆"
+HandlerId = &"ingredient_source"
+IngredientId = &"coffee_beans"
+IngredientAmount = 0.25
+PromptTemplate = "[E] 用{right_hand}取 0.25 份开发占位咖啡豆"
+HideUnavailablePromptInGlassesWorld = true
+
+[sub_resource type="Resource" id="Station_waste_bin"]
+script = ExtResource("2_station")
+Id = &"waste_bin"
+Kind = 5
+DisplayName = "弃物桶"
+HandlerId = &"waste_bin"
+
+[resource]
+script = ExtResource("1_catalog")
+Stations = Array[ExtResource("2_station")]([SubResource("Station_customer"), SubResource("Station_ice_bucket"), SubResource("Station_hand_wash_sink"), SubResource("Station_kettle"), SubResource("Station_coffee_beans"), SubResource("Station_waste_bin")])

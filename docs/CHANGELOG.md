@@ -2,6 +2,9 @@
 
 ## 2026-07-29
 
+- 完成第六批架构迁移：新增 6 项 `StationDefinition` Resource 原型目录及校验器，并以 5 类 `StationActionHandlerRegistry` 注册 handler 接管站点提示、动作、许可、不可用原因与执行。
+- `StationInteractable` 删除全部 Kind `switch`，保留通用会话/世界/柜体门控和 `IInteractable` facade；原节点/Kind/EntityId、提示/反馈、距离、份量与玩法结果不变。
+- 流程集成新增站点目录、handler 注册和运行时 definition 绑定不变量；第六批完整验证为资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入和完整流程全部 PASS。Forward+ 顾客交互截图已人工检查。
 - 完成第五批架构迁移：将 `PlayerController` 拆为 `PlayerMotor`、`InteractionSensor`、`PlayerActionInput` 和 `HeldToolPresenter`；原类保留为 98 行 Godot 生命周期、公开 API、signal 与组合 facade。
 - 保持原场景节点/导出参数、输入映射、探测顺序、动作 phase/提交时机、提示/反馈、玩家快照、手持 Mesh 和跨天复位不变；Gameplay 不依赖手持 presenter 或未来动画、IK、骨骼实现。
 - 输入集成新增姿态快照/零速度恢复及手持 signal/Mesh 同步回归；第五批完整验证为资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入和完整流程全部 PASS。Forward+ 手持截图已人工检查。
