@@ -24,6 +24,18 @@ public partial class StationInteractable : StaticBody3D, IInteractable
         _ => string.Empty
     };
 
+    public GameplayActionDefinition GetActionDefinition(InteractionContext context) => Kind switch
+    {
+        StationKind.Customer when GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder =>
+            GameplayActionDefinitions.AcceptOrder,
+        StationKind.Customer => GameplayActionDefinitions.DeliverDrink,
+        StationKind.HandWashSink => GameplayActionDefinitions.WashHands,
+        StationKind.Kettle => GameplayActionDefinitions.FillMeasure,
+        StationKind.WasteBin => GameplayActionDefinitions.DiscardContents,
+        StationKind.IceBucket or StationKind.CoffeeBeans => GameplayActionDefinitions.LoadIngredient,
+        _ => GameplayActionDefinitions.LoadIngredient
+    };
+
     public string GetUnavailablePrompt(InteractionContext context)
     {
         if (!GameSession.Instance.GameStarted)

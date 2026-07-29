@@ -17,7 +17,9 @@ public partial class RecipeDefinition : Resource
     {
         var targets = new RecipeTargets
         {
-            IsPrototype = IsPrototype || Tolerance?.EnableQuantityScoring != true,
+            Id = Id.ToString(),
+            IsPrototype = IsPrototype,
+            EnableQuantityScoring = Tolerance?.EnableQuantityScoring == true,
             AmountToleranceRatio = Tolerance?.AmountToleranceRatio ?? 0.1
         };
 

@@ -60,6 +60,9 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
             ? $"[E] 将{Spec.DisplayName}拿到左手"
             : $"[E] 将{Spec.DisplayName}拿到右手";
 
+    public GameplayActionDefinition GetActionDefinition(InteractionContext context) =>
+        GameplayActionDefinitions.PickUpTool;
+
     public string GetUnavailablePrompt(InteractionContext context)
     {
         if (!GameSession.Instance.GameStarted)

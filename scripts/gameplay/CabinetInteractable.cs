@@ -1,4 +1,5 @@
 using Godot;
+using GlassesBar.Domain;
 
 namespace GlassesBar;
 
@@ -98,6 +99,9 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
 
     public string GetPrompt(InteractionContext context) =>
         $"[E] {(IsOpen ? "关闭" : "打开")}{(_kind == CabinetPartKind.Drawer ? "抽屉" : "柜门")}（{_contentsDescription}）";
+
+    public GameplayActionDefinition GetActionDefinition(InteractionContext context) =>
+        GameplayActionDefinitions.ToggleStorage;
 
     public string GetUnavailablePrompt(InteractionContext context) =>
         GameSession.Instance.WorldMode == WorldMode.Glasses ? "[G] 摘下眼镜后操作柜体" : string.Empty;

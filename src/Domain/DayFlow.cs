@@ -28,6 +28,13 @@ public sealed class DayFlow
 
     public void Reset() => Current = DayPhase.WaitingForOrder;
 
+    public void Restore(DayPhase phase)
+    {
+        if (!Enum.IsDefined(phase))
+            throw new ArgumentOutOfRangeException(nameof(phase));
+        Current = phase;
+    }
+
     private static bool IsAllowed(DayPhase current, DayPhase next) => (current, next) switch
     {
         (DayPhase.WaitingForOrder, DayPhase.OrderReceived) => true,

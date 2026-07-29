@@ -17,7 +17,9 @@ public sealed class DrinkSnapshot
 
 public sealed class RecipeTargets
 {
+    public string Id { get; init; } = string.Empty;
     public bool IsPrototype { get; init; } = true;
+    public bool EnableQuantityScoring { get; init; }
     public HashSet<string> RequiredSteps { get; } = new(StringComparer.Ordinal);
     public HashSet<string> RequiredIngredients { get; } = new(StringComparer.Ordinal);
     public Dictionary<string, double> TargetAmounts { get; } = new(StringComparer.Ordinal);
@@ -50,12 +52,12 @@ public static class RecipeEvaluator
 
         var stepRatio = Ratio(targets.RequiredSteps.Count - missingSteps.Length, targets.RequiredSteps.Count);
         var ingredientRatio = Ratio(targets.RequiredIngredients.Count - missingIngredients.Length, targets.RequiredIngredients.Count);
-        var quantityRatio = targets.IsPrototype ? 0d : EvaluateAmounts(targets, drink);
+        var quantityRatio = targets.EnableQuantityScoring ? EvaluateAmounts(targets, drink) : 0d;
 
         return new DrinkEvaluation
         {
             Passed = missingSteps.Length == 0 && missingIngredients.Length == 0 &&
-                     (targets.IsPrototype || quantityRatio >= 1d),
+                     (!targets.EnableQuantityScoring || quantityRatio >= 1d),
             StepCompletionRatio = stepRatio,
             IngredientCompletionRatio = ingredientRatio,
             QuantityAccuracyRatio = quantityRatio,

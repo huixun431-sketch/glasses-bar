@@ -37,4 +37,11 @@ public partial class GameplayCatalogDefinition : Resource
         }
         return result;
     }
+
+    public GameplayCatalogSpecs BuildValidatedSpecs()
+    {
+        var tools = BuildToolSpecs();
+        var operations = BuildOperationSpecs();
+        return GameplayCatalogValidator.Validate(tools, operations);
+    }
 }

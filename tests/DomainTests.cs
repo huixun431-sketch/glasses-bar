@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using GlassesBar.Domain;
 using NUnit.Framework;
 
@@ -50,7 +52,12 @@ public sealed class DomainTests
     [Test]
     public void FormalRecipe_UsesToleranceGate()
     {
-        var targets = new RecipeTargets { IsPrototype = false, AmountToleranceRatio = 0.1d };
+        var targets = new RecipeTargets
+        {
+            IsPrototype = false,
+            EnableQuantityScoring = true,
+            AmountToleranceRatio = 0.1d
+        };
         targets.RequiredSteps.Add("pour");
         targets.RequiredIngredients.Add("water");
         targets.TargetAmounts["water"] = 100d;
@@ -172,5 +179,113 @@ public sealed class DomainTests
         Assert.That(MyopiaProgression.DegreesForDay(27), Is.EqualTo(300f));
         Assert.That(MyopiaProgression.DegreesForDay(30), Is.EqualTo(350f));
         Assert.That(MyopiaProgression.DegreesForDay(999), Is.LessThanOrEqualTo(MyopiaProgression.MaximumDegrees));
+    }
+
+    [Test]
+    public void SaveSnapshot_RoundTripsVersionedAuthoritativeState()
+    {
+        var snapshot = new GameSaveSnapshot
+        {
+            CurrentDay = 7,
+            DayPhase = DayPhase.Preparation,
+            WorldModeId = "glasses",
+            GameStarted = true,
+            RecipeObserved = true,
+            Workstation = new WorkstationSnapshot
+            {
+                LeftHandToolId = "glass",
+                BoardToolIds = new List<string> { "filter" },
+                HandsWashedToday = true,
+                KettleWaterAmountMl = 1230d,
+                WastedAmount = 2d,
+                Glass = new LiquidSnapshot { Capacity = 300d },
+                Tools = new List<ToolInstanceSnapshot>
+                {
+                    new()
+                    {
+                        ToolId = "glass",
+                        Location = ToolLocation.LeftHand,
+                        Position = new SpatialPosition(1d, 2d, 3d),
+                        Contents = new Dictionary<string, double> { ["water"] = 30d }
+                    },
+                    new()
+                    {
+                        ToolId = "filter",
+                        Location = ToolLocation.Workboard,
+                        BoardSlot = 0,
+                        Position = new SpatialPosition(0d, 1d, 0d)
+                    }
+                }
+            }
+        };
+
+        var restored = SaveGameSerializer.Deserialize(SaveGameSerializer.Serialize(snapshot));
+        Assert.That(restored.SchemaVersion, Is.EqualTo(GameSaveSnapshot.CurrentSchemaVersion));
+        Assert.That(restored.CurrentDay, Is.EqualTo(7));
+        Assert.That(restored.WorldModeId, Is.EqualTo("glasses"));
+        Assert.That(restored.Workstation.Tools[0].Contents["water"], Is.EqualTo(30d));
+    }
+
+    [Test]
+    public void SaveSnapshot_RejectsUnknownFutureSchema()
+    {
+        var snapshot = new GameSaveSnapshot { SchemaVersion = GameSaveSnapshot.CurrentSchemaVersion + 1 };
+        Assert.That(() => SaveGameSerializer.Serialize(snapshot), Throws.TypeOf<InvalidDataException>());
+    }
+
+    [Test]
+    public void GameplayActionDefinitions_HaveStableUniqueIdsAndExplicitModes()
+    {
+        var definitions = typeof(GameplayActionDefinitions).GetFields()
+            .Select(field => (GameplayActionDefinition)field.GetValue(null)!)
+            .ToArray();
+
+        Assert.That(definitions, Is.Not.Empty);
+        Assert.That(definitions.Select(definition => definition.Id).Distinct().Count(), Is.EqualTo(definitions.Length));
+        Assert.That(definitions.Single(definition => definition.Id == "process.run_board").Mode,
+            Is.EqualTo(GameplayActionMode.Continuous));
+        Assert.That(definitions.Where(definition => definition.Id != "process.run_board")
+            .All(definition => definition.Mode == GameplayActionMode.Instant), Is.True);
+    }
+
+    [Test]
+    public void GameplayCatalogValidation_RejectsBrokenCrossReferences()
+    {
+        var tools = new Dictionary<string, ToolSpec>
+        {
+            ["glass"] = new()
+            {
+                Id = "glass",
+                DisplayName = "Glass",
+                CanContainIngredients = true
+            }
+        };
+        var operation = new OperationSpec
+        {
+            Id = "pour",
+            DisplayName = "Pour",
+            RequiredHandheldToolId = "missing_jigger",
+            ResultTargetToolId = "glass"
+        };
+        operation.RequiredPlacementToolIds.Add("glass");
+        operation.InputTargets["water"] = 30d;
+        operation.Outputs["water"] = 30d;
+
+        Assert.That(
+            () => GameplayCatalogValidator.Validate(tools, new[] { operation }),
+            Throws.TypeOf<GameplayCatalogValidationException>()
+                .With.Message.Contains("missing_jigger"));
+    }
+
+    [Test]
+    public void GameplayCatalogValidation_RejectsRecipeOperationDrift()
+    {
+        var recipe = new RecipeTargets { Id = "broken_recipe" };
+        recipe.RequiredSteps.Add("missing_step");
+        recipe.RequiredIngredients.Add("missing_output");
+
+        Assert.That(
+            () => GameplayCatalogValidator.ValidateRecipeCompatibility(recipe, new List<OperationSpec>()),
+            Throws.TypeOf<GameplayCatalogValidationException>());
     }
 }

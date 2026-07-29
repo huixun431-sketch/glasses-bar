@@ -101,6 +101,12 @@ public partial class InputIntegrationTests : Node
             SendPlayerAction(player, "interact", false);
             Require(GameSession.Instance.Flow.Current == DayPhase.Preparation && !GameSession.Instance.RecipeObserved,
                 "E accepts the order and immediately allows crafting without glasses");
+            Require(player.Actions.LastTrace is
+                    {
+                        ActionId: "customer.accept_order",
+                        Phase: GameplayActionPhase.Committed
+                    },
+                "interaction discovery routes the accepted order through the unified action pipeline");
             Require(main.GetNode<PanelContainer>("HUD/FeedbackPanel").Visible, "interaction produces immediate UI feedback");
 
             pauseMenu._Input(new InputEventAction { Action = "pause_game", Pressed = true, Strength = 1f });
@@ -126,6 +132,12 @@ public partial class InputIntegrationTests : Node
             SendPlayerAction(player, "toggle_glasses", true);
             SendPlayerAction(player, "toggle_glasses", false);
             Require(GameSession.Instance.WorldMode == WorldMode.Glasses, "G action enters glasses world");
+            Require(player.Actions.LastTrace is
+                    {
+                        ActionId: "session.toggle_world",
+                        Phase: GameplayActionPhase.Committed
+                    },
+                "non-interaction world commands use the same action pipeline");
             Require(GameSession.Instance.CanMove, "movement remains enabled in glasses world");
 
             var beforeMove = player.GlobalPosition;

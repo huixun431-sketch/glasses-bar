@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using GlassesBar.Domain;
 
 namespace GlassesBar;
 
@@ -9,6 +10,7 @@ public partial class PlayerController : CharacterBody3D
     [Signal] public delegate void PromptStateChangedEventHandler(string prompt, bool available);
     [Signal] public delegate void OperationChangedEventHandler(string prompt, bool active);
     [Signal] public delegate void OperationProgressChangedEventHandler(float progress);
+    [Signal] public delegate void ActionPhaseChangedEventHandler(string actionId, int phase, string targetId);
 
     [Export] public float MoveSpeed { get; set; } = 4.2f;
     [Export] public float MouseSensitivity { get; set; } = 0.0022f;
@@ -22,13 +24,15 @@ public partial class PlayerController : CharacterBody3D
     private Label3D _leftHandLabel = null!;
     private Label3D _rightHandLabel = null!;
     private DrinkWorkstation? _workstation;
-    private IManualOperation? _operation;
+    private readonly GameplayActionPipeline _actions = new();
     private double _gestureIntensity;
     private string _lastPrompt = string.Empty;
     private bool _lastPromptAvailable;
     private Transform3D _dayStartTransform;
     private Vector3 _dayStartHeadRotation;
     private Vector3 _focusedInteractionPoint;
+
+    public GameplayActionPipeline Actions => _actions;
 
     public override void _Ready()
     {
@@ -41,6 +45,8 @@ public partial class PlayerController : CharacterBody3D
         _rightHandLabel = GetNode<Label3D>("Head/Camera3D/RightHandAnchor/Label");
         _dayStartTransform = Transform;
         _dayStartHeadRotation = _head.Rotation;
+        _actions.Transitioned += trace =>
+            EmitSignal(SignalName.ActionPhaseChanged, trace.ActionId, (int)trace.Phase, trace.TargetId);
         Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
@@ -60,7 +66,7 @@ public partial class PlayerController : CharacterBody3D
 
         if (@event is InputEventMouseMotion motion && Input.MouseMode == Input.MouseModeEnum.Captured)
         {
-            if (_operation is not null)
+            if (_actions.HasActiveAction)
             {
                 _gestureIntensity = Math.Clamp(Math.Abs(motion.Relative.Y) / 18d, 0d, 1d);
             }
@@ -77,32 +83,61 @@ public partial class PlayerController : CharacterBody3D
         if (@event.IsActionPressed("toggle_glasses"))
         {
             CancelOperation();
-            GameSession.Instance.ToggleWorld();
+            ExecuteInstant(
+                GameplayActionDefinitions.ToggleWorld,
+                "game_session",
+                () => GameSession.Instance.GameStarted && GameSession.Instance.Flow.Current != DayPhase.DaySummary,
+                () =>
+                {
+                    GameSession.Instance.ToggleWorld();
+                    return string.Empty;
+                },
+                "当前阶段无法切换眼镜世界。");
         }
 
         if (@event.IsActionPressed("next_day") && GameSession.Instance.Flow.Current == GlassesBar.Domain.DayPhase.DaySummary && _workstation is not null)
         {
-            _workstation.ResetForNewDay();
-            ResetForNewDay();
-            GameSession.Instance.AdvanceToNextDay();
+            ExecuteInstant(
+                GameplayActionDefinitions.AdvanceDay,
+                "game_session",
+                () => GameSession.Instance.Flow.Current == DayPhase.DaySummary,
+                () =>
+                {
+                    _workstation.ResetForNewDay();
+                    ResetForNewDay();
+                    GameSession.Instance.AdvanceToNextDay();
+                    return string.Empty;
+                },
+                "只有日结阶段可以进入下一天。");
             return;
         }
 
         if (@event.IsActionPressed("interact"))
             TryInteract();
 
-        if (@event.IsActionPressed("use_held_tool") && _workstation is not null && _operation is null)
+        if (@event.IsActionPressed("use_held_tool") && _workstation is not null && !_actions.HasActiveAction)
         {
-            var result = _workstation.TryUseSimpleOperation();
-            if (!string.Equals(result.Feedback, _workstation.LastOperationFeedback, StringComparison.Ordinal))
-                GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, result.Feedback);
+            ExecuteInstant(
+                GameplayActionDefinitions.UseHeldTool,
+                "held_tools",
+                () => _workstation.CanUseSimpleOperation,
+                () => _workstation.TryUseSimpleOperation().Feedback,
+                "当前双手组合无法进行简易工序；左手需持放置类工具，右手工具需携带原材料。");
         }
 
-        if (@event.IsActionPressed("toggle_jigger_side") && _workstation is not null && _operation is null &&
-            !_workstation.ToggleRightHandMeasureSide(out var measureFeedback))
-            GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, measureFeedback);
+        if (@event.IsActionPressed("toggle_jigger_side") && _workstation is not null && !_actions.HasActiveAction)
+            ExecuteInstant(
+                GameplayActionDefinitions.ToggleMeasureSide,
+                _workstation.RightHandToolId,
+                () => _workstation.RightHandHasDualMeasure,
+                () =>
+                {
+                    _workstation.ToggleRightHandMeasureSide(out var feedback);
+                    return feedback;
+                },
+                "右手需要拿着一种双头量酒器才能切换量杯端。");
 
-        if (@event.IsActionReleased("operate") && _operation is not null)
+        if (@event.IsActionReleased("operate") && _actions.HasActiveAction)
             CompleteOperation();
 
         if (@event.IsActionPressed("cancel_operation"))
@@ -117,7 +152,7 @@ public partial class PlayerController : CharacterBody3D
         else if (velocity.Y < 0f)
             velocity.Y = 0f;
 
-        var input = GameSession.Instance.CanMove && _operation is null && !DeveloperConsole.IsOpen
+        var input = GameSession.Instance.CanMove && !_actions.HasActiveAction && !DeveloperConsole.IsOpen
             ? Input.GetVector("move_left", "move_right", "move_forward", "move_back")
             : Vector2.Zero;
         var direction = (Transform.Basis * new Vector3(input.X, 0f, input.Y)).Normalized();
@@ -141,7 +176,11 @@ public partial class PlayerController : CharacterBody3D
 
     public void BeginOperation(IManualOperation operation)
     {
-        _operation = operation;
+        if (!_actions.AdoptContinuous(operation))
+        {
+            operation.Cancel();
+            return;
+        }
         _gestureIntensity = 0d;
         EmitSignal(SignalName.OperationChanged, operation.OperationPrompt, true);
     }
@@ -154,47 +193,66 @@ public partial class PlayerController : CharacterBody3D
         Velocity = Vector3.Zero;
     }
 
+    public PlayerSnapshot CaptureState() => new()
+    {
+        Position = ToSpatialPosition(Position),
+        BodyRotation = ToSpatialPosition(Rotation),
+        HeadRotation = ToSpatialPosition(_head.Rotation)
+    };
+
+    public void RestoreState(PlayerSnapshot snapshot)
+    {
+        CancelOperation();
+        Position = ToVector3(snapshot.Position);
+        Rotation = ToVector3(snapshot.BodyRotation);
+        _head.Rotation = ToVector3(snapshot.HeadRotation);
+        Velocity = Vector3.Zero;
+    }
+
     private void TryInteract()
     {
-        if (_operation is not null || _workstation is null || DeveloperConsole.IsOpen)
+        if (_actions.HasActiveAction || _workstation is null || DeveloperConsole.IsOpen)
             return;
         if (GetFocusedInteractable() is not { } interactable)
             return;
 
-        var context = CreateInteractionContext();
-        interactable.Interact(context);
+        var result = TryExecuteInteraction(interactable, CreateInteractionContext());
+        if (!result.Accepted && !string.IsNullOrWhiteSpace(result.Feedback))
+            GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, result.Feedback);
     }
+
+    public GameplayActionExecution TryExecuteInteraction(IInteractable interactable, InteractionContext context) =>
+        _actions.TryExecute(CreateInteractionAction(interactable, context));
 
     private void UpdateOperation(double delta)
     {
-        if (_operation is null)
+        var operation = _actions.ActiveOperation;
+        if (operation is null)
             return;
 
         var held = Input.IsActionPressed("operate") ? 0.3d : 0d;
         var assist = Input.IsActionPressed("operate_assist") ? 0.8d : 0d;
         var intensity = Math.Max(Math.Max(held, assist), _gestureIntensity);
-        _operation.UpdateOperation(intensity, delta);
-        EmitSignal(SignalName.OperationProgressChanged, _operation.FeedbackProgress);
+        _actions.UpdateActive(intensity, delta);
+        EmitSignal(SignalName.OperationProgressChanged, operation.FeedbackProgress);
         _gestureIntensity = Math.Max(0d, _gestureIntensity - delta * 3d);
     }
 
     private void CompleteOperation()
     {
-        if (_operation is null)
+        if (!_actions.HasActiveAction)
             return;
-        var result = _operation.Complete();
+        var result = _actions.CommitActive();
         GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, result.Feedback);
-        _operation = null;
         EmitSignal(SignalName.OperationChanged, string.Empty, false);
         EmitSignal(SignalName.OperationProgressChanged, 0f);
     }
 
     private void CancelOperation()
     {
-        if (_operation is null)
+        if (!_actions.HasActiveAction)
             return;
-        _operation.Cancel();
-        _operation = null;
+        _actions.CancelActive();
         EmitSignal(SignalName.OperationChanged, string.Empty, false);
         EmitSignal(SignalName.OperationProgressChanged, 0f);
     }
@@ -203,16 +261,17 @@ public partial class PlayerController : CharacterBody3D
     {
         var prompt = string.Empty;
         var available = false;
-        if (_operation is not null)
+        if (_actions.ActiveOperation is { } operation)
         {
-            prompt = _operation.OperationPrompt;
+            prompt = operation.OperationPrompt;
             available = true;
         }
         else if (_workstation is not null && GetFocusedInteractable() is { } interactable)
         {
             var context = CreateInteractionContext();
-            available = interactable.CanInteract(context);
-            prompt = available ? interactable.GetPrompt(context) : interactable.GetUnavailablePrompt(context);
+            var decision = _actions.Inspect(CreateInteractionAction(interactable, context));
+            available = decision.IsAvailable;
+            prompt = decision.Prompt;
         }
 
         if (prompt == _lastPrompt && available == _lastPromptAvailable)
@@ -250,6 +309,42 @@ public partial class PlayerController : CharacterBody3D
         InteractionPoint = _focusedInteractionPoint
     };
 
+    private static GameplayActionRequest CreateInteractionAction(IInteractable interactable, InteractionContext context)
+    {
+        var definition = interactable.GetActionDefinition(context);
+        var targetId = interactable is Node node ? node.Name.ToString() : interactable.GetType().Name;
+        return new GameplayActionRequest
+        {
+            Definition = definition,
+            TargetId = targetId,
+            Evaluate = () =>
+            {
+                var available = interactable.CanInteract(context);
+                return new GameplayActionDecision(available,
+                    available ? interactable.GetPrompt(context) : interactable.GetUnavailablePrompt(context));
+            },
+            Execute = () =>
+            {
+                interactable.Interact(context);
+                return new GameplayActionExecution { Feedback = interactable.GetPrompt(context) };
+            }
+        };
+    }
+
+    private void ExecuteInstant(GameplayActionDefinition definition, string targetId, Func<bool> canExecute,
+        Func<string> execute, string unavailableFeedback)
+    {
+        var result = _actions.TryExecute(new GameplayActionRequest
+        {
+            Definition = definition,
+            TargetId = targetId,
+            Evaluate = () => new GameplayActionDecision(canExecute(), unavailableFeedback),
+            Execute = () => new GameplayActionExecution { Feedback = execute() }
+        });
+        if (!result.Accepted && !string.IsNullOrWhiteSpace(result.Feedback))
+            GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, result.Feedback);
+    }
+
     private void UpdateHeldVisuals(string leftHand, string rightHand)
     {
         var hasLeft = !string.IsNullOrWhiteSpace(leftHand) && leftHand != "空";
@@ -280,4 +375,8 @@ public partial class PlayerController : CharacterBody3D
             _ => new BoxMesh { Size = new Vector3(0.14f, 0.08f, 0.3f) }
         };
     }
+
+    private static SpatialPosition ToSpatialPosition(Vector3 value) => new(value.X, value.Y, value.Z);
+
+    private static Vector3 ToVector3(SpatialPosition value) => new((float)value.X, (float)value.Y, (float)value.Z);
 }

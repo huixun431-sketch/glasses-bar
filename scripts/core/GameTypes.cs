@@ -3,20 +3,6 @@ using GlassesBar.Domain;
 
 namespace GlassesBar;
 
-public sealed class IngredientAmount
-{
-    public StringName IngredientId { get; init; } = new();
-    public double Amount { get; set; }
-    public IngredientUnit Unit { get; init; } = IngredientUnit.PrototypeUnit;
-}
-
-public sealed class ContainerState
-{
-    public double Capacity { get; set; }
-    public double CurrentAmount { get; set; }
-    public double SpilledAmount { get; set; }
-}
-
 public sealed class OperationResult
 {
     public bool Completed { get; init; }

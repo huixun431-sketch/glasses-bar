@@ -49,6 +49,17 @@ public partial class WorkboardInteractable : StaticBody3D, IInteractable, IManua
         return $"砧板当前能力：{_workstation.GetBoardCapabilityText()}";
     }
 
+    public GameplayActionDefinition GetActionDefinition(InteractionContext context)
+    {
+        if (!string.IsNullOrEmpty(_workstation.LeftHandToolId))
+            return GameplayActionDefinitions.PlaceToolOnBoard;
+        if (_workstation.CanDepositRightHandIngredientOnBoard(out _))
+            return GameplayActionDefinitions.DepositBoardIngredient;
+        if (_workstation.CanCollectBoardIngredient(out _))
+            return GameplayActionDefinitions.CollectBoardIngredient;
+        return GameplayActionDefinitions.RunBoardProcess;
+    }
+
     public string GetUnavailablePrompt(InteractionContext context)
     {
         if (!GameSession.Instance.GameStarted)

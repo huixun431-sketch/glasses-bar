@@ -1,4 +1,5 @@
 using Godot;
+using GlassesBar.Domain;
 
 namespace GlassesBar;
 
@@ -24,6 +25,9 @@ public partial class CounterSurfaceInteractable : StaticBody3D, IInteractable
         var tool = _workstation.CounterPlacementDisplayName;
         return $"[E] 将{tool}放在瞄准的吧台空位";
     }
+
+    public GameplayActionDefinition GetActionDefinition(InteractionContext context) =>
+        GameplayActionDefinitions.PlaceHeldTool;
 
     public string GetUnavailablePrompt(InteractionContext context)
     {

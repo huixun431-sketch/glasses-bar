@@ -1,8 +1,44 @@
 # 《眼镜酒馆》开发进展交接
 
-更新时间：2026-07-23
+更新时间：2026-07-29
 
 用途：新对话先读本文件，再读 `docs/CONTEXT_HANDOFF.md`。正式配方、平衡值、顾客内容和最终美术仍未批准；下述数值与灰盒均为开发占位。
+
+## 2026-07-29｜完整结构审查、纠错与架构边界
+
+### 已完成的事项
+
+- 完成交互、物品、配方、工序、存档和眼镜系统的代码/数据/场景/测试审查。总体架构、状态归属、风险和拆分顺序已写入 `docs/ARCHITECTURE_REVIEW_20260729.md`；逐脚本职责表写入 `docs/SCRIPT_RESPONSIBILITIES.md`。
+- 建立统一 `GameplayActionPipeline` 与稳定动作定义。正式玩家输入路径中的拿取/摆放/站点交互、切镜、简易工序、连续砧板工序、量酒器切换和跨天统一经过“只读检查 → 拒绝或开始 → 提交或取消”，并生成 action trace。
+- 将工具权威实例和表现分开：`src/Domain/ToolInstanceState.cs` 保存工具位置、手位、砧板槽、内容物、废品、完成度和量酒器端位；`scripts/gameplay/ToolPresentationBinding.cs` 只绑定 Godot 节点。连续摆放坐标不再从视觉节点反向读取。
+- 建立存档基础：`GameSaveSnapshot` schema version 1、JSON 序列化、严格一致性校验、`GameSession`/`DrinkWorkstation` 捕获与恢复。集成测试已覆盖会话、工具内容/位置、玩家姿态和冰桶抽屉开合往返。
+- 建立工具/工序目录和配方兼容性校验，错误稳定 ID、分类、工具引用、输入输出、结果容器或配方步骤漂移会在创建实例前失败。
+- 修复两个真实状态错误：
+  - `TotalWaste` 此前不会跨天清零，现已随当天重置。
+  - 评价此前读取历史累计原料/完成度，丢掉旧饮品重做后会污染新杯；现从当前高球杯实例重建。
+- 将 `RecipeTargets.IsPrototype` 与 `EnableQuantityScoring` 分离，避免原型批准状态和评分策略互相决定；删除未进入运行逻辑的旧交互枚举、重复容器 DTO 和工具字段。
+- 更新 `docs/TECHNICAL_DESIGN.md` 的旧布局描述：当前为约 `2.31 m` 关闭通道、8 个前抽屉、6 扇上方大门和约 `1.69 m` 长抽屉打开通行带。
+- 最终自动化通过：资产 16 项 0 错误、领域测试 16/16、Debug/Release 构建 0 警告/0 错误、Godot 导入、`SMOKE_TESTS_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS`。
+
+### 关键决策
+
+- 定义只描述类型和规则；实例只描述当前实体状态。Resource → 不可变 Spec → 运行时实例，任何实例创建前先做目录交叉校验。
+- 交互只发现目标和给出只读许可/提示；动作才修改状态。新增玩家行为不得绕过 `GameplayActionPipeline`。
+- 连续动作过程由 pipeline/`IManualOperation` 持有，取消不写玩法状态，完成提交时才结算材料、废品、完成度与统计。
+- `RealityWorld`/`GlassesWorld` 仍只负责表现；`GameSession` 是世界模式唯一 owner，工具、订单和饮品不在两个世界复制。
+- 存档只保存权威状态及影响玩法可达性的实例状态，不保存 Node、材质、Tween、HUD、提示或半完成动作。
+- 当前完成的是 M0 存档状态边界与往返基础，不是正式磁盘存档产品。主菜单“继续游戏”保持禁用，不自行新增存档槽、云同步或正式迁移策略。
+- `DrinkWorkstation.Persistence.cs` 只是代码文件拆分；`DrinkWorkstation` 仍拥有过多编排职责，不得误报为状态所有权拆分完成。
+
+### 未完成的待办
+
+1. P1：把 `DrinkWorkstation` 拆为 `ToolInventoryService`、`ProcessExecutionService`、`DrinkAssemblyState`，保留 Godot facade/signal 桥。
+2. P1：把 `GrayboxLevelBuilder` 的组合根、布局数据、建筑/柜体/站点生成分离。
+3. P1：把 `PlayerController` 的移动、交互探测、动作输入和手持表现分离。
+4. P1：将 `StationInteractable` 的 Kind `switch` 改为站点定义 Resource + 动作 handler 注册。
+5. P1：提取主菜单/暂停菜单共用的 `SettingsService`。
+6. P2/M3：正式存档产品层补充磁盘槽、原子写入、备份、显式 schema 迁移器、损坏回退、“继续游戏”和设置持久化。
+7. 外部阻塞继续不变：等待正式冰美式配方/容差/评价经济和首批 GLB；仍需用户真实键鼠游玩检查手感。
 
 ## 一、已完成的事项
 

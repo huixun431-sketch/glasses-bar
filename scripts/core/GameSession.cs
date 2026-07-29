@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using GlassesBar.Domain;
 
@@ -135,6 +138,64 @@ public partial class GameSession : Node
         EmitSignal(SignalName.WorldModeChanged, (int)WorldMode);
         EmitPhase();
         EmitSignal(SignalName.GameStartedChanged, false);
+    }
+
+    public GameSaveSnapshot CaptureState(
+        DrinkWorkstation workstation,
+        PlayerController? player = null,
+        IEnumerable<CabinetInteractable>? storage = null)
+    {
+        var snapshot = new GameSaveSnapshot
+        {
+            CurrentDay = CurrentDay,
+            RecipeId = workstation.RecipeId,
+            DayPhase = Flow.Current,
+            WorldModeId = WorldMode == WorldMode.Reality ? "reality" : "glasses",
+            GameStarted = GameStarted,
+            RecipeObserved = RecipeObserved,
+            Workstation = workstation.CaptureState(),
+            Player = player?.CaptureState()
+        };
+        if (storage is not null)
+            snapshot.StorageOpenStates = storage.ToDictionary(
+                cabinet => cabinet.Name.ToString(),
+                cabinet => cabinet.IsOpen,
+                StringComparer.Ordinal);
+        return snapshot;
+    }
+
+    public void RestoreState(
+        GameSaveSnapshot snapshot,
+        DrinkWorkstation workstation,
+        PlayerController? player = null,
+        IEnumerable<CabinetInteractable>? storage = null)
+    {
+        SaveGameSerializer.Validate(snapshot);
+        if (!string.Equals(snapshot.RecipeId, workstation.RecipeId, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                $"Save recipe '{snapshot.RecipeId}' does not match runtime recipe '{workstation.RecipeId}'.");
+        CurrentDay = Math.Clamp(snapshot.CurrentDay, 1, MaxCampaignDays);
+        Flow.Restore(snapshot.DayPhase);
+        WorldMode = snapshot.WorldModeId == "glasses" ? WorldMode.Glasses : WorldMode.Reality;
+        GameStarted = snapshot.GameStarted;
+        RecipeObserved = snapshot.RecipeObserved;
+        workstation.RestoreState(snapshot.Workstation);
+        EmitSignal(SignalName.WorldModeChanged, (int)WorldMode);
+        EmitSignal(SignalName.DayChanged, CurrentDay);
+        EmitPhase();
+        EmitSignal(SignalName.GameStartedChanged, GameStarted);
+
+        // DayChanged listeners may rebuild or close presentation nodes. Restore scene
+        // instances only after those reactions, while keeping them outside the save schema's
+        // authoritative domain records.
+        if (storage is not null)
+        {
+            foreach (var cabinet in storage)
+                if (snapshot.StorageOpenStates.TryGetValue(cabinet.Name.ToString(), out var open))
+                    cabinet.SetOpen(open, false);
+        }
+        if (player is not null && snapshot.Player is not null)
+            player.RestoreState(snapshot.Player);
     }
 
     private void ResetFlowForDay()

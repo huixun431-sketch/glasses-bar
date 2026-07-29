@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Godot;
-using GlassesBar.Domain;
 
-namespace GlassesBar;
+namespace GlassesBar.Domain;
 
 public enum ToolLocation
 {
@@ -13,11 +11,19 @@ public enum ToolLocation
     Workboard
 }
 
-public sealed class ToolRuntimeState
+public readonly record struct SpatialPosition(double X, double Y, double Z);
+
+/// <summary>
+/// Mutable state for one tool instance. This class deliberately has no Godot node,
+/// transform, mesh, or material reference so gameplay state can be tested and saved
+/// independently from its presentation.
+/// </summary>
+public sealed class ToolInstanceState
 {
-    public required ToolSpec Spec { get; init; }
-    public required ToolInteractable Node { get; init; }
-    public required Vector3 InitialPosition { get; init; }
+    public required ToolSpec Definition { get; init; }
+    public required SpatialPosition InitialPosition { get; init; }
+    public string Id => Definition.Id;
+    public SpatialPosition Position { get; set; }
     public ToolLocation Location { get; set; } = ToolLocation.Counter;
     public int BoardSlot { get; set; } = -1;
     public bool ContentsAreWaste { get; set; }

@@ -6,17 +6,6 @@ public enum WorldMode
     Glasses
 }
 
-public enum InteractionKind
-{
-    Observe,
-    Pickup,
-    Place,
-    Operate,
-    Pour,
-    Serve,
-    Discard
-}
-
 public enum IngredientUnit
 {
     PrototypeUnit,

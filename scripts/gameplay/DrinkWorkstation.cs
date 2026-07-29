@@ -18,7 +18,8 @@ public partial class DrinkWorkstation : Node
     private readonly DrinkSnapshot _snapshot = new();
     private readonly Dictionary<string, ToolSpec> _toolSpecs = new(StringComparer.Ordinal);
     private readonly List<OperationSpec> _operations = new();
-    private readonly Dictionary<string, ToolRuntimeState> _tools = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ToolInstanceState> _tools = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ToolPresentationBinding> _toolPresentations = new(StringComparer.Ordinal);
     private readonly List<string> _boardToolIds = new();
     private readonly RandomNumberGenerator _random = new();
     private readonly Dictionary<string, int> _repeatRecoveryCounts = new(StringComparer.Ordinal);
@@ -32,21 +33,22 @@ public partial class DrinkWorkstation : Node
     public bool HasHeldTool => !string.IsNullOrEmpty(LeftHandToolId) || !string.IsNullOrEmpty(RightHandToolId);
     public bool HasGlass => string.Equals(LeftHandToolId, "highball_glass", StringComparison.Ordinal);
     public int IcePieces => (int)Math.Round(Glass.Ingredients.TryGetValue("ice", out var ice) ? ice : 0d);
-    public double TotalWaste { get; private set; }
+    public double TotalWaste => _snapshot.WastedAmount;
     public bool HandsWashedToday { get; private set; }
     public double KettleWaterAmountMl { get; private set; } = PrototypeKettleCapacityMl;
     public int BoardToolCount => _boardToolIds.Count;
     public string LastOperationFeedback { get; private set; } = string.Empty;
     public ProcessAttemptResult? LastProcessResult { get; private set; }
+    public string RecipeId => _recipeTargets.Id;
     public string LeftHandDisplayName => HandDisplay(LeftHandToolId);
     public string RightHandDisplayName => HandDisplay(RightHandToolId, true);
     public string CounterPlacementDisplayName => HandDisplay(GetCounterPlacementToolId(), true);
     public double SuccessProbabilityPenalty => HandsWashedToday ? 0d : PrototypeHygienePenalty;
-    public bool RightHandHasDualMeasure => !string.IsNullOrEmpty(RightHandToolId) && _tools[RightHandToolId].Spec.HasDualMeasure;
+    public bool RightHandHasDualMeasure => !string.IsNullOrEmpty(RightHandToolId) && _tools[RightHandToolId].Definition.HasDualMeasure;
     public double RightHandMeasureAmount => RightHandHasDualMeasure
-        ? (_tools[RightHandToolId].UseLargeMeasureSide
-            ? _tools[RightHandToolId].Spec.LargeMeasureAmount
-            : _tools[RightHandToolId].Spec.SmallMeasureAmount)
+            ? (_tools[RightHandToolId].UseLargeMeasureSide
+            ? _tools[RightHandToolId].Definition.LargeMeasureAmount
+            : _tools[RightHandToolId].Definition.SmallMeasureAmount)
         : 0d;
     public string RightHandMeasureSideName => RightHandHasDualMeasure && _tools[RightHandToolId].UseLargeMeasureSide ? "大头" : "小头";
 
@@ -78,11 +80,11 @@ public partial class DrinkWorkstation : Node
         var state = _tools[RightHandToolId];
         if (state.Contents.Count > 0)
         {
-            feedback = $"{state.Spec.DisplayName}里已有{ContentText(state)}；倒出后才能翻转选择另一端重新计量。";
+            feedback = $"{state.Definition.DisplayName}里已有{ContentText(state)}；倒出后才能翻转选择另一端重新计量。";
             return false;
         }
         state.UseLargeMeasureSide = !state.UseLargeMeasureSide;
-        feedback = $"已切换为{state.Spec.DisplayName}的{RightHandMeasureSideName}：{RightHandMeasureAmount:0} ml（开发占位容量）。";
+        feedback = $"已切换为{state.Definition.DisplayName}的{RightHandMeasureSideName}：{RightHandMeasureAmount:0} ml（开发占位容量）。";
         EmitHandsAndState(feedback);
         return true;
     }
@@ -98,7 +100,7 @@ public partial class DrinkWorkstation : Node
         var state = _tools[RightHandToolId];
         if (state.Contents.Count > 0)
         {
-            reason = $"{state.Spec.DisplayName}里已有{ContentText(state)}，先倒出后才能重新计量。";
+            reason = $"{state.Definition.DisplayName}里已有{ContentText(state)}，先倒出后才能重新计量。";
             return false;
         }
         if (KettleWaterAmountMl <= 0.000001d)
@@ -122,7 +124,7 @@ public partial class DrinkWorkstation : Node
         var state = _tools[RightHandToolId];
         state.Contents["water"] = amount;
         KettleWaterAmountMl -= amount;
-        feedback = $"已用{state.Spec.DisplayName}{RightHandMeasureSideName}从水壶接取 {amount:0} ml 水；水壶剩余 {KettleWaterAmountMl:0} ml。";
+        feedback = $"已用{state.Definition.DisplayName}{RightHandMeasureSideName}从水壶接取 {amount:0} ml 水；水壶剩余 {KettleWaterAmountMl:0} ml。";
         EmitHandsAndState(feedback);
         return true;
     }
@@ -144,6 +146,7 @@ public partial class DrinkWorkstation : Node
         if (recipe is null)
             throw new InvalidOperationException("Prototype recipe resource could not be loaded.");
         _recipeTargets = recipe.BuildTargets();
+        GameplayCatalogValidator.ValidateRecipeCompatibility(_recipeTargets, _operations);
         GameSession.Instance.DayPhaseChanged += OnPhaseChanged;
     }
 
@@ -155,11 +158,12 @@ public partial class DrinkWorkstation : Node
 
     public void ConfigureCatalog(GameplayCatalogDefinition catalog)
     {
+        var validated = catalog.BuildValidatedSpecs();
         _toolSpecs.Clear();
-        foreach (var pair in catalog.BuildToolSpecs())
+        foreach (var pair in validated.Tools)
             _toolSpecs.Add(pair.Key, pair.Value);
         _operations.Clear();
-        _operations.AddRange(catalog.BuildOperationSpecs());
+        _operations.AddRange(validated.Operations);
     }
 
     public ToolSpec GetToolSpec(string toolId) =>
@@ -173,13 +177,17 @@ public partial class DrinkWorkstation : Node
     public void RegisterTool(ToolInteractable node, string toolId, Vector3 initialPosition)
     {
         var spec = GetToolSpec(toolId);
-        var state = new ToolRuntimeState
+        var state = new ToolInstanceState
         {
-            Spec = spec,
-            Node = node,
-            InitialPosition = initialPosition
+            Definition = spec,
+            InitialPosition = ToSpatialPosition(initialPosition),
+            Position = ToSpatialPosition(initialPosition)
         };
         _tools.Add(toolId, state);
+        _toolPresentations.Add(toolId, new ToolPresentationBinding
+        {
+            Node = node
+        });
         node.ApplyWorldState(initialPosition, true);
     }
 
@@ -187,7 +195,7 @@ public partial class DrinkWorkstation : Node
     {
         if (!_tools.TryGetValue(toolId, out var state))
             return false;
-        return state.Spec.ResolveCategory() switch
+        return state.Definition.ResolveCategory() switch
         {
             ToolCategory.Placement => string.IsNullOrEmpty(LeftHandToolId),
             ToolCategory.Handheld => string.IsNullOrEmpty(RightHandToolId),
@@ -204,7 +212,7 @@ public partial class DrinkWorkstation : Node
             _boardToolIds.Remove(toolId);
 
         state.BoardSlot = -1;
-        if (state.Spec.ResolveCategory() == ToolCategory.Placement)
+        if (state.Definition.ResolveCategory() == ToolCategory.Placement)
         {
             LeftHandToolId = toolId;
             state.Location = ToolLocation.LeftHand;
@@ -214,8 +222,9 @@ public partial class DrinkWorkstation : Node
             RightHandToolId = toolId;
             state.Location = ToolLocation.RightHand;
         }
-        state.Node.ApplyWorldState(state.Node.GlobalPosition, false);
-        EmitHandsAndState($"已将{state.Spec.DisplayName}拿到{(state.Spec.ResolveCategory() == ToolCategory.Placement ? "左手" : "右手")}。原位置现在为空。");
+        var presentation = _toolPresentations[toolId];
+        presentation.Node.ApplyWorldState(presentation.Node.GlobalPosition, false);
+        EmitHandsAndState($"已将{state.Definition.DisplayName}拿到{(state.Definition.ResolveCategory() == ToolCategory.Placement ? "左手" : "右手")}。原位置现在为空。");
         return true;
     }
 
@@ -229,17 +238,17 @@ public partial class DrinkWorkstation : Node
             return false;
         }
         var incoming = _tools[toolId];
-        if (incoming.Spec.ResolveCategory() == ToolCategory.Handheld && incoming.Contents.Count > 0)
+        if (incoming.Definition.ResolveCategory() == ToolCategory.Handheld && incoming.Contents.Count > 0)
         {
-            reason = $"{incoming.Spec.DisplayName}还装有{ContentText(incoming)}，不能直接搁在台面；先完成转移或倒入弃物桶。";
+            reason = $"{incoming.Definition.DisplayName}还装有{ContentText(incoming)}，不能直接搁在台面；先完成转移或倒入弃物桶。";
             return false;
         }
-        foreach (var existing in _tools.Values.Where(state => state.Location == ToolLocation.Counter && state.Spec.Id != toolId))
+        foreach (var existing in _tools.Values.Where(state => state.Location == ToolLocation.Counter && state.Id != toolId))
         {
-            var distance = new Vector2(position.X - existing.Node.GlobalPosition.X, position.Z - existing.Node.GlobalPosition.Z).Length();
-            if (distance < incoming.Spec.FootprintRadius + existing.Spec.FootprintRadius + 0.08d)
+            var distance = new Vector2(position.X - (float)existing.Position.X, position.Z - (float)existing.Position.Z).Length();
+            if (distance < incoming.Definition.FootprintRadius + existing.Definition.FootprintRadius + 0.08d)
             {
-                reason = $"此处会与{existing.Spec.DisplayName}重合，请瞄准其他空余位置。";
+                reason = $"此处会与{existing.Definition.DisplayName}重合，请瞄准其他空余位置。";
                 return false;
             }
         }
@@ -254,9 +263,10 @@ public partial class DrinkWorkstation : Node
         var state = _tools[toolId];
         state.Location = ToolLocation.Counter;
         state.BoardSlot = -1;
+        state.Position = ToSpatialPosition(position);
         ClearHand(toolId);
-        state.Node.ApplyWorldState(position, true);
-        feedback = $"已将{state.Spec.DisplayName}放到瞄准的空余吧台位置；其他工具不能与它重合。";
+        _toolPresentations[toolId].Node.ApplyWorldState(position, true);
+        feedback = $"已将{state.Definition.DisplayName}放到瞄准的空余吧台位置；其他工具不能与它重合。";
         EmitHandsAndState(feedback);
         return true;
     }
@@ -274,12 +284,12 @@ public partial class DrinkWorkstation : Node
             reason = "砧板已经没有空余工具位。";
             return false;
         }
-        var incoming = _tools[LeftHandToolId].Spec;
+        var incoming = _tools[LeftHandToolId].Definition;
         foreach (var existingId in _boardToolIds)
         {
-            if (ProcessRules.ToolsConflict(incoming, _tools[existingId].Spec))
+            if (ProcessRules.ToolsConflict(incoming, _tools[existingId].Definition))
             {
-                reason = $"{incoming.DisplayName}与{_tools[existingId].Spec.DisplayName}属于冲突工具，不能同时放上砧板。";
+                reason = $"{incoming.DisplayName}与{_tools[existingId].Definition.DisplayName}属于冲突工具，不能同时放上砧板。";
                 return false;
             }
         }
@@ -295,10 +305,11 @@ public partial class DrinkWorkstation : Node
         var slot = Enumerable.Range(0, boardPositions.Length).First(index => _boardToolIds.All(id => _tools[id].BoardSlot != index));
         state.Location = ToolLocation.Workboard;
         state.BoardSlot = slot;
+        state.Position = ToSpatialPosition(boardPositions[slot]);
         _boardToolIds.Add(toolId);
         LeftHandToolId = string.Empty;
-        state.Node.ApplyWorldState(boardPositions[slot], true);
-        feedback = $"已先将{state.Spec.DisplayName}放上砧板。当前可实现：{GetBoardCapabilityText()}。";
+        _toolPresentations[toolId].Node.ApplyWorldState(boardPositions[slot], true);
+        feedback = $"已先将{state.Definition.DisplayName}放上砧板。当前可实现：{GetBoardCapabilityText()}。";
         EmitHandsAndState(feedback);
         return true;
     }
@@ -321,7 +332,7 @@ public partial class DrinkWorkstation : Node
             reason = "右手携带的是废品，请先倒入弃物桶。";
             return false;
         }
-        if (!_boardToolIds.Any(id => _tools[id].Spec.CanContainIngredients))
+        if (!_boardToolIds.Any(id => _tools[id].Definition.CanContainIngredients))
         {
             reason = "砧板上的放置类工具都不能容纳原材料。";
             return false;
@@ -334,7 +345,7 @@ public partial class DrinkWorkstation : Node
         if (!CanDepositRightHandIngredientOnBoard(out feedback))
             return false;
         var carrier = _tools[RightHandToolId];
-        var target = _boardToolIds.Select(id => _tools[id]).First(state => state.Spec.CanContainIngredients);
+        var target = _boardToolIds.Select(id => _tools[id]).First(state => state.Definition.CanContainIngredients);
         foreach (var pair in carrier.Contents)
         {
             target.Contents.TryGetValue(pair.Key, out var existing);
@@ -343,7 +354,7 @@ public partial class DrinkWorkstation : Node
         target.ContentCompletionRatio = Math.Min(target.ContentCompletionRatio, carrier.ContentCompletionRatio);
         var ingredientText = ContentText(carrier);
         carrier.ClearContents();
-        feedback = $"已用{carrier.Spec.DisplayName}把{ingredientText}放入{target.Spec.DisplayName}；系统不会预先判断配方是否正确。";
+        feedback = $"已用{carrier.Definition.DisplayName}把{ingredientText}放入{target.Definition.DisplayName}；系统不会预先判断配方是否正确。";
         EmitHandsAndState(feedback);
         return true;
     }
@@ -359,7 +370,7 @@ public partial class DrinkWorkstation : Node
         var carrier = _tools[RightHandToolId];
         if (carrier.Contents.Count > 0)
         {
-            feedback = $"{carrier.Spec.DisplayName}已经携带一种原材料，不能再拿另一种。";
+            feedback = $"{carrier.Definition.DisplayName}已经携带一种原材料，不能再拿另一种。";
             return false;
         }
         foreach (var source in _boardToolIds.Select(id => _tools[id]))
@@ -367,12 +378,12 @@ public partial class DrinkWorkstation : Node
             if (source.ContentsAreWaste || source.Contents.Count != 1)
                 continue;
             var pair = source.Contents.First();
-            if (!carrier.Spec.CanCarry(pair.Key))
+            if (!carrier.Definition.CanCarry(pair.Key))
                 continue;
             carrier.Contents[pair.Key] = pair.Value;
             carrier.ContentCompletionRatio = source.ContentCompletionRatio;
             source.ClearContents();
-            feedback = $"已用{carrier.Spec.DisplayName}从{source.Spec.DisplayName}取出{IngredientDisplay(pair.Key)}。";
+            feedback = $"已用{carrier.Definition.DisplayName}从{source.Definition.DisplayName}取出{IngredientDisplay(pair.Key)}。";
             EmitHandsAndState(feedback);
             return true;
         }
@@ -400,7 +411,7 @@ public partial class DrinkWorkstation : Node
             .ToHashSet(StringComparer.Ordinal);
         var available = _boardToolIds.Select(id => _tools[id]).Any(state =>
             !state.ContentsAreWaste && state.Contents.Count == 1 &&
-            intermediateIds.Contains(state.Contents.Keys.First()) && carrier.Spec.CanCarry(state.Contents.Keys.First()));
+            intermediateIds.Contains(state.Contents.Keys.First()) && carrier.Definition.CanCarry(state.Contents.Keys.First()));
         if (!available)
             reason = "当前右手工具无法搬运砧板上的中间产物。";
         return available;
@@ -415,9 +426,9 @@ public partial class DrinkWorkstation : Node
             return false;
         }
         var carrier = _tools[RightHandToolId];
-        if (!carrier.Spec.CanCarry(ingredientId))
+        if (!carrier.Definition.CanCarry(ingredientId))
         {
-            reason = $"{carrier.Spec.DisplayName}无法在物理上携带{IngredientDisplay(ingredientId)}。";
+            reason = $"{carrier.Definition.DisplayName}无法在物理上携带{IngredientDisplay(ingredientId)}。";
             return false;
         }
         if (carrier.ContentsAreWaste)
@@ -440,7 +451,7 @@ public partial class DrinkWorkstation : Node
         var carrier = _tools[RightHandToolId];
         carrier.Contents.TryGetValue(ingredientId, out var existing);
         carrier.Contents[ingredientId] = existing + Math.Max(0d, amount);
-        feedback = $"{carrier.Spec.DisplayName}正在携带{IngredientAmountText(ingredientId, carrier.Contents[ingredientId])}；可继续取同类，但不能混拿其他原料。";
+        feedback = $"{carrier.Definition.DisplayName}正在携带{IngredientAmountText(ingredientId, carrier.Contents[ingredientId])}；可继续取同类，但不能混拿其他原料。";
         EmitHandsAndState(feedback, emitStatus);
         return true;
     }
@@ -464,7 +475,7 @@ public partial class DrinkWorkstation : Node
             return new OperationResult { Feedback = "没有由当前左手工具支持的简易工序。" };
 
         var result = ProcessRules.Evaluate(operation, RightHandToolId, carrier.Contents, 1d, NextRoll(), SuccessProbabilityPenalty);
-        return ApplyAttempt(operation, result, new[] { carrier }, false);
+        return ApplyAttempt(operation, result, new[] { carrier });
     }
 
     public IReadOnlyList<OperationSpec> GetBoardCapabilities()
@@ -533,13 +544,13 @@ public partial class DrinkWorkstation : Node
         if (TryGetRepeatRecoveryTarget(operation, out var target))
             return ApplyRepeatRecovery(operation, target, action);
         var result = ProcessRules.Evaluate(operation, RightHandToolId, ingredients, action, NextRoll(), SuccessProbabilityPenalty);
-        ApplyAttempt(operation, result, sources, true);
+        ApplyAttempt(operation, result, sources);
         return result;
     }
 
     public bool TryDiscardHeldContents(out string feedback)
     {
-        ToolRuntimeState? target = null;
+        ToolInstanceState? target = null;
         if (!string.IsNullOrEmpty(RightHandToolId) && _tools[RightHandToolId].Contents.Count > 0)
             target = _tools[RightHandToolId];
         else if (!string.IsNullOrEmpty(LeftHandToolId) && _tools[LeftHandToolId].Contents.Count > 0)
@@ -552,12 +563,11 @@ public partial class DrinkWorkstation : Node
         }
 
         var discarded = target.ContentAmount;
-        if (target.Spec.Id == "highball_glass")
+        if (target.Id == "highball_glass")
             Glass.Empty();
         target.ClearContents();
-        TotalWaste += discarded;
         _snapshot.WastedAmount += discarded;
-        feedback = $"已手动把{target.Spec.DisplayName}中的内容倒入弃物桶；工具仍拿在手中。";
+        feedback = $"已手动把{target.Definition.DisplayName}中的内容倒入弃物桶；工具仍拿在手中。";
         EmitHandsAndState(feedback);
         return true;
     }
@@ -578,6 +588,9 @@ public partial class DrinkWorkstation : Node
         _snapshot.FailedOperations = 0;
         Glass = new LiquidContainer(300d);
         _timing = false;
+        _nextAttemptRoll = null;
+        LastOperationFeedback = string.Empty;
+        LastProcessResult = null;
         HandsWashedToday = false;
         KettleWaterAmountMl = PrototypeKettleCapacityMl;
         _repeatRecoveryCounts.Clear();
@@ -590,7 +603,9 @@ public partial class DrinkWorkstation : Node
             state.UseLargeMeasureSide = true;
             state.Location = ToolLocation.Counter;
             state.BoardSlot = -1;
-            state.Node.ApplyWorldState(state.InitialPosition, true);
+            state.Position = state.InitialPosition;
+            var presentation = _toolPresentations[state.Id];
+            presentation.Node.ApplyWorldState(ToVector3(state.Position), true);
         }
         EmitHandsAndState(string.Empty, false);
     }
@@ -598,22 +613,34 @@ public partial class DrinkWorkstation : Node
     public DrinkEvaluation EvaluateAndFinish()
     {
         _timing = false;
-        var evaluation = RecipeEvaluator.Evaluate(_recipeTargets, _snapshot);
+        var evaluation = EvaluateCurrentDrink();
         if (GameSession.Instance.BeginDelivery())
             GameSession.Instance.FinishEvaluation(evaluation);
         return evaluation;
+    }
+
+    public DrinkEvaluation EvaluateCurrentDrink()
+    {
+        // Recipe evaluation describes the current drink instance. Waste, spills, elapsed
+        // time, and failed attempts remain day metrics, but discarded liquid and completion
+        // from an earlier glass must never leak into a remade drink.
+        _snapshot.IngredientAmounts.Clear();
+        foreach (var ingredient in Glass.Ingredients)
+            _snapshot.IngredientAmounts[ingredient.Key] = ingredient.Value;
+        _snapshot.CraftCompletionRatio = DrinkCompletionRatio;
+        return RecipeEvaluator.Evaluate(_recipeTargets, _snapshot);
     }
 
     public string GetDebugText()
     {
         var board = _boardToolIds.Count == 0
             ? "空"
-            : string.Join("+", _boardToolIds.Select(id => _tools[id].Spec.DisplayName));
+            : string.Join("+", _boardToolIds.Select(id => _tools[id].Definition.DisplayName));
         var measure = RightHandHasDualMeasure ? $"｜量酒器:{RightHandMeasureSideName} {RightHandMeasureAmount:0} ml" : string.Empty;
-        return $"左手:{LeftHandDisplayName}｜右手:{RightHandDisplayName}{measure}｜洗手:{(HandsWashedToday ? "已完成" : "未完成(-4%)")}｜水壶:{KettleWaterAmountMl:0} ml｜砧板:{board} [{GetBoardCapabilityText()}]｜杯量:{Glass.CurrentAmount:0.0}/300 ml｜完成度:{_snapshot.CraftCompletionRatio:P0}｜失败:{_snapshot.FailedOperations}｜浪费:{TotalWaste:0.00}";
+        return $"左手:{LeftHandDisplayName}｜右手:{RightHandDisplayName}{measure}｜洗手:{(HandsWashedToday ? "已完成" : "未完成(-4%)")}｜水壶:{KettleWaterAmountMl:0} ml｜砧板:{board} [{GetBoardCapabilityText()}]｜杯量:{Glass.CurrentAmount:0.0}/300 ml｜完成度:{DrinkCompletionRatio:P0}｜失败:{_snapshot.FailedOperations}｜浪费:{TotalWaste:0.00}";
     }
 
-    private bool TryGetRepeatRecoveryTarget(OperationSpec operation, out ToolRuntimeState target)
+    private bool TryGetRepeatRecoveryTarget(OperationSpec operation, out ToolInstanceState target)
     {
         target = null!;
         if (string.IsNullOrEmpty(operation.RepeatRecoveryInputIngredientId) ||
@@ -626,7 +653,7 @@ public partial class DrinkWorkstation : Node
         return true;
     }
 
-    private ProcessAttemptResult ApplyRepeatRecovery(OperationSpec operation, ToolRuntimeState target, double action)
+    private ProcessAttemptResult ApplyRepeatRecovery(OperationSpec operation, ToolInstanceState target, double action)
     {
         if (Math.Max(0d, action) < Math.Max(0d, operation.RequiredAction))
             return ReportNonDestructiveBlock($"重复{operation.DisplayName}尚未完成；继续操作可尝试补救，材料保持可用。");
@@ -634,7 +661,7 @@ public partial class DrinkWorkstation : Node
         {
             var wrongTool = ProcessRules.Evaluate(operation, RightHandToolId, operation.InputTargets, action, 0d,
                 SuccessProbabilityPenalty);
-            ApplyAttempt(operation, wrongTool, new[] { target }, true);
+            ApplyAttempt(operation, wrongTool, new[] { target });
             return wrongTool;
         }
 
@@ -675,7 +702,7 @@ public partial class DrinkWorkstation : Node
     }
 
     private OperationResult ApplyAttempt(OperationSpec operation, ProcessAttemptResult result,
-        IEnumerable<ToolRuntimeState> sourceStates, bool boardOperation)
+        IEnumerable<ToolInstanceState> sourceStates)
     {
         var sources = sourceStates.Distinct().ToArray();
         var inheritedCompletion = sources.Where(state => state.Contents.Count > 0)
@@ -688,7 +715,7 @@ public partial class DrinkWorkstation : Node
         {
             foreach (var source in sources)
             {
-                if (source.Spec.Id == "highball_glass")
+                if (source.Id == "highball_glass")
                     Glass.Empty();
                 source.ClearContents();
             }
@@ -729,10 +756,10 @@ public partial class DrinkWorkstation : Node
         };
     }
 
-    private void AddOutput(ToolRuntimeState target, string ingredientId, double amount, double completion)
+    private void AddOutput(ToolInstanceState target, string ingredientId, double amount, double completion)
     {
         var accepted = Math.Max(0d, amount);
-        if (target.Spec.Id == "highball_glass")
+        if (target.Id == "highball_glass")
         {
             var spillBefore = Glass.SpilledAmount;
             accepted = Glass.Add(ingredientId, amount);
@@ -745,15 +772,15 @@ public partial class DrinkWorkstation : Node
         target.ContentCompletionRatio = Math.Min(target.ContentCompletionRatio, completion);
     }
 
-    private List<ToolRuntimeState> GetOperationSourceStates(OperationSpec operation)
+    private List<ToolInstanceState> GetOperationSourceStates(OperationSpec operation)
     {
         var states = _boardToolIds.Select(id => _tools[id]).Where(state => state.Contents.Count > 0).ToList();
-        if (states.Count > 1 && states.Any(state => state.Spec.Id == operation.ResultTargetToolId))
+        if (states.Count > 1 && states.Any(state => state.Id == operation.ResultTargetToolId))
         {
-            var nonTargetHasInput = states.Where(state => state.Spec.Id != operation.ResultTargetToolId)
+            var nonTargetHasInput = states.Where(state => state.Id != operation.ResultTargetToolId)
                 .SelectMany(state => state.Contents.Keys).Any(operation.InputTargets.ContainsKey);
             if (nonTargetHasInput)
-                states.RemoveAll(state => state.Spec.Id == operation.ResultTargetToolId);
+                states.RemoveAll(state => state.Id == operation.ResultTargetToolId);
         }
         return states;
     }
@@ -802,11 +829,11 @@ public partial class DrinkWorkstation : Node
         if (next is null)
             return string.Empty;
         var missing = next.RequiredPlacementToolIds.Where(id => !placementIds.Contains(id))
-            .Select(id => _tools.TryGetValue(id, out var state) ? state.Spec.DisplayName : id);
+            .Select(id => _tools.TryGetValue(id, out var state) ? state.Definition.DisplayName : id);
         return $"中间产物已完成；加入{string.Join("＋", missing)}后可{next.DisplayName}";
     }
 
-    private static Dictionary<string, double> MergeContents(IEnumerable<ToolRuntimeState> states)
+    private static Dictionary<string, double> MergeContents(IEnumerable<ToolInstanceState> states)
     {
         var result = new Dictionary<string, double>(StringComparer.Ordinal);
         foreach (var state in states)
@@ -817,6 +844,10 @@ public partial class DrinkWorkstation : Node
         }
         return result;
     }
+
+    private static SpatialPosition ToSpatialPosition(Vector3 value) => new(value.X, value.Y, value.Z);
+
+    private static Vector3 ToVector3(SpatialPosition value) => new((float)value.X, (float)value.Y, (float)value.Z);
 
     private void ClearHand(string toolId)
     {
@@ -836,7 +867,7 @@ public partial class DrinkWorkstation : Node
         var suffix = includePayload && state.Contents.Count > 0
             ? $"（{(state.ContentsAreWaste ? "废品:" : string.Empty)}{ContentText(state)}）"
             : state.ContentsAreWaste ? "（含废品）" : string.Empty;
-        return state.Spec.DisplayName + suffix;
+        return state.Definition.DisplayName + suffix;
     }
 
     private void EmitHandsAndState(string status, bool emitStatus = true)
@@ -858,7 +889,7 @@ public partial class DrinkWorkstation : Node
         return _random.Randf();
     }
 
-    private static string ContentText(ToolRuntimeState state) => state.Contents.Count == 0
+    private static string ContentText(ToolInstanceState state) => state.Contents.Count == 0
         ? "空"
         : string.Join("+", state.Contents.Select(pair => IngredientAmountText(pair.Key, pair.Value)));
 

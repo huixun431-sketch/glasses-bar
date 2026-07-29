@@ -9,8 +9,6 @@ public partial class ToolDefinition : Resource
 {
     [Export] public StringName Id { get; set; } = new();
     [Export] public string DisplayName { get; set; } = string.Empty;
-    [Export] public InteractionKind Interaction { get; set; } = InteractionKind.Operate;
-    [Export] public bool RequiresContinuousInput { get; set; } = true;
     [Export] public ToolCategory Category { get; set; } = ToolCategory.Automatic;
     [Export] public bool CanContainIngredients { get; set; }
     [Export] public bool CanCarryIngredients { get; set; }

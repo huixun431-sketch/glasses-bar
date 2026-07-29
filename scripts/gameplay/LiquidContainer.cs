@@ -56,5 +56,21 @@ public sealed class LiquidContainer : ILiquidContainer
         _ingredients.Clear();
         return amount;
     }
-}
 
+    public void Restore(IReadOnlyDictionary<string, double> ingredients, double spilledAmount)
+    {
+        _ingredients.Clear();
+        CurrentAmount = 0d;
+        foreach (var ingredient in ingredients)
+        {
+            var amount = Math.Max(0d, ingredient.Value);
+            if (CurrentAmount + amount > Capacity + 0.000001d)
+                throw new ArgumentOutOfRangeException(nameof(ingredients), "Restored liquid exceeds container capacity.");
+            if (amount <= 0d)
+                continue;
+            _ingredients[ingredient.Key] = amount;
+            CurrentAmount += amount;
+        }
+        SpilledAmount = Math.Max(0d, spilledAmount);
+    }
+}

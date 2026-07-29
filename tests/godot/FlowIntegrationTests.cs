@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Godot;
 using GlassesBar.Domain;
 
@@ -134,13 +135,16 @@ public partial class FlowIntegrationTests : Node
             customer.Interact(context);
             Require(_evaluationPassed && GameSession.Instance.Flow.Current == DayPhase.DaySummary,
                 "prototype drink reaches evaluation with bounded recovery preserved");
+            Require(workstation.TryDiscardHeldContents(out _) && !workstation.EvaluateCurrentDrink().Passed,
+                "discarding the delivered glass removes its ingredients from the current drink evaluation");
 
             player._UnhandledInput(new InputEventAction { Action = "next_day", Pressed = true, Strength = 1f });
             var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
             Require(GameSession.Instance.CurrentDay == 2 && !workstation.HandsWashedToday &&
-                    Math.Abs(workstation.KettleWaterAmountMl - DrinkWorkstation.PrototypeKettleCapacityMl) < 0.001d &&
-                    !iceDrawer.IsOpen && Math.Abs(player.GlobalPosition.Z - (-1.2f)) < 0.01f,
-                "next day resets hand washing, kettle, drawer state, tools and raised-camera player position");
+                     Math.Abs(workstation.KettleWaterAmountMl - DrinkWorkstation.PrototypeKettleCapacityMl) < 0.001d &&
+                     Math.Abs(workstation.TotalWaste) < 0.000001d && !iceDrawer.IsOpen &&
+                     Math.Abs(player.GlobalPosition.Z - (-1.2f)) < 0.01f,
+                "next day resets hand washing, kettle, per-day waste, drawer state, tools and raised-camera player position");
 
             for (var expectedDay = 2; expectedDay <= GameSession.MaxCampaignDays; expectedDay++)
             {
@@ -271,15 +275,31 @@ public partial class FlowIntegrationTests : Node
         Require(Math.Abs(workstation.GetRightHandIngredientAmount("water") - 30d) < 0.001d &&
                 Math.Abs(workstation.KettleWaterAmountMl - (before - 30d)) < 0.001d,
             "jigger takes its selected measured amount from the kettle");
+        var storage = main.GetTree().GetNodesInGroup("cabinet_storage").OfType<CabinetInteractable>().ToArray();
+        var serialized = SaveGameSerializer.Serialize(GameSession.Instance.CaptureState(workstation, context.Player, storage));
+        bin.Interact(context);
+        GameSession.Instance.RestoreState(SaveGameSerializer.Deserialize(serialized), workstation, context.Player, storage);
+        Require(workstation.RightHandToolId == "jigger_small" &&
+                Math.Abs(workstation.GetRightHandIngredientAmount("water") - 30d) < 0.001d &&
+                workstation.GetToolLocation("jigger_small") == ToolLocation.RightHand &&
+                main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper").IsOpen,
+            "versioned save snapshot restores authoritative held-tool, contents, player and storage instance state without scene-node references");
         bin.Interact(context);
         PlaceAt(workstation, "jigger_free");
     }
 
     private static OperationResult CompleteBoard(WorkboardInteractable board, InteractionContext context, double action)
     {
-        Require(board.Begin(context), "board operation begins when tools and material are physically present");
-        board.UpdateOperation(1d, action);
-        return board.Complete();
+        var started = context.Player.TryExecuteInteraction(board, context);
+        Require(started.Accepted && context.Player.Actions.HasActiveAction &&
+                context.Player.Actions.LastTrace is
+                {
+                    ActionId: "process.run_board",
+                    Phase: GameplayActionPhase.Started
+                },
+            "board operation begins through the unified action pipeline when tools and material are physically present");
+        context.Player.Actions.UpdateActive(1d, action);
+        return context.Player.Actions.CommitActive();
     }
 
     private static void LoadBeans(Node3D main, InteractionContext context, int portions)
