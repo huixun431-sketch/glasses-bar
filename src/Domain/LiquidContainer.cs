@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
-using GlassesBar.Domain;
 
-namespace GlassesBar;
+namespace GlassesBar.Domain;
 
-public sealed class LiquidContainer : ILiquidContainer, IProcessLiquidTarget
+/// <summary>
+/// Pure gameplay liquid state. Rendering, shaders, particles, animation, and IK
+/// consume results from higher layers and never participate in these calculations.
+/// </summary>
+public sealed class LiquidContainer
 {
     private readonly Dictionary<string, double> _ingredients = new(StringComparer.Ordinal);
 
@@ -59,6 +62,7 @@ public sealed class LiquidContainer : ILiquidContainer, IProcessLiquidTarget
 
     public void Restore(IReadOnlyDictionary<string, double> ingredients, double spilledAmount)
     {
+        ArgumentNullException.ThrowIfNull(ingredients);
         _ingredients.Clear();
         CurrentAmount = 0d;
         foreach (var ingredient in ingredients)

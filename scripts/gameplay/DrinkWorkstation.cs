@@ -15,9 +15,9 @@ public partial class DrinkWorkstation : Node
     [Signal] public delegate void HandsChangedEventHandler(string leftHand, string rightHand);
     [Signal] public delegate void HandToolIdsChangedEventHandler(string leftToolId, string rightToolId);
 
-    private readonly DrinkSnapshot _snapshot = new();
     private readonly Dictionary<string, ToolSpec> _toolSpecs = new(StringComparer.Ordinal);
     private readonly ToolInventoryService _inventory = new();
+    private readonly DrinkAssemblyState _assembly = new(300d);
     private readonly ProcessExecutionService _processes;
     private readonly Dictionary<string, ToolPresentationBinding> _toolPresentations = new(StringComparer.Ordinal);
     private readonly RandomNumberGenerator _random = new();
@@ -27,16 +27,16 @@ public partial class DrinkWorkstation : Node
 
     public DrinkWorkstation()
     {
-        _processes = new ProcessExecutionService(_inventory, _snapshot);
+        _processes = new ProcessExecutionService(_inventory, _assembly);
     }
 
-    public LiquidContainer Glass { get; private set; } = new(300d);
+    public LiquidContainer Glass => _assembly.Glass;
     public string LeftHandToolId => _inventory.LeftHandToolId;
     public string RightHandToolId => _inventory.RightHandToolId;
     public bool HasHeldTool => _inventory.HasHeldTool;
     public bool HasGlass => string.Equals(LeftHandToolId, "highball_glass", StringComparison.Ordinal);
     public int IcePieces => (int)Math.Round(Glass.Ingredients.TryGetValue("ice", out var ice) ? ice : 0d);
-    public double TotalWaste => _snapshot.WastedAmount;
+    public double TotalWaste => _assembly.WastedAmount;
     public bool HandsWashedToday { get; private set; }
     public double KettleWaterAmountMl { get; private set; } = PrototypeKettleCapacityMl;
     public int BoardToolCount => _inventory.BoardToolIds.Count;
@@ -162,7 +162,7 @@ public partial class DrinkWorkstation : Node
     public override void _Process(double delta)
     {
         if (_timing)
-            _snapshot.ElapsedSeconds += Math.Max(0d, delta);
+            _assembly.AdvanceElapsed(delta);
     }
 
     public void ConfigureCatalog(GameplayCatalogDefinition catalog)
@@ -385,8 +385,7 @@ public partial class DrinkWorkstation : Node
 
         var outcome = _processes.ExecuteSimpleOperation(
             NextRoll,
-            SuccessProbabilityPenalty,
-            Glass);
+            SuccessProbabilityPenalty);
         if (outcome is null)
             return new OperationResult { Feedback = "没有由当前左手工具支持的简易工序。" };
 
@@ -434,8 +433,7 @@ public partial class DrinkWorkstation : Node
             action,
             NextRoll,
             SuccessProbabilityPenalty,
-            KettleWaterAmountMl > 0.000001d,
-            Glass);
+            KettleWaterAmountMl > 0.000001d);
         PublishProcessOutcome(outcome);
         return outcome.Attempt;
     }
@@ -456,11 +454,7 @@ public partial class DrinkWorkstation : Node
             return false;
         }
 
-        var discarded = target.ContentAmount;
-        if (target.Id == "highball_glass")
-            Glass.Empty();
-        target.ClearContents();
-        _snapshot.WastedAmount += discarded;
+        _assembly.DiscardToolContents(target);
         feedback = $"已手动把{target.Definition.DisplayName}中的内容倒入弃物桶；工具仍拿在手中。";
         EmitHandsAndState(feedback);
         return true;
@@ -473,14 +467,7 @@ public partial class DrinkWorkstation : Node
 
     public void ResetForNewDay()
     {
-        _snapshot.CompletedSteps.Clear();
-        _snapshot.IngredientAmounts.Clear();
-        _snapshot.WastedAmount = 0d;
-        _snapshot.SpilledAmount = 0d;
-        _snapshot.ElapsedSeconds = 0d;
-        _snapshot.CraftCompletionRatio = 1d;
-        _snapshot.FailedOperations = 0;
-        Glass = new LiquidContainer(300d);
+        _assembly.ResetForNewDay(300d);
         _timing = false;
         _nextAttemptRoll = null;
         LastOperationFeedback = string.Empty;
@@ -508,14 +495,7 @@ public partial class DrinkWorkstation : Node
 
     public DrinkEvaluation EvaluateCurrentDrink()
     {
-        // Recipe evaluation describes the current drink instance. Waste, spills, elapsed
-        // time, and failed attempts remain day metrics, but discarded liquid and completion
-        // from an earlier glass must never leak into a remade drink.
-        _snapshot.IngredientAmounts.Clear();
-        foreach (var ingredient in Glass.Ingredients)
-            _snapshot.IngredientAmounts[ingredient.Key] = ingredient.Value;
-        _snapshot.CraftCompletionRatio = DrinkCompletionRatio;
-        return RecipeEvaluator.Evaluate(_recipeTargets, _snapshot);
+        return _assembly.Evaluate(_recipeTargets, DrinkCompletionRatio);
     }
 
     public string GetDebugText()
@@ -524,7 +504,7 @@ public partial class DrinkWorkstation : Node
             ? "空"
             : string.Join("+", _inventory.BoardToolIds.Select(id => _inventory.GetRequiredTool(id).Definition.DisplayName));
         var measure = RightHandHasDualMeasure ? $"｜量酒器:{RightHandMeasureSideName} {RightHandMeasureAmount:0} ml" : string.Empty;
-        return $"左手:{LeftHandDisplayName}｜右手:{RightHandDisplayName}{measure}｜洗手:{(HandsWashedToday ? "已完成" : "未完成(-4%)")}｜水壶:{KettleWaterAmountMl:0} ml｜砧板:{board} [{GetBoardCapabilityText()}]｜杯量:{Glass.CurrentAmount:0.0}/300 ml｜完成度:{DrinkCompletionRatio:P0}｜失败:{_snapshot.FailedOperations}｜浪费:{TotalWaste:0.00}";
+        return $"左手:{LeftHandDisplayName}｜右手:{RightHandDisplayName}{measure}｜洗手:{(HandsWashedToday ? "已完成" : "未完成(-4%)")}｜水壶:{KettleWaterAmountMl:0} ml｜砧板:{board} [{GetBoardCapabilityText()}]｜杯量:{Glass.CurrentAmount:0.0}/300 ml｜完成度:{DrinkCompletionRatio:P0}｜失败:{_assembly.FailedOperations}｜浪费:{TotalWaste:0.00}";
     }
 
     private OperationResult PublishProcessOutcome(ProcessExecutionOutcome outcome)

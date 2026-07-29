@@ -21,13 +21,15 @@
 
 ## 审查后重构进展
 
-2026-07-29 已完成 `DrinkWorkstation` 前两批职责迁移：
+2026-07-29 已完成 `DrinkWorkstation` 前三批职责迁移：
 
 - 新增无 Godot 依赖的 `ToolInventoryService`，接管工具实例集合、左右手槽、拿放、防重叠、砧板槽、材料装载/板上转移、每日重置及工具快照往返。
 - 新增无 Godot 依赖的 `ProcessExecutionService`，接管工序目录、能力/选择、来源合并、规则鉴定、成功输出、失败废品、重复补救、溢出与工序统计；以类型化 outcome 交给 facade 格式化反馈。
+- 新增无 Godot 依赖的 `DrinkAssemblyState`，接管当前杯液体、饮品统计、丢弃/重做、评价输入、每日重置和 schema version 1 工作台快照映射；`LiquidContainer` 同步迁入纯 Domain。
+- `ProcessExecutionService` 不再接收可替换液体目标或直接改写 `DrinkSnapshot`，只向稳定的 `DrinkAssemblyState` 提交工序结果。
 - `DrinkWorkstation` 保留原有公开 API，转为 Godot signal facade、工具表现同步、反馈文本与跨服务编排入口；玩法逻辑、提示语义和随机数消费时机未改变。
-- 新增 7 项纯领域测试覆盖两批服务；完整回归现为领域 23/23，资产、Debug/Release、Godot 导入、冒烟、输入和流程全部 PASS。
-- 下一批是 `DrinkAssemblyState`；不得把前两批迁移误报为整个 `DrinkWorkstation` 拆分完成。
+- 新增 11 项纯领域测试覆盖三批服务；完整回归现为领域 27/27，资产、Debug/Release、Godot 导入、冒烟、输入和流程全部 PASS。
+- 下一拆分目标是 `GrayboxLevelBuilder`；前三批完成仍不等于全部架构重构完成。
 
 表现系统边界同步锁定：Gameplay 只允许通过事件、signal 或动作结果通知表现层，不得直接依赖或控制动画、IK、Skeleton/Bone 等表现实现；表现层不得反向决定玩法结果。
 
@@ -38,7 +40,7 @@ flowchart TD
     R["Godot Resource 定义<br/>ToolDefinition / OperationDefinition / RecipeDefinition"]
     S["不可变领域规格<br/>ToolSpec / OperationSpec / RecipeTargets"]
     V["目录交叉校验<br/>GameplayCatalogValidator"]
-    I["权威运行时实例<br/>ToolInstanceState / LiquidContainer / DayFlow"]
+    I["权威运行时实例<br/>ToolInstanceState / DrinkAssemblyState / DayFlow"]
     Q["交互发现<br/>IInteractable + 射线/ShapeCast"]
     A["统一动作管线<br/>Inspect → Start/Reject → Commit/Cancel"]
     O["玩法编排<br/>DrinkWorkstation / GameSession"]
@@ -72,7 +74,7 @@ flowchart TD
 实例回答“当前这一件东西处于什么状态”：
 
 - `ToolInstanceState` 保存唯一工具实例的位置、手位、砧板槽、内容物、废品标记、完成度和量酒器端位。
-- `LiquidContainer` 保存当前杯中液体组成、容量和溢出。
+- `DrinkAssemblyState` 持有 `LiquidContainer`，统一保存当前杯液体、饮品统计、评价输入与存档映射。
 - `GameSession`/`DayFlow` 保存当前天、阶段、世界模式与是否已观察配方。
 
 禁止事项：
@@ -147,7 +149,7 @@ flowchart TD
 - 工具连续摆放坐标不再从视觉 Node 反向读取。
 - `ToolInventoryService` 已成为工具集合、双手、砧板槽和内容转移的权威 owner；`DrinkWorkstation` 只负责适配与编排。
 - 目录校验会拒绝错误分类、缺失工具引用、无效量酒器端位和不能容纳结果的目标工具。
-- 工序造成的内容消耗、输出和废品标记已由 `ProcessExecutionService` 提交；当前杯液体仍通过窄化的 `IProcessLiquidTarget` 端口接入，等待 `DrinkAssemblyState` 成为正式 owner。
+- 工序造成的内容消耗、输出和废品标记由 `ProcessExecutionService` 提交；高球杯输出、溢出和饮品统计统一写入 `DrinkAssemblyState`。
 
 ### 配方系统
 
@@ -166,7 +168,7 @@ flowchart TD
 - `WorkboardInteractable` 保存短生命周期手势过程；提交时由 `ProcessExecutionService` 修改工具、输出、废品、完成度和统计。
 - 允许错误工具/材料进入结果，仍只阻止物理不成立的动作。
 - `DrinkWorkstation` 只把服务的类型化 outcome 转为既有中文反馈并发布 signal。
-- 剩余风险：当前杯、液体与评价输入仍由 facade 直接编排，需要拆出 `DrinkAssemblyState`。
+- 当前杯、液体、饮品统计与评价输入已由 `DrinkAssemblyState` 统一持有；流程服务不再直接拥有或替换液体状态。
 
 ### 存档系统
 
@@ -195,8 +197,8 @@ flowchart TD
 | 天数、阶段、世界模式、是否开局 | `GameSession` + `DayFlow` | 玩家、HUD、世界 presenter | `RealityWorld`、`GlassesWorld` |
 | 工具定义/工序定义 | Resource → `ToolSpec`/`OperationSpec` | 工作台、校验器、提示 | 工具实例 |
 | 工具位置、手位、砧板槽、内容物 | `ToolInstanceState` 集合 | 工作台、表现绑定、存档 | `ToolInteractable` 视觉 |
-| 当前杯中液体 | `LiquidContainer` | 评价、HUD、存档 | 杯 Mesh |
-| 当日失败/浪费/溢出/用时 | `DrinkSnapshot`/`DrinkWorkstation` | 评价、HUD、存档 | 动作过程 |
+| 当前杯中液体 | `DrinkAssemblyState` → `LiquidContainer` | 评价、HUD、存档 | 杯 Mesh、`DrinkWorkstation` |
+| 当日失败/浪费/溢出/用时 | `DrinkAssemblyState` | 评价、HUD、存档 | 动作过程、表现节点 |
 | 活动连续动作 | `GameplayActionPipeline` + `IManualOperation` | Player/HUD | 存档、配方、工具实例 |
 | 玩家姿态 | `PlayerController` | 存档、摄像机 | `GameSession` |
 | 柜体开合 | `CabinetInteractable` |冰桶可达性、存档 | HUD |
@@ -213,12 +215,12 @@ flowchart TD
 - 数据目录/配方引用校验建立。
 - 当前杯评价与跨天浪费污染修复。
 
-### P1｜建议下一轮拆分
+### P1｜渐进拆分顺序
 
 1. `DrinkWorkstation`：
    - `ToolInventoryService`：双手、拿放、位置、内容转移（第一批已完成）。
    - `ProcessExecutionService`：工序选择、规则调用、输出/废品/补救（第二批已完成）。
-   - `DrinkAssemblyState`：当前杯、完成度、评价输入。
+   - `DrinkAssemblyState`：当前杯、完成度、评价输入（第三批已完成）。
    - `DrinkWorkstation` 保留为 Godot signal facade 和组合入口。
 2. `GrayboxLevelBuilder`：
    - `BarLayoutDefinition`：尺寸/坐标数据。

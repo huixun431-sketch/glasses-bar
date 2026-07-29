@@ -323,8 +323,8 @@ public sealed class DomainTests
         grind.InputTargets["coffee_beans"] = 1d;
         grind.Outputs["ground_coffee"] = 1d;
 
-        var snapshot = new DrinkSnapshot();
-        var service = new ProcessExecutionService(inventory, snapshot);
+        var assembly = new DrinkAssemblyState(300d);
+        var service = new ProcessExecutionService(inventory, assembly);
         service.ConfigureOperations(new[] { wrongCandidate, grind });
 
         Assert.That(service.SelectBoardOperation()?.Id, Is.EqualTo("manual_grind"));
@@ -333,14 +333,13 @@ public sealed class DomainTests
             1d,
             () => 0d,
             0d,
-            true,
-            new TestLiquidTarget(300d));
+            true);
 
         Assert.That(outcome.Kind, Is.EqualTo(ProcessExecutionKind.Completed));
         Assert.That(inventory.GetRequiredTool("mortar").Contents["ground_coffee"], Is.EqualTo(1d));
         Assert.That(inventory.GetRequiredTool("mortar").Contents.ContainsKey("coffee_beans"), Is.False);
-        Assert.That(snapshot.CompletedSteps, Does.Contain("manual_grind"));
-        Assert.That(snapshot.FailedOperations, Is.Zero);
+        Assert.That(assembly.CompletedSteps, Does.Contain("manual_grind"));
+        Assert.That(assembly.FailedOperations, Is.Zero);
     }
 
     [Test]
@@ -379,19 +378,18 @@ public sealed class DomainTests
         addWater.InputTargets["water"] = 30d;
         addWater.Outputs["water"] = 30d;
 
-        var snapshot = new DrinkSnapshot();
-        var liquid = new TestLiquidTarget(20d);
-        var service = new ProcessExecutionService(inventory, snapshot);
+        var assembly = new DrinkAssemblyState(20d);
+        var service = new ProcessExecutionService(inventory, assembly);
         service.ConfigureOperations(new[] { addWater });
-        var outcome = service.ExecuteSimpleOperation(() => 0d, 0d, liquid);
+        var outcome = service.ExecuteSimpleOperation(() => 0d, 0d);
 
         Assert.That(outcome, Is.Not.Null);
         Assert.That(outcome!.Kind, Is.EqualTo(ProcessExecutionKind.Completed));
-        Assert.That(liquid.CurrentAmount, Is.EqualTo(20d));
-        Assert.That(liquid.SpilledAmount, Is.EqualTo(10d));
+        Assert.That(assembly.Glass.CurrentAmount, Is.EqualTo(20d));
+        Assert.That(assembly.Glass.SpilledAmount, Is.EqualTo(10d));
         Assert.That(inventory.GetRequiredTool("highball_glass").Contents["water"], Is.EqualTo(20d));
-        Assert.That(snapshot.IngredientAmounts["water"], Is.EqualTo(20d));
-        Assert.That(snapshot.SpilledAmount, Is.EqualTo(10d));
+        Assert.That(assembly.IngredientAmounts["water"], Is.EqualTo(20d));
+        Assert.That(assembly.SpilledAmount, Is.EqualTo(10d));
         Assert.That(inventory.GetRequiredTool("jigger").Contents, Is.Empty);
     }
 
@@ -430,22 +428,21 @@ public sealed class DomainTests
         grind.InputTargets["coffee_beans"] = 1d;
         grind.Outputs["ground_coffee"] = 1d;
 
-        var snapshot = new DrinkSnapshot();
-        var service = new ProcessExecutionService(inventory, snapshot);
+        var assembly = new DrinkAssemblyState(300d);
+        var service = new ProcessExecutionService(inventory, assembly);
         service.ConfigureOperations(new[] { grind });
         var outcome = service.ExecuteBoardOperation(
             grind,
             1d,
             () => 0d,
             0d,
-            true,
-            new TestLiquidTarget(300d));
+            true);
 
         Assert.That(outcome.Kind, Is.EqualTo(ProcessExecutionKind.Failed));
         Assert.That(outcome.Attempt.Failure, Is.EqualTo(ProcessFailure.WrongIngredients));
         Assert.That(inventory.GetRequiredTool("mortar").ContentsAreWaste, Is.True);
-        Assert.That(snapshot.FailedOperations, Is.EqualTo(1));
-        Assert.That(snapshot.CompletedSteps, Does.Not.Contain("manual_grind"));
+        Assert.That(assembly.FailedOperations, Is.EqualTo(1));
+        Assert.That(assembly.CompletedSteps, Does.Not.Contain("manual_grind"));
     }
 
     [Test]
@@ -478,8 +475,8 @@ public sealed class DomainTests
         extract.InputTargets["ground_coffee"] = 1d;
         extract.InputTargets["water"] = 30d;
         extract.Outputs["coffee_extract"] = 30d;
-        var snapshot = new DrinkSnapshot();
-        var service = new ProcessExecutionService(inventory, snapshot);
+        var assembly = new DrinkAssemblyState(300d);
+        var service = new ProcessExecutionService(inventory, assembly);
         service.ConfigureOperations(new[] { extract });
         var rollCalls = 0;
         double NextRoll()
@@ -493,8 +490,7 @@ public sealed class DomainTests
             1d,
             NextRoll,
             0d,
-            false,
-            new TestLiquidTarget(300d));
+            false);
         Assert.That(dry.Kind, Is.EqualTo(ProcessExecutionKind.NonDestructiveBlock));
         Assert.That(dry.BlockReason, Is.EqualTo(ProcessBlockReason.KettleEmpty));
         Assert.That(rollCalls, Is.Zero);
@@ -510,8 +506,7 @@ public sealed class DomainTests
             0.1d,
             NextRoll,
             0d,
-            true,
-            new TestLiquidTarget(300d));
+            true);
         Assert.That(incomplete.BlockReason, Is.EqualTo(ProcessBlockReason.RepeatActionIncomplete));
         Assert.That(rollCalls, Is.Zero);
         Assert.That(filter.ContentCompletionRatio, Is.EqualTo(0.72d));
@@ -521,13 +516,112 @@ public sealed class DomainTests
             1d,
             NextRoll,
             0d,
-            true,
-            new TestLiquidTarget(300d));
+            true);
         Assert.That(recovered.Kind, Is.EqualTo(ProcessExecutionKind.RepeatRecovery));
         Assert.That(recovered.FullRecovery, Is.True);
         Assert.That(recovered.Attempt.CompletionRatio, Is.GreaterThan(0.72d).And.LessThanOrEqualTo(0.96d));
         Assert.That(rollCalls, Is.EqualTo(1));
         Assert.That(service.RepeatRecoveryCounts["manual_extract"], Is.EqualTo(1));
+    }
+
+    [Test]
+    public void DrinkAssemblyState_DiscardedDrinkDoesNotLeakIntoRemakeEvaluation()
+    {
+        var assembly = new DrinkAssemblyState(300d);
+        assembly.AddProcessOutput("water", 30d);
+        assembly.RecordCompletedOperation("add_water", 0.72d);
+        var glassTool = new ToolInstanceState
+        {
+            Definition = new ToolSpec { Id = "highball_glass", DisplayName = "Glass" },
+            InitialPosition = new SpatialPosition(0d, 0d, 0d)
+        };
+        glassTool.Contents["water"] = 30d;
+        glassTool.ContentCompletionRatio = 0.72d;
+
+        Assert.That(assembly.DiscardToolContents(glassTool), Is.EqualTo(30d));
+        assembly.AddProcessOutput("ice", 2d);
+
+        var targets = new RecipeTargets();
+        targets.RequiredIngredients.Add("water");
+        var evaluation = assembly.Evaluate(targets, 1d);
+
+        Assert.That(evaluation.Passed, Is.False);
+        Assert.That(evaluation.MissingIngredients, Does.Contain("water"));
+        Assert.That(assembly.IngredientAmounts.ContainsKey("water"), Is.False);
+        Assert.That(assembly.IngredientAmounts["ice"], Is.EqualTo(2d));
+        Assert.That(assembly.WastedAmount, Is.EqualTo(30d));
+        Assert.That(assembly.Glass.CurrentAmount, Is.EqualTo(2d));
+    }
+
+    [Test]
+    public void DrinkAssemblyState_ResetClearsDrinkAndDayMetrics()
+    {
+        var assembly = new DrinkAssemblyState(10d);
+        assembly.AdvanceElapsed(5d);
+        assembly.AddProcessOutput("water", 12d);
+        assembly.RecordCompletedOperation("add_water", 0.6d);
+        assembly.RecordFailedOperation();
+        var carrier = new ToolInstanceState
+        {
+            Definition = new ToolSpec { Id = "jigger", DisplayName = "Jigger" },
+            InitialPosition = new SpatialPosition(0d, 0d, 0d)
+        };
+        carrier.Contents["water"] = 3d;
+        assembly.DiscardToolContents(carrier);
+
+        assembly.ResetForNewDay(300d);
+
+        Assert.That(assembly.Glass.Capacity, Is.EqualTo(300d));
+        Assert.That(assembly.Glass.CurrentAmount, Is.Zero);
+        Assert.That(assembly.ElapsedSeconds, Is.Zero);
+        Assert.That(assembly.WastedAmount, Is.Zero);
+        Assert.That(assembly.SpilledAmount, Is.Zero);
+        Assert.That(assembly.FailedOperations, Is.Zero);
+        Assert.That(assembly.CraftCompletionRatio, Is.EqualTo(1d));
+        Assert.That(assembly.CompletedSteps, Is.Empty);
+        Assert.That(assembly.IngredientAmounts, Is.Empty);
+    }
+
+    [Test]
+    public void DrinkAssemblyState_RestoresVersionOneSnapshotSemantics()
+    {
+        var assembly = new DrinkAssemblyState(15d);
+        assembly.AdvanceElapsed(4d);
+        assembly.AddProcessOutput("water", 20d);
+        assembly.RecordCompletedOperation("add_water", 0.8d);
+        assembly.RecordFailedOperation();
+        var glass = assembly.CaptureGlassSnapshot();
+        var completedSteps = assembly.CaptureCompletedSteps();
+
+        var restored = new DrinkAssemblyState(1d);
+        restored.Restore(glass, assembly.ElapsedSeconds, 7d, assembly.FailedOperations, completedSteps);
+
+        Assert.That(restored.Glass.Capacity, Is.EqualTo(15d));
+        Assert.That(restored.Glass.CurrentAmount, Is.EqualTo(15d));
+        Assert.That(restored.Glass.SpilledAmount, Is.EqualTo(5d));
+        Assert.That(restored.ElapsedSeconds, Is.EqualTo(4d));
+        Assert.That(restored.WastedAmount, Is.EqualTo(7d));
+        Assert.That(restored.SpilledAmount, Is.EqualTo(5d));
+        Assert.That(restored.FailedOperations, Is.EqualTo(1));
+        Assert.That(restored.CompletedSteps, Does.Contain("add_water"));
+        Assert.That(restored.CraftCompletionRatio, Is.EqualTo(1d));
+        Assert.That(restored.IngredientAmounts, Is.Empty);
+    }
+
+    [Test]
+    public void LiquidContainer_RemovalPreservesIngredientRatios()
+    {
+        var liquid = new LiquidContainer(100d);
+        liquid.Add("water", 30d);
+        liquid.Add("coffee_extract", 10d);
+
+        Assert.That(liquid.Remove(20d), Is.EqualTo(20d));
+        Assert.That(liquid.CurrentAmount, Is.EqualTo(20d));
+        Assert.That(liquid.Ingredients["water"], Is.EqualTo(15d));
+        Assert.That(liquid.Ingredients["coffee_extract"], Is.EqualTo(5d));
+        Assert.That(
+            () => liquid.Restore(new Dictionary<string, double> { ["water"] = 101d }, 0d),
+            Throws.TypeOf<System.ArgumentOutOfRangeException>());
     }
 
     [Test]
@@ -651,30 +745,4 @@ public sealed class DomainTests
             Throws.TypeOf<GameplayCatalogValidationException>());
     }
 
-    private sealed class TestLiquidTarget : IProcessLiquidTarget
-    {
-        public TestLiquidTarget(double capacity)
-        {
-            Capacity = capacity;
-        }
-
-        public double Capacity { get; }
-        public double CurrentAmount { get; private set; }
-        public double SpilledAmount { get; private set; }
-
-        public double Add(string ingredientId, double amount)
-        {
-            var accepted = System.Math.Min(System.Math.Max(0d, amount), Capacity - CurrentAmount);
-            CurrentAmount += accepted;
-            SpilledAmount += System.Math.Max(0d, amount - accepted);
-            return accepted;
-        }
-
-        public double Empty()
-        {
-            var amount = CurrentAmount;
-            CurrentAmount = 0d;
-            return amount;
-        }
-    }
 }

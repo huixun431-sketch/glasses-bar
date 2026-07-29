@@ -13,18 +13,13 @@ public partial class DrinkWorkstation
             LeftHandToolId = LeftHandToolId,
             RightHandToolId = RightHandToolId,
             BoardToolIds = new List<string>(_inventory.BoardToolIds),
-            Glass = new LiquidSnapshot
-            {
-                Capacity = Glass.Capacity,
-                SpilledAmount = Glass.SpilledAmount,
-                Ingredients = new Dictionary<string, double>(Glass.Ingredients, StringComparer.Ordinal)
-            },
+            Glass = _assembly.CaptureGlassSnapshot(),
             HandsWashedToday = HandsWashedToday,
             KettleWaterAmountMl = KettleWaterAmountMl,
-            ElapsedSeconds = _snapshot.ElapsedSeconds,
-            WastedAmount = _snapshot.WastedAmount,
-            FailedOperations = _snapshot.FailedOperations,
-            CompletedSteps = new HashSet<string>(_snapshot.CompletedSteps, StringComparer.Ordinal),
+            ElapsedSeconds = _assembly.ElapsedSeconds,
+            WastedAmount = _assembly.WastedAmount,
+            FailedOperations = _assembly.FailedOperations,
+            CompletedSteps = _assembly.CaptureCompletedSteps(),
             RepeatRecoveryCounts = _processes.CaptureRepeatRecoveryCounts(),
             Tools = _inventory.CaptureToolSnapshots()
         };
@@ -40,17 +35,12 @@ public partial class DrinkWorkstation
             snapshot.BoardToolIds);
         HandsWashedToday = snapshot.HandsWashedToday;
         KettleWaterAmountMl = Math.Clamp(snapshot.KettleWaterAmountMl, 0d, PrototypeKettleCapacityMl);
-        Glass = new LiquidContainer(snapshot.Glass.Capacity);
-        Glass.Restore(snapshot.Glass.Ingredients, snapshot.Glass.SpilledAmount);
-
-        _snapshot.CompletedSteps.Clear();
-        _snapshot.CompletedSteps.UnionWith(snapshot.CompletedSteps);
-        _snapshot.IngredientAmounts.Clear();
-        _snapshot.ElapsedSeconds = Math.Max(0d, snapshot.ElapsedSeconds);
-        _snapshot.WastedAmount = Math.Max(0d, snapshot.WastedAmount);
-        _snapshot.SpilledAmount = Glass.SpilledAmount;
-        _snapshot.CraftCompletionRatio = 1d;
-        _snapshot.FailedOperations = Math.Max(0, snapshot.FailedOperations);
+        _assembly.Restore(
+            snapshot.Glass,
+            snapshot.ElapsedSeconds,
+            snapshot.WastedAmount,
+            snapshot.FailedOperations,
+            snapshot.CompletedSteps);
         _processes.RestoreRepeatRecoveryCounts(snapshot.RepeatRecoveryCounts);
 
         foreach (var state in _inventory.Tools.Values)

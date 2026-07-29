@@ -4,13 +4,6 @@ using System.Linq;
 
 namespace GlassesBar.Domain;
 
-public interface IProcessLiquidTarget
-{
-    double SpilledAmount { get; }
-    double Add(string ingredientId, double amount);
-    double Empty();
-}
-
 public enum ProcessExecutionKind
 {
     Completed,
@@ -54,14 +47,14 @@ public sealed class ProcessExecutionService
     private const double QuantityEpsilon = 0.000001d;
 
     private readonly ToolInventoryService _inventory;
-    private readonly DrinkSnapshot _snapshot;
+    private readonly DrinkAssemblyState _assembly;
     private readonly List<OperationSpec> _operations = new();
     private readonly Dictionary<string, int> _repeatRecoveryCounts = new(StringComparer.Ordinal);
 
-    public ProcessExecutionService(ToolInventoryService inventory, DrinkSnapshot snapshot)
+    public ProcessExecutionService(ToolInventoryService inventory, DrinkAssemblyState assembly)
     {
         _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
-        _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
+        _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
     }
 
     public IReadOnlyList<OperationSpec> Operations => _operations;
@@ -102,11 +95,9 @@ public sealed class ProcessExecutionService
 
     public ProcessExecutionOutcome? ExecuteSimpleOperation(
         Func<double> nextRoll,
-        double successProbabilityPenalty,
-        IProcessLiquidTarget liquidTarget)
+        double successProbabilityPenalty)
     {
         ArgumentNullException.ThrowIfNull(nextRoll);
-        ArgumentNullException.ThrowIfNull(liquidTarget);
 
         var operation = SelectSimpleOperation();
         if (operation is null)
@@ -120,7 +111,7 @@ public sealed class ProcessExecutionService
             1d,
             nextRoll(),
             successProbabilityPenalty);
-        return ApplyAttempt(operation, attempt, new[] { carrier }, liquidTarget);
+        return ApplyAttempt(operation, attempt, new[] { carrier });
     }
 
     public IReadOnlyList<OperationSpec> GetBoardCapabilities()
@@ -206,12 +197,10 @@ public sealed class ProcessExecutionService
         double action,
         Func<double> nextRoll,
         double successProbabilityPenalty,
-        bool kettleHasWater,
-        IProcessLiquidTarget liquidTarget)
+        bool kettleHasWater)
     {
         ArgumentNullException.ThrowIfNull(operation);
         ArgumentNullException.ThrowIfNull(nextRoll);
-        ArgumentNullException.ThrowIfNull(liquidTarget);
 
         var sources = GetOperationSourceStates(operation);
         var ingredients = MergeContents(sources);
@@ -233,8 +222,7 @@ public sealed class ProcessExecutionService
                 target,
                 action,
                 nextRoll,
-                successProbabilityPenalty,
-                liquidTarget);
+                successProbabilityPenalty);
         }
 
         var attempt = ProcessRules.Evaluate(
@@ -244,7 +232,7 @@ public sealed class ProcessExecutionService
             action,
             nextRoll(),
             successProbabilityPenalty);
-        return ApplyAttempt(operation, attempt, sources, liquidTarget);
+        return ApplyAttempt(operation, attempt, sources);
     }
 
     public void Reset() => _repeatRecoveryCounts.Clear();
@@ -265,8 +253,7 @@ public sealed class ProcessExecutionService
         ToolInstanceState target,
         double action,
         Func<double> nextRoll,
-        double successProbabilityPenalty,
-        IProcessLiquidTarget liquidTarget)
+        double successProbabilityPenalty)
     {
         if (Math.Max(0d, action) < Math.Max(0d, operation.RequiredAction))
         {
@@ -284,7 +271,7 @@ public sealed class ProcessExecutionService
                 action,
                 0d,
                 successProbabilityPenalty);
-            return ApplyAttempt(operation, wrongTool, new[] { target }, liquidTarget);
+            return ApplyAttempt(operation, wrongTool, new[] { target });
         }
 
         var chance = Math.Clamp(1d - successProbabilityPenalty, 0d, 1d);
@@ -295,7 +282,7 @@ public sealed class ProcessExecutionService
             operation.RepeatRecoveryCap,
             fraction);
         target.ContentCompletionRatio = recovered;
-        _snapshot.CraftCompletionRatio = recovered;
+        _assembly.SetCraftCompletion(recovered);
         _repeatRecoveryCounts.TryGetValue(operation.Id, out var count);
         _repeatRecoveryCounts[operation.Id] = count + 1;
 
@@ -318,8 +305,7 @@ public sealed class ProcessExecutionService
     private ProcessExecutionOutcome ApplyAttempt(
         OperationSpec operation,
         ProcessAttemptResult attempt,
-        IEnumerable<ToolInstanceState> sourceStates,
-        IProcessLiquidTarget liquidTarget)
+        IEnumerable<ToolInstanceState> sourceStates)
     {
         var sources = sourceStates.Distinct().ToArray();
         var inheritedCompletion = sources
@@ -335,19 +321,17 @@ public sealed class ProcessExecutionService
             foreach (var source in sources)
             {
                 if (source.Id == "highball_glass")
-                    liquidTarget.Empty();
+                    _assembly.EmptyGlass();
                 source.ClearContents();
             }
 
             if (_inventory.Tools.TryGetValue(operation.ResultTargetToolId, out var target))
             {
                 foreach (var output in operation.Outputs)
-                    AddOutput(target, output.Key, output.Value, outputCompletion, liquidTarget);
+                    AddOutput(target, output.Key, output.Value, outputCompletion);
             }
 
-            _snapshot.CompletedSteps.Add(operation.Id);
-            _snapshot.CraftCompletionRatio =
-                Math.Min(_snapshot.CraftCompletionRatio, outputCompletion);
+            _assembly.RecordCompletedOperation(operation.Id, outputCompletion);
             kind = ProcessExecutionKind.Completed;
         }
         else if (attempt.Failure == ProcessFailure.InsufficientAction)
@@ -358,7 +342,7 @@ public sealed class ProcessExecutionService
         {
             foreach (var source in sources.Where(state => state.Contents.Count > 0))
                 source.ContentsAreWaste = true;
-            _snapshot.FailedOperations++;
+            _assembly.RecordFailedOperation();
             kind = ProcessExecutionKind.Failed;
         }
 
@@ -375,18 +359,11 @@ public sealed class ProcessExecutionService
         ToolInstanceState target,
         string ingredientId,
         double amount,
-        double completion,
-        IProcessLiquidTarget liquidTarget)
+        double completion)
     {
         var accepted = Math.Max(0d, amount);
         if (target.Id == "highball_glass")
-        {
-            var spillBefore = liquidTarget.SpilledAmount;
-            accepted = liquidTarget.Add(ingredientId, amount);
-            _snapshot.SpilledAmount += liquidTarget.SpilledAmount - spillBefore;
-            _snapshot.IngredientAmounts.TryGetValue(ingredientId, out var existingSnapshot);
-            _snapshot.IngredientAmounts[ingredientId] = existingSnapshot + accepted;
-        }
+            accepted = _assembly.AddProcessOutput(ingredientId, amount);
 
         target.Contents.TryGetValue(ingredientId, out var existing);
         target.Contents[ingredientId] = existing + accepted;

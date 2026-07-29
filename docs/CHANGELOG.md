@@ -2,6 +2,9 @@
 
 ## 2026-07-29
 
+- 完成第三批 `DrinkWorkstation` 职责迁移：新增纯 C# `DrinkAssemblyState`，接管当前杯、饮品统计、丢弃/重做、评价、每日重置和 schema version 1 快照映射；`LiquidContainer` 移入纯 Domain。
+- `ProcessExecutionService` 改为只通过 `DrinkAssemblyState` 提交饮品结果，不再直接改写 `DrinkSnapshot` 或接收临时液体端口；`DrinkWorkstation` 继续保留原公开 facade、signal 和反馈语义。
+- 新增 4 项饮品组装/液体领域测试；第三批回归为资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS；无视觉改动。
 - 完成第二批 `DrinkWorkstation` 职责迁移：新增纯 C# `ProcessExecutionService`，接管工序能力/选择、来源合并、规则鉴定、输出/废品、重复补救、溢出和工序统计。
 - 新增类型化 `ProcessExecutionOutcome` 与 `IProcessLiquidTarget` 窄端口；`DrinkWorkstation` 保留原公开 API，只负责既有反馈格式化、signal 与跨服务编排，不依赖任何动画、IK 或骨骼实现。
 - 新增 4 项工序执行领域测试；第二批回归为资产 16 项 0 错误、领域测试 23/23、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS。
