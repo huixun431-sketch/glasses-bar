@@ -32,7 +32,9 @@
 - `GrayboxLevelBuilder` 已按审查结论拆成不可变 `BarLayoutDefinition`、无玩法状态的 `GrayboxArchitectureBuilder`、柜体节点组装 `CabinetBuilder` 和玩法绑定 `GameplaySceneComposer`；原类只保留组合顺序与兼容常量。
 - 布局定义新增稳定 ID、唯一性、正尺寸、三槽砧板、单一冰桶抽屉和水槽下方净空校验；完整回归仍为领域 27/27 及所有 Godot 测试 PASS。
 - Forward+ 布局最终帧与重构前已验收基线 SHA-256 完全一致，证明节点、几何、材质和画面未发生漂移。
-- 下一拆分目标是 `PlayerController`；前四批完成仍不等于全部架构重构完成。
+- `PlayerController` 已按审查结论拆成 `PlayerMotor`、`InteractionSensor`、`PlayerActionInput` 与单向消费 hand signal 的 `HeldToolPresenter`；原类只保留 Godot 生命周期、公开 API/signal 与组合编排。
+- 玩家节点路径、导出参数、输入、探测、动作 phase/提交时机、提示/反馈、姿态快照和手持灰盒保持原行为；完整回归仍为领域 27/27 及所有 Godot 测试 PASS，Forward+ 手持截图已人工检查。
+- 下一拆分目标是 `StationInteractable`；前五批完成仍不等于全部架构重构完成。
 
 表现系统边界同步锁定：Gameplay 只允许通过事件、signal 或动作结果通知表现层，不得直接依赖或控制动画、IK、Skeleton/Bone 等表现实现；表现层不得反向决定玩法结果。
 
@@ -230,7 +232,7 @@ flowchart TD
    - `GameplaySceneComposer`：创建工作台、玩家和绑定（第四批已完成）。
    - `GrayboxArchitectureBuilder`/`CabinetBuilder`：表现、碰撞与柜体节点搭建（第四批已完成）。
 3. `PlayerController`：
-   - `PlayerMotor`、`InteractionSensor`、`PlayerActionInput`、`HeldToolPresenter`。
+   - `PlayerMotor`、`InteractionSensor`、`PlayerActionInput`、`HeldToolPresenter`（第五批已完成）。
 4. `StationInteractable`：
    - Resource 化站点定义；动作 handler 注册表替代 Kind `switch`。
 5. 设置：
@@ -249,7 +251,7 @@ flowchart TD
 
 - 资产验证器自测：好/坏 manifest 均 PASS。
 - 资产清单：16 项，0 错误。
-- 纯领域测试：16/16 PASS。
+- 纯领域测试：27/27 PASS。
 - Debug/Release 构建：0 警告、0 错误。
 - Godot 编辑器导入：PASS。
 - `SMOKE_TESTS_PASS`。

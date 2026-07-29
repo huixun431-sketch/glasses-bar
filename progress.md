@@ -4,6 +4,32 @@
 
 用途：新对话先读本文件，再读 `docs/CONTEXT_HANDOFF.md`。正式配方、平衡值、顾客内容和最终美术仍未批准；下述数值与灰盒均为开发占位。
 
+## 2026-07-29｜第五批职责迁移：玩家控制器
+
+### 已完成的事项
+
+- 新增 `PlayerMotor`，从 `PlayerController` 接管移动输入、重力、视角旋转、跨天姿态复位以及 schema version 1 玩家姿态快照往返。
+- 新增 `InteractionSensor`，按原有顺序使用 `InteractionRay` 优先、`InteractionProbe` 兜底，只返回交互目标和命中点，不评估或执行玩法规则。
+- 新增 `PlayerActionInput`，把既有输入映射转换为统一动作管线请求，驱动连续动作、提示检查、提交/取消和反馈；原 action ID、phase、目标 ID 与提交时机保持不变。
+- 新增 `HeldToolPresenter`，只消费 `DrinkWorkstation` 的 `HandsChanged`/`HandToolIdsChanged` signal 并更新现有手持 Mesh、可见性和隐藏标签；Gameplay 不引用该 presenter。
+- `PlayerController` 从 382 行收敛为 98 行 Godot 生命周期、公开 API、signal 和协作者组合 facade；`Main.tscn` 挂载、节点路径、导出参数、HUD/菜单/存档调用均未改变。
+- 输入集成回归新增玩家姿态快照/零速度恢复，以及研钵/研杵 hand signal → Mesh/可见性同步与每日重置断言。
+- 完整验证通过：资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误、Godot 导入、`SMOKE_TESTS_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS`。
+- 已运行 Forward+ `ToolHandsVisualCapture` 并人工检查，最终帧为 `artifacts/visual_review_20260729_player_refactor/hands00000044.png`，SHA-256 `F03D29EDFB8BC6C69B2D8053F72B762E749437882E26EFD04A63238474612921`；左右手灰盒、HUD 手位和交互反馈显示正常。
+
+### 关键决策
+
+- 玩家姿态仍是唯一权威状态，`PlayerMotor` 只负责读写该姿态；动作过程继续由 `GameplayActionPipeline` 持有，交互探测不拥有玩法状态。
+- `HeldToolPresenter` 是单向表现消费者。后续动画、IK、骨骼只能替换或扩展表现层，并通过事件、signal 或动作结果接收通知；Gameplay 不得依赖、查询或控制其实现，表现层不得决定玩法结果。
+- 第五批保留 `PlayerController` 作为稳定 Godot facade，避免场景、HUD、菜单、交互上下文和存档系统在职责迁移时同时改接口。
+- 第五批完成不代表整体架构重构完成。
+
+### 未完成的待办
+
+1. P1：下一批拆分 `StationInteractable`，引入站点定义并以动作 handler 注册替代 Kind `switch`，保持所有提示、许可、反馈和玩法结果不变。
+2. P1：随后抽出主菜单/暂停菜单共用的 `SettingsState/SettingsService`。
+3. P2/M3 与外部阻塞不变：正式存档产品层、正式配方/平衡、首批 GLB 和真实键鼠手感验收仍待后续。
+
 ## 2026-07-29｜第四批职责迁移：灰盒场景组合
 
 ### 已完成的事项

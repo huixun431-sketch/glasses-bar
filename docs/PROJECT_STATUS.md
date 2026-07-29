@@ -4,6 +4,9 @@
 
 ## 已完成
 
+- 完成 `PlayerController` 第五批职责迁移：新增 `PlayerMotor`、`InteractionSensor`、`PlayerActionInput` 与 `HeldToolPresenter`，分别接管移动/视角/姿态快照、RayCast/ShapeCast 目标探测、输入到动作管线/连续动作/提示，以及手持灰盒表现；原类从 382 行收敛为 98 行 Godot 生命周期、公开 API、signal 和组合 facade。
+- 原场景挂载、节点路径、导出参数、输入映射、探测优先级/范围、动作 trace/提交时机、提示/反馈、玩家快照 schema、手持 Mesh/可见性和跨天复位语义保持不变；Gameplay 不依赖 `HeldToolPresenter` 或动画、IK、骨骼实现。
+- 2026-07-29 第五批回归：资产 16 项 0 错误、纯领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS；新增姿态快照和手持 signal/Mesh 回归。Forward+ `ToolHandsVisualCapture` 已人工检查，左右手灰盒、HUD 手位和反馈正常。
 - 完成 `GrayboxLevelBuilder` 第四批职责迁移：新增不可变 `BarLayoutDefinition`、`GrayboxArchitectureBuilder`、`CabinetBuilder` 和 `GameplaySceneComposer`，分别接管布局数据/校验、现实与眼镜建筑/碰撞、柜体/冰桶节点组装，以及工作台/工具/站点创建和玩家/HUD/菜单/会话绑定；原类收敛为 52 行 Godot 组合根。
 - 所有现有节点名/路径、坐标、尺寸、颜色、碰撞层、创建顺序、signal 绑定和重置语义保持不变；Gameplay 没有新增对材质、动画、IK 或骨骼实现的依赖。
 - 2026-07-29 第四批回归：资产 16 项 0 错误、纯领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS；布局定义不变量测试通过。Forward+ 最终帧与 2026-07-23 已验收基线 SHA-256 完全一致并已人工检查。
@@ -83,7 +86,7 @@
 
 ## 计划中
 
-- 下一批按 P1 顺序拆分 `PlayerController`，随后处理 `StationInteractable`，避免新增内容继续扩大集中式控制器与交互分派。
+- 下一批按 P1 顺序拆分 `StationInteractable`，随后提取主/暂停菜单共用设置服务，避免新增内容继续扩大交互分派与重复 UI 设置逻辑。
 - 长期存档进入产品实现时，在现有 schema 基础上补充磁盘槽、原子写入、备份、显式迁移器、损坏回退与“继续游戏”，不把 Node 或表现状态写入存档。
 - 由用户在新版 Windows 包中至少完整游玩两天，主动覆盖提前制作/误猜、正确流程、载料落台提示、左手优先、拿错工具、放错材料、比例偏差、手动清废、暂停重开、柜体和跨天近视，按反馈调整双手切换、摆放半径、砧板操作、UI 节奏、封闭空间和模糊强度。
 - 使用固定的 Blender 4.5.5 LTS 开始首批物品建模，并按资产规范交付 GLB。

@@ -2,6 +2,9 @@
 
 ## 2026-07-29
 
+- 完成第五批架构迁移：将 `PlayerController` 拆为 `PlayerMotor`、`InteractionSensor`、`PlayerActionInput` 和 `HeldToolPresenter`；原类保留为 98 行 Godot 生命周期、公开 API、signal 与组合 facade。
+- 保持原场景节点/导出参数、输入映射、探测顺序、动作 phase/提交时机、提示/反馈、玩家快照、手持 Mesh 和跨天复位不变；Gameplay 不依赖手持 presenter 或未来动画、IK、骨骼实现。
+- 输入集成新增姿态快照/零速度恢复及手持 signal/Mesh 同步回归；第五批完整验证为资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入和完整流程全部 PASS。Forward+ 手持截图已人工检查。
 - 完成第四批架构迁移：将 `GrayboxLevelBuilder` 拆为不可变布局定义、建筑/碰撞构建器、柜体/冰桶构建器和玩法场景组合器；原类只保留 Godot 组合顺序与兼容常量。
 - 布局定义新增稳定 ID、唯一性、正尺寸、三槽砧板、单一冰桶抽屉和水槽下方净空校验；流程回归直接锁定 5 个站点、9 件工具、8 个抽屉、6 扇柜门和冰桶抽屉 ID。
 - 第四批回归为资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS；Forward+ 最终帧与已验收基线 SHA-256 完全一致。

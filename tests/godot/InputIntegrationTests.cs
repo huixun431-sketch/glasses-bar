@@ -64,11 +64,47 @@ public partial class InputIntegrationTests : Node
                 "side return collision encloses the bartender work area and prevents walking out");
             player.ResetForNewDay();
             await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+            var savedPosition = player.Position;
+            var savedRotation = player.Rotation;
+            var head = player.GetNode<Node3D>("Head");
+            var savedHeadRotation = head.Rotation;
+            var playerSnapshot = player.CaptureState();
+            player.Position += new Vector3(0.4f, 0.2f, -0.3f);
+            player.Rotation += new Vector3(0f, 0.35f, 0f);
+            head.Rotation += new Vector3(0.2f, 0f, 0f);
+            player.RestoreState(playerSnapshot);
+            Require(player.Position.IsEqualApprox(savedPosition) &&
+                    player.Rotation.IsEqualApprox(savedRotation) &&
+                    head.Rotation.IsEqualApprox(savedHeadRotation) &&
+                    player.Velocity.IsZeroApprox(),
+                "player motor preserves the existing pose snapshot and zero-velocity restore contract");
             var workstation = main.GetNode<DrinkWorkstation>("NeutralGameplay/DrinkWorkstation");
             var glassPickup = main.GetNode<ToolInteractable>("NeutralGameplay/highball_glass");
             var context = new InteractionContext { Player = player, Workstation = workstation };
             Require(GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder && glassPickup.CanInteract(context),
                 "tools and crafting interactions are available before accepting an order");
+            var leftHeldVisual = player.GetNode<MeshInstance3D>("Head/Camera3D/LeftHandAnchor/HeldTool");
+            var rightHeldVisual = player.GetNode<MeshInstance3D>("Head/Camera3D/RightHandAnchor/HeldTool");
+            main.GetNode<ToolInteractable>("NeutralGameplay/mortar").Interact(context);
+            main.GetNode<ToolInteractable>("NeutralGameplay/pestle").Interact(context);
+            Require(leftHeldVisual.Visible && leftHeldVisual.Mesh is CylinderMesh
+                    {
+                        TopRadius: 0.135f,
+                        BottomRadius: 0.165f,
+                        Height: 0.16f
+                    },
+                "left-hand presentation consumes the hand-state signal and keeps the mortar mesh");
+            Require(rightHeldVisual.Visible && rightHeldVisual.Mesh is CylinderMesh
+                    {
+                        TopRadius: 0.034f,
+                        BottomRadius: 0.049f,
+                        Height: 0.3f
+                    },
+                "right-hand presentation consumes the hand-state signal and keeps the pestle mesh");
+            workstation.ResetForNewDay();
+            player.ResetForNewDay();
+            Require(!leftHeldVisual.Visible && !rightHeldVisual.Visible,
+                "hand presentation hides both meshes after the authoritative hand state resets");
             Require(probe.Enabled && probe.TargetPosition.Length() > 5f, "forgiving interaction probe is active");
             Require(Math.Abs(myopia.MyopiaDegrees - 50f) < 0.01f, "reality myopia defaults to 50 degrees");
             var blurMaterial = (ShaderMaterial)main.GetNode<ColorRect>("RealityEffects/RealityBlur").Material;

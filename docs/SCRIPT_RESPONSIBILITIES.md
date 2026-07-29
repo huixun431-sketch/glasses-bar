@@ -64,7 +64,11 @@
 
 | 脚本 | 当前职责 | 权威状态 | 拆分结论 |
 |---|---|---|---|
-| `scripts/player/PlayerController.cs` | 移动、视角、输入映射、目标探测、动作请求、连续动作驱动、手持灰盒表现、玩家快照 | 玩家姿态；动作由 pipeline 持有 | 待拆 P1 |
+| `scripts/player/PlayerMotor.cs` | 移动、重力、视角旋转、玩家姿态快照与跨天复位 | 玩家位置/身体与头部旋转 | 已拆；不发起玩法动作 |
+| `scripts/player/InteractionSensor.cs` | RayCast 优先、ShapeCast 兜底的目标与命中点探测 | 无 | 已拆；不评估或执行交互 |
+| `scripts/player/PlayerActionInput.cs` | 输入映射、动作请求、连续动作驱动、提示检查与反馈路由 | 手势强度/提示缓存；动作过程由 pipeline 持有 | 已拆；不依赖表现实现 |
+| `scripts/player/HeldToolPresenter.cs` | 消费手部 signal，更新第一人称手持 Mesh、可见性和标签 | 仅表现缓存 | 已拆；Gameplay 不依赖 presenter |
+| `scripts/player/PlayerController.cs` | Godot 生命周期、公开 API/signal 与四个玩家协作者组合 | 不新增状态；兼容 facade | 已拆；98 行组合入口 |
 | `scripts/world/BarLayoutDefinition.cs` | 当前灰盒尺寸、坐标、稳定节点 ID、工具/站点/柜体布局及结构校验 | 不可变布局数据；无玩法进度 | 已拆；无 Node |
 | `scripts/world/GrayboxArchitectureBuilder.cs` | 从布局数据创建现实/眼镜建筑、静态碰撞、材质、标签与站点视觉 | 无 | 已拆；不读取玩法状态 |
 | `scripts/world/CabinetBuilder.cs` | 从布局数据组装 `CabinetInteractable`、抽屉空腔与内置冰桶节点 | 无；柜体状态仍由各 `CabinetInteractable` 持有 | 已拆 |
