@@ -18,11 +18,14 @@
 - 第二批职责迁移目标为无 Godot 依赖的 `ProcessExecutionService`：接管工序能力/选择、来源合并、规则调用、成功输出、失败废品、重复补救和工序统计；`DrinkWorkstation` 只保留反馈文本格式化、signal 发布、卫生/水壶环境输入与跨服务 facade。
 - 第二批必须保持既有随机数消费时机：非破坏性缺水、重复补救动作不足和重复补救的错误手持工具固定失败路径不得额外消费随机数；普通工序仍按既有调用顺序取得鉴定值，测试排队的下一次鉴定值不能因重构漂移。
 - 第三批职责迁移目标为无 Godot 依赖的 `DrinkAssemblyState`：集中持有当前杯液体、饮品快照、耗时、浪费、溢出、失败次数、已完成步骤、丢弃/重做、评价与存档映射；`ProcessExecutionService` 只通过该领域边界提交工序结果，`DrinkWorkstation` 不再直接改写饮品快照。必须保持 `WorkstationSnapshot` schema version 1、现有公开 facade、配方判定、完成度传播、溢出/浪费累计和跨天重置语义不变。
+- 第四批职责迁移目标为 `GrayboxLevelBuilder`：`BarLayoutDefinition` 集中当前灰盒尺寸/坐标与稳定节点 ID，`GrayboxArchitectureBuilder` 只创建现实/眼镜建筑和碰撞，`CabinetBuilder` 只组装柜体与冰桶节点，`GameplaySceneComposer` 创建工作台/工具/站点并绑定玩家、HUD、菜单和会话；`GrayboxLevelBuilder` 收敛为 Godot 组合根。必须保持所有现有节点名/路径、坐标、尺寸、颜色、碰撞层、创建顺序、signal 绑定与重置语义不变。
 - 后续动画、IK、骨骼等均属于可替换表现实现。Gameplay 只能通过事件、signal 或动作结果通知表现层，不得直接依赖、查询或控制动画播放器、IK 求解器、Skeleton/Bone 或其他表现实现；表现层不得反向决定玩法结果。
 - 本轮仍须保留用户已有的 `export_presets.cfg` 未提交改动，不纳入重构提交。
 
 ## P1｜2026-07-29 活动状态
 
+- 已完成审查后第四批重构：`BarLayoutDefinition` 接管灰盒尺寸/坐标/稳定节点 ID，`GrayboxArchitectureBuilder` 接管现实/眼镜建筑与碰撞，`CabinetBuilder` 接管柜体/冰桶组装，`GameplaySceneComposer` 接管工作台/工具/站点创建及玩家/HUD/菜单/会话绑定；`GrayboxLevelBuilder` 已收敛为 52 行 Godot 组合根。
+- 已验证（2026-07-29 第四批回归）：资产 16 项 0 错误、纯领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS；新增布局定义不变量回归。Forward+ 布局最终帧与 2026-07-23 已验收基线的 SHA-256 同为 `5E610186D5C7FD7FDC6265325CCC2A5521AFD37ECD573BF8120C37F5B916BE51`，视觉输出逐像素一致并已人工检查。
 - 已完成审查后第三批重构：`DrinkAssemblyState` 接管当前杯、液体、饮品统计、丢弃/重做、评价、每日重置与 schema version 1 快照映射；`LiquidContainer` 已迁入纯 Domain，`ProcessExecutionService` 只通过稳定饮品边界提交结果。
 - 已验证（2026-07-29 第三批回归）：资产 16 项 0 错误、纯领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS；本批无视觉改动，无需新增截图。
 - 已完成审查后第二批重构：`ProcessExecutionService` 接管工序目录、能力/选择、来源合并、规则鉴定、输出/废品、重复补救、溢出与工序统计；`DrinkWorkstation` 只格式化类型化 outcome 并发 signal。
@@ -36,7 +39,7 @@
 - 已修复丢弃旧饮品后历史原料/完成度污染重做评价、`TotalWaste` 跨天不清零，以及原型标记与数量评分策略耦合的问题。
 - 已更新 `docs/TECHNICAL_DESIGN.md` 的旧柜体描述为当前 `2.31 m` 通道、8 抽屉、6 大门吊柜和 `1.69 m` 开抽屉通行带。
 - 已验证（2026-07-29）：资产 16 项 0 错误、纯领域测试 16/16、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS。
-- 下一代码拆分优先级：`GrayboxLevelBuilder` → `PlayerController` → `StationInteractable`；不得把前三批迁移误报为全部架构重构完成。
+- 下一代码拆分优先级：`PlayerController` → `StationInteractable`；不得把前四批迁移误报为全部架构重构完成。
 
 ## P0｜不可丢失的决策与边界
 
@@ -126,6 +129,7 @@
 - 核心会话：`scripts/core/GameSession.cs`
 - 工具/工序领域规则：`src/Domain/ToolProcessModel.cs`
 - 工具库存、饮品组装与工序执行：`src/Domain/ToolInventoryService.cs`、`src/Domain/DrinkAssemblyState.cs`、`src/Domain/ProcessExecutionService.cs`
+- 灰盒布局与场景组合：`scripts/world/BarLayoutDefinition.cs`、`scripts/world/GrayboxArchitectureBuilder.cs`、`scripts/world/CabinetBuilder.cs`、`scripts/world/GameplaySceneComposer.cs`
 - 工具与工序开发目录：`data/gameplay/prototype_gameplay_catalog.tres`
 - 双手与权威物品状态：`scripts/gameplay/DrinkWorkstation.cs`
 - 组合砧板：`scripts/gameplay/WorkboardInteractable.cs`

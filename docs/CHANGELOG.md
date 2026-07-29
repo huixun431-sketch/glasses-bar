@@ -2,6 +2,9 @@
 
 ## 2026-07-29
 
+- 完成第四批架构迁移：将 `GrayboxLevelBuilder` 拆为不可变布局定义、建筑/碰撞构建器、柜体/冰桶构建器和玩法场景组合器；原类只保留 Godot 组合顺序与兼容常量。
+- 布局定义新增稳定 ID、唯一性、正尺寸、三槽砧板、单一冰桶抽屉和水槽下方净空校验；流程回归直接锁定 5 个站点、9 件工具、8 个抽屉、6 扇柜门和冰桶抽屉 ID。
+- 第四批回归为资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS；Forward+ 最终帧与已验收基线 SHA-256 完全一致。
 - 完成第三批 `DrinkWorkstation` 职责迁移：新增纯 C# `DrinkAssemblyState`，接管当前杯、饮品统计、丢弃/重做、评价、每日重置和 schema version 1 快照映射；`LiquidContainer` 移入纯 Domain。
 - `ProcessExecutionService` 改为只通过 `DrinkAssemblyState` 提交饮品结果，不再直接改写 `DrinkSnapshot` 或接收临时液体端口；`DrinkWorkstation` 继续保留原公开 facade、signal 和反馈语义。
 - 新增 4 项饮品组装/液体领域测试；第三批回归为资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS；无视觉改动。

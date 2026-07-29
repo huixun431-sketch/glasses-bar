@@ -4,6 +4,32 @@
 
 用途：新对话先读本文件，再读 `docs/CONTEXT_HANDOFF.md`。正式配方、平衡值、顾客内容和最终美术仍未批准；下述数值与灰盒均为开发占位。
 
+## 2026-07-29｜第四批职责迁移：灰盒场景组合
+
+### 已完成的事项
+
+- 新增 `scripts/world/BarLayoutDefinition.cs`，集中当前灰盒的尺寸、坐标、稳定节点 ID、站点、工具、砧板、柜体和冰桶布局；构建前校验 ID 唯一性、正尺寸、三槽砧板、单一冰桶抽屉与水槽下方净空。
+- 新增 `GrayboxArchitectureBuilder`，只根据布局数据创建现实/眼镜建筑、材质、标签和静态碰撞，不读取或修改任何玩法状态。
+- 新增 `CabinetBuilder`，只组装现有 `CabinetInteractable`、抽屉空腔与内置冰桶节点；柜体开合状态继续由各柜体实例持有。
+- 新增 `GameplaySceneComposer`，创建工作台、台面、站点、砧板和工具，并绑定玩家、HUD、主菜单、暂停菜单与会话重置。
+- `GrayboxLevelBuilder` 从 470 行收敛为 52 行 Godot 组合根；原有公开布局常量继续转发，所有节点名/路径、坐标、尺寸、颜色、碰撞层、创建顺序、signal 和重置语义不变。
+- 流程测试新增布局定义不变量断言，锁定 5 个站点、9 件工具、8 个抽屉、6 扇柜门、三槽砧板及 `front_drawer_2_upper` 冰桶位置。
+- 完整验证通过：资产 16 项 0 错误、领域测试 27/27、Debug/Release 0 警告/0 错误、Godot 导入、`SMOKE_TESTS_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS`。
+- 已运行 Forward+ `BarLayoutVisualCapture` 并人工检查；当前最终帧与 2026-07-23 已验收基线大小均为 162,717 字节，SHA-256 均为 `5E610186D5C7FD7FDC6265325CCC2A5521AFD37ECD573BF8120C37F5B916BE51`，视觉输出逐像素一致。
+
+### 关键决策
+
+- `BarLayoutDefinition` 是当前灰盒空间数据的唯一来源，但它不属于 Gameplay 状态，也不进入存档；建筑/材质构建器只能消费布局数据，不能反向控制玩法结果。
+- `GameplaySceneComposer` 只创建 adapter 并连接现有 owner，不获得工具、饮品、会话或柜体状态所有权。
+- 后续动画、IK、骨骼仍是可替换表现实现。Gameplay 只能通过事件、signal 或动作结果通知表现层，不得直接依赖、查询或控制这些对象。
+- 第四批只完成灰盒场景组合职责拆分，整体架构重构仍继续。
+
+### 未完成的待办
+
+1. P1：下一批拆分 `PlayerController`，分离 `PlayerMotor`、`InteractionSensor`、`PlayerActionInput` 与 `HeldToolPresenter`，保持玩家姿态/输入/动作提交行为不变。
+2. P1：随后拆分 `StationInteractable` 和主/暂停菜单共用设置服务。
+3. P2/M3 与外部阻塞不变：正式存档产品层、正式配方/平衡、首批 GLB 和真实键鼠手感验收仍待后续。
+
 ## 2026-07-29｜第三批职责迁移：当前饮品组装状态
 
 ### 已完成的事项
@@ -24,8 +50,8 @@
 
 ### 未完成的待办
 
-1. P1：下一批拆分 `GrayboxLevelBuilder`，分离组合根、布局数据、灰盒建筑/柜体生成与玩法场景组装。
-2. P1：随后按审查顺序拆分 `PlayerController`、`StationInteractable` 和共用设置服务。
+1. P1：`GrayboxLevelBuilder` 已完成；下一步拆分 `PlayerController`。
+2. P1：随后按审查顺序拆分 `StationInteractable` 和共用设置服务。
 3. P2/M3 与外部阻塞不变：正式存档产品层、正式配方/平衡、首批 GLB 和真实键鼠手感验收仍待后续。
 
 ## 2026-07-29｜第二批职责迁移：工序执行服务
@@ -46,7 +72,7 @@
 
 ### 未完成的待办
 
-1. P1：`DrinkAssemblyState` 已完成；下一步按审查顺序拆分 `GrayboxLevelBuilder`、`PlayerController`、`StationInteractable` 和共用设置服务。
+1. P1：`DrinkAssemblyState` 与 `GrayboxLevelBuilder` 已完成；下一步按审查顺序拆分 `PlayerController`、`StationInteractable` 和共用设置服务。
 2. P2/M3 与外部阻塞不变：正式存档产品层、正式配方/平衡、首批 GLB 和真实键鼠手感验收仍待后续。
 
 ## 2026-07-29｜架构审查后首批职责迁移
@@ -66,8 +92,8 @@
 
 ### 未完成的待办
 
-1. P1：`ProcessExecutionService` 与 `DrinkAssemblyState` 已完成；下一步拆分 `GrayboxLevelBuilder`。
-2. P1：随后按审查顺序拆分 `PlayerController`、`StationInteractable` 和共用设置服务。
+1. P1：`ProcessExecutionService`、`DrinkAssemblyState` 与 `GrayboxLevelBuilder` 已完成；下一步拆分 `PlayerController`。
+2. P1：随后按审查顺序拆分 `StationInteractable` 和共用设置服务。
 3. P2/M3 与外部阻塞不变：正式存档产品层、正式配方/平衡、首批 GLB 和真实键鼠手感验收仍待后续。
 
 ## 2026-07-29｜完整结构审查、纠错与架构边界
@@ -98,7 +124,7 @@
 
 ### 未完成的待办
 
-1. P1：`ToolInventoryService`、`ProcessExecutionService`、`DrinkAssemblyState` 已完成；下一步拆分 `GrayboxLevelBuilder`，保留 Godot facade/signal 桥。
+1. P1：`ToolInventoryService`、`ProcessExecutionService`、`DrinkAssemblyState` 与 `GrayboxLevelBuilder` 已完成；下一步拆分 `PlayerController`，保留 Godot facade/signal 桥。
 2. P1：把 `GrayboxLevelBuilder` 的组合根、布局数据、建筑/柜体/站点生成分离。
 3. P1：把 `PlayerController` 的移动、交互探测、动作输入和手持表现分离。
 4. P1：将 `StationInteractable` 的 Kind `switch` 改为站点定义 Resource + 动作 handler 注册。

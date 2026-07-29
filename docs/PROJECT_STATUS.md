@@ -4,6 +4,9 @@
 
 ## 已完成
 
+- 完成 `GrayboxLevelBuilder` 第四批职责迁移：新增不可变 `BarLayoutDefinition`、`GrayboxArchitectureBuilder`、`CabinetBuilder` 和 `GameplaySceneComposer`，分别接管布局数据/校验、现实与眼镜建筑/碰撞、柜体/冰桶节点组装，以及工作台/工具/站点创建和玩家/HUD/菜单/会话绑定；原类收敛为 52 行 Godot 组合根。
+- 所有现有节点名/路径、坐标、尺寸、颜色、碰撞层、创建顺序、signal 绑定和重置语义保持不变；Gameplay 没有新增对材质、动画、IK 或骨骼实现的依赖。
+- 2026-07-29 第四批回归：资产 16 项 0 错误、纯领域测试 27/27、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS；布局定义不变量测试通过。Forward+ 最终帧与 2026-07-23 已验收基线 SHA-256 完全一致并已人工检查。
 - 完成 `DrinkWorkstation` 第三批职责迁移：新增无 Godot 依赖的 `DrinkAssemblyState`，接管当前杯液体、饮品统计、丢弃/重做、评价输入、每日重置和 schema version 1 工作台快照映射；`LiquidContainer` 同步迁入纯 Domain。
 - `ProcessExecutionService` 现在只通过稳定的 `DrinkAssemblyState` 提交液体、溢出、完成步骤、完成度与失败结果，不再直接改写 `DrinkSnapshot` 或接收临时液体端口；`DrinkWorkstation` 的公开 API、signal、反馈语义和玩法结果保持不变。
 - 2026-07-29 第三批回归：新增 4 项饮品组装/液体领域测试，纯领域测试现为 27/27；资产 16 项 0 错误、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS。此次无场景/视觉参数改动，无需新增截图。
@@ -80,7 +83,7 @@
 
 ## 计划中
 
-- 下一批按 P1 顺序拆分 `GrayboxLevelBuilder`，随后处理 `PlayerController` 和 `StationInteractable`，避免新增内容继续扩大集中式组合根与控制器。
+- 下一批按 P1 顺序拆分 `PlayerController`，随后处理 `StationInteractable`，避免新增内容继续扩大集中式控制器与交互分派。
 - 长期存档进入产品实现时，在现有 schema 基础上补充磁盘槽、原子写入、备份、显式迁移器、损坏回退与“继续游戏”，不把 Node 或表现状态写入存档。
 - 由用户在新版 Windows 包中至少完整游玩两天，主动覆盖提前制作/误猜、正确流程、载料落台提示、左手优先、拿错工具、放错材料、比例偏差、手动清废、暂停重开、柜体和跨天近视，按反馈调整双手切换、摆放半径、砧板操作、UI 节奏、封闭空间和模糊强度。
 - 使用固定的 Blender 4.5.5 LTS 开始首批物品建模，并按资产规范交付 GLB。

@@ -65,7 +65,11 @@
 | 脚本 | 当前职责 | 权威状态 | 拆分结论 |
 |---|---|---|---|
 | `scripts/player/PlayerController.cs` | 移动、视角、输入映射、目标探测、动作请求、连续动作驱动、手持灰盒表现、玩家快照 | 玩家姿态；动作由 pipeline 持有 | 待拆 P1 |
-| `scripts/world/GrayboxLevelBuilder.cs` | 组合根、灰盒建筑、碰撞、柜体、站点、工具、菜单/重置绑定 | 布局常量；不应拥有玩法进度 | 待拆 P1 |
+| `scripts/world/BarLayoutDefinition.cs` | 当前灰盒尺寸、坐标、稳定节点 ID、工具/站点/柜体布局及结构校验 | 不可变布局数据；无玩法进度 | 已拆；无 Node |
+| `scripts/world/GrayboxArchitectureBuilder.cs` | 从布局数据创建现实/眼镜建筑、静态碰撞、材质、标签与站点视觉 | 无 | 已拆；不读取玩法状态 |
+| `scripts/world/CabinetBuilder.cs` | 从布局数据组装 `CabinetInteractable`、抽屉空腔与内置冰桶节点 | 无；柜体状态仍由各 `CabinetInteractable` 持有 | 已拆 |
+| `scripts/world/GameplaySceneComposer.cs` | 创建工作台、台面、站点、砧板和工具，并绑定玩家、HUD、菜单与会话重置 | 无；只编排现有 owner | 已拆 |
+| `scripts/world/GrayboxLevelBuilder.cs` | 查找场景根并按固定顺序调用布局、建筑、柜体与玩法组合器 | 无 | 已拆；52 行 Godot 组合根 |
 | `scripts/world/WorldLayerController.cs` | 现实/眼镜世界、模糊层和信息层可见性 | 仅表现缓存 | 保留 |
 | `scripts/world/MyopiaEffectController.cs` | 度数 → Shader 参数、开发覆盖 | 当前表现参数 | 保留 |
 | `scripts/ui/HudController.cs` | 阶段、提示、动作进度、反馈、双手、日结显示 | 仅 UI 状态 | 保留 |

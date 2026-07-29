@@ -29,7 +29,10 @@
 - `ProcessExecutionService` 不再接收可替换液体目标或直接改写 `DrinkSnapshot`，只向稳定的 `DrinkAssemblyState` 提交工序结果。
 - `DrinkWorkstation` 保留原有公开 API，转为 Godot signal facade、工具表现同步、反馈文本与跨服务编排入口；玩法逻辑、提示语义和随机数消费时机未改变。
 - 新增 11 项纯领域测试覆盖三批服务；完整回归现为领域 27/27，资产、Debug/Release、Godot 导入、冒烟、输入和流程全部 PASS。
-- 下一拆分目标是 `GrayboxLevelBuilder`；前三批完成仍不等于全部架构重构完成。
+- `GrayboxLevelBuilder` 已按审查结论拆成不可变 `BarLayoutDefinition`、无玩法状态的 `GrayboxArchitectureBuilder`、柜体节点组装 `CabinetBuilder` 和玩法绑定 `GameplaySceneComposer`；原类只保留组合顺序与兼容常量。
+- 布局定义新增稳定 ID、唯一性、正尺寸、三槽砧板、单一冰桶抽屉和水槽下方净空校验；完整回归仍为领域 27/27 及所有 Godot 测试 PASS。
+- Forward+ 布局最终帧与重构前已验收基线 SHA-256 完全一致，证明节点、几何、材质和画面未发生漂移。
+- 下一拆分目标是 `PlayerController`；前四批完成仍不等于全部架构重构完成。
 
 表现系统边界同步锁定：Gameplay 只允许通过事件、signal 或动作结果通知表现层，不得直接依赖或控制动画、IK、Skeleton/Bone 等表现实现；表现层不得反向决定玩法结果。
 
@@ -223,9 +226,9 @@ flowchart TD
    - `DrinkAssemblyState`：当前杯、完成度、评价输入（第三批已完成）。
    - `DrinkWorkstation` 保留为 Godot signal facade 和组合入口。
 2. `GrayboxLevelBuilder`：
-   - `BarLayoutDefinition`：尺寸/坐标数据。
-   - `GameplaySceneComposer`：创建工作台、玩家和绑定。
-   - `GrayboxArchitectureBuilder`/`CabinetBuilder`：纯表现与碰撞搭建。
+   - `BarLayoutDefinition`：尺寸/坐标数据（第四批已完成）。
+   - `GameplaySceneComposer`：创建工作台、玩家和绑定（第四批已完成）。
+   - `GrayboxArchitectureBuilder`/`CabinetBuilder`：表现、碰撞与柜体节点搭建（第四批已完成）。
 3. `PlayerController`：
    - `PlayerMotor`、`InteractionSensor`、`PlayerActionInput`、`HeldToolPresenter`。
 4. `StationInteractable`：

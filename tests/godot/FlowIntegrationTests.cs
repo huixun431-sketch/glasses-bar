@@ -173,6 +173,15 @@ public partial class FlowIntegrationTests : Node
     private static void VerifyLayout(Node3D main, DrinkWorkstation workstation, StationInteractable sink,
         StationInteractable ice, InteractionContext context)
     {
+        var layout = BarLayoutDefinition.Prototype;
+        layout.Validate();
+        Require(layout.Stations.Count == 5 &&
+                layout.Tools.Count == 9 &&
+                layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.Drawer) == 8 &&
+                layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.Door) == 6 &&
+                layout.Cabinets.Single(cabinet => cabinet.ContainsIceBucket).Id == "front_drawer_2_upper" &&
+                layout.Workboard.Slots.Count == 3,
+            "immutable bar layout definition retains every stable gameplay node and cabinet slot");
         Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.42f) < 0.001f &&
                 Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 2.31f) < 0.001f &&
                 GrayboxLevelBuilder.OperationAisleClearWidth >= 0.7f * 2f + 0.3f,

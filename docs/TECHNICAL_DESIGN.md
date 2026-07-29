@@ -14,6 +14,7 @@
 - 校验层：`GameplayCatalogValidator` 在创建实例前检查稳定 ID、工具分类、工序引用、输入输出、结果容器以及配方/工序漂移。
 - 实例层：`ToolInstanceState`、`ToolInventoryService`、`DrinkAssemblyState`、`ProcessExecutionService`、`DayFlow` 和 `GameSession` 保存或提交权威运行时状态，不引用表现 Node。
 - 动作层：`GameplayActionPipeline` 统一执行“只读检查 → 拒绝/开始 → 提交/取消”，连续动作只在提交时修改玩法状态。
+- 场景组合层：`BarLayoutDefinition` 保存当前灰盒坐标/尺寸/稳定节点 ID；`GrayboxArchitectureBuilder` 创建建筑与碰撞，`CabinetBuilder` 组装柜体节点，`GameplaySceneComposer` 创建玩法 adapter 并绑定现有 owner；`GrayboxLevelBuilder` 只保留组合顺序。
 - 表现层：`ToolPresentationBinding`、世界 controller、HUD、材质和标签只呈现权威状态。
 - 持久化边界：`GameSaveSnapshot` 按 schema version 保存会话、工作台、工具实例、玩家姿态和柜体开合；不保存 Node、材质、Tween、HUD 或活动动作。
 
@@ -89,11 +90,13 @@ Gameplay 与表现之间的依赖只能单向流动：Gameplay 通过事件、Go
 - `OpeningMenuController` 在最终视觉稿的无字背景/独立标题上管理 Godot 实时菜单文字、透明点击区、输入模式和独立选择器；“继续游戏”因尚未启用磁盘存档槽而明确禁用。鼠标未悬停时选择器隐藏，键盘/手柄导航时显示。`PauseMenuController` 以 `ProcessMode.Always` 在暂停状态接收输入。
 - `MyopiaProgression` 以纯领域函数计算 30 天近视值；`MyopiaEffectController` 在 `DayChanged` 时应用规则值，开发控制台可临时覆盖。
 - 前台、后墙浅架和左右回转台均有玩家碰撞，关闭状态形成约 `2.31 m` 工作通道。前吧台水槽独占一格且下方净空，其余四格为 8 个深抽屉；酒架上方 3 组吊柜使用 6 扇成对大门。`CabinetInteractable` 以单开互锁避免同时挤占通道；前抽屉约 `0.62 m` 行程，完全打开仍约保留 `1.69 m` 通行带。冰桶随指定上层抽屉移动，其余柜体当前不保存正式玩法物品。
+- 上述灰盒布局值集中于不可变 `BarLayoutDefinition` 并在场景创建前校验；建筑、碰撞、柜体和玩法绑定的构造代码分离后仍保留原节点路径与创建顺序。2026-07-29 Forward+ 对照帧与拆分前基线的 SHA-256 完全一致。
 
 ## 状态与验证
 
 - `ToolProcessModel` 是无 Godot 依赖的分类、冲突、材料集合、偏离度与结果规则层。
 - `ToolInstanceState` 管理单件工具的权威运行时状态；`ToolInventoryService` 已接管工具集合、双手、连续摆放、砧板槽和内容转移；`ProcessExecutionService` 已接管工序选择与提交；`DrinkAssemblyState` 已接管当前杯、饮品统计、评价和快照映射。`DrinkWorkstation` 保留 Godot signal facade、表现同步、卫生/水壶、反馈与跨服务编排。
+- `GrayboxLevelBuilder` 已收敛为场景组合根；布局、建筑/碰撞、柜体节点和玩法 adapter 绑定分别由四个无玩法状态的协作者负责。下一职责迁移目标为 `PlayerController`。
 - `GameSession` 管理菜单、天数、世界模式和日流程；接单直接进入 `Preparation`，`RecipeObservation` 只保留为兼容路径，不再是制作必经状态。
 - 自动化必须覆盖双手容量、实体移动、防重叠、复数砧板工具、冲突、单一载料、错误工具/材料、比例成功/失败、手动清废、每日洗手、双头量酒器、固定水壶、重复工序恢复、动作开始/提交/取消、存档往返、柜体通行、无戴镜制作、交付与跨天重置。
 
