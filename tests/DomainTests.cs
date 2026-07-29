@@ -278,6 +278,259 @@ public sealed class DomainTests
     }
 
     [Test]
+    public void ProcessExecutionService_SelectsExactBoardOperationAndCommitsOutput()
+    {
+        var inventory = new ToolInventoryService();
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "mortar",
+            DisplayName = "Mortar",
+            Category = ToolCategory.Placement,
+            CanContainIngredients = true
+        }, new SpatialPosition(0d, 0d, 0d));
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "pestle",
+            DisplayName = "Pestle",
+            Category = ToolCategory.Handheld,
+            UsedInHand = true
+        }, new SpatialPosition(1d, 0d, 0d));
+        inventory.PickUp("mortar");
+        inventory.PlaceLeftHandOnBoard(new[] { new SpatialPosition(5d, 0d, 5d) });
+        inventory.PickUp("pestle");
+        inventory.GetRequiredTool("mortar").Contents["coffee_beans"] = 1d;
+
+        var wrongCandidate = new OperationSpec
+        {
+            Id = "crush_ice",
+            DisplayName = "Crush Ice",
+            RequiredHandheldToolId = "pestle",
+            ResultTargetToolId = "mortar",
+            RequiredAction = 0.5d
+        };
+        wrongCandidate.RequiredPlacementToolIds.Add("mortar");
+        wrongCandidate.InputTargets["ice"] = 1d;
+        wrongCandidate.Outputs["crushed_ice"] = 1d;
+        var grind = new OperationSpec
+        {
+            Id = "manual_grind",
+            DisplayName = "Manual Grind",
+            RequiredHandheldToolId = "pestle",
+            ResultTargetToolId = "mortar",
+            RequiredAction = 0.5d
+        };
+        grind.RequiredPlacementToolIds.Add("mortar");
+        grind.InputTargets["coffee_beans"] = 1d;
+        grind.Outputs["ground_coffee"] = 1d;
+
+        var snapshot = new DrinkSnapshot();
+        var service = new ProcessExecutionService(inventory, snapshot);
+        service.ConfigureOperations(new[] { wrongCandidate, grind });
+
+        Assert.That(service.SelectBoardOperation()?.Id, Is.EqualTo("manual_grind"));
+        var outcome = service.ExecuteBoardOperation(
+            grind,
+            1d,
+            () => 0d,
+            0d,
+            true,
+            new TestLiquidTarget(300d));
+
+        Assert.That(outcome.Kind, Is.EqualTo(ProcessExecutionKind.Completed));
+        Assert.That(inventory.GetRequiredTool("mortar").Contents["ground_coffee"], Is.EqualTo(1d));
+        Assert.That(inventory.GetRequiredTool("mortar").Contents.ContainsKey("coffee_beans"), Is.False);
+        Assert.That(snapshot.CompletedSteps, Does.Contain("manual_grind"));
+        Assert.That(snapshot.FailedOperations, Is.Zero);
+    }
+
+    [Test]
+    public void ProcessExecutionService_TracksAcceptedLiquidAndSpillForSimpleOutput()
+    {
+        var inventory = new ToolInventoryService();
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "highball_glass",
+            DisplayName = "Glass",
+            Category = ToolCategory.Placement,
+            CanContainIngredients = true
+        }, new SpatialPosition(0d, 0d, 0d));
+        var jigger = new ToolSpec
+        {
+            Id = "jigger",
+            DisplayName = "Jigger",
+            Category = ToolCategory.Handheld,
+            CanCarryIngredients = true
+        };
+        jigger.AllowedIngredientIds.Add("water");
+        inventory.RegisterTool(jigger, new SpatialPosition(1d, 0d, 0d));
+        inventory.PickUp("highball_glass");
+        inventory.PickUp("jigger");
+        inventory.LoadIngredient("water", 30d);
+
+        var addWater = new OperationSpec
+        {
+            Id = "add_water",
+            DisplayName = "Add Water",
+            CanRunOffBoard = true,
+            RequiredHandheldToolId = "jigger",
+            ResultTargetToolId = "highball_glass"
+        };
+        addWater.RequiredPlacementToolIds.Add("highball_glass");
+        addWater.InputTargets["water"] = 30d;
+        addWater.Outputs["water"] = 30d;
+
+        var snapshot = new DrinkSnapshot();
+        var liquid = new TestLiquidTarget(20d);
+        var service = new ProcessExecutionService(inventory, snapshot);
+        service.ConfigureOperations(new[] { addWater });
+        var outcome = service.ExecuteSimpleOperation(() => 0d, 0d, liquid);
+
+        Assert.That(outcome, Is.Not.Null);
+        Assert.That(outcome!.Kind, Is.EqualTo(ProcessExecutionKind.Completed));
+        Assert.That(liquid.CurrentAmount, Is.EqualTo(20d));
+        Assert.That(liquid.SpilledAmount, Is.EqualTo(10d));
+        Assert.That(inventory.GetRequiredTool("highball_glass").Contents["water"], Is.EqualTo(20d));
+        Assert.That(snapshot.IngredientAmounts["water"], Is.EqualTo(20d));
+        Assert.That(snapshot.SpilledAmount, Is.EqualTo(10d));
+        Assert.That(inventory.GetRequiredTool("jigger").Contents, Is.Empty);
+    }
+
+    [Test]
+    public void ProcessExecutionService_MarksWrongIngredientsAsWaste()
+    {
+        var inventory = new ToolInventoryService();
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "mortar",
+            DisplayName = "Mortar",
+            Category = ToolCategory.Placement,
+            CanContainIngredients = true
+        }, new SpatialPosition(0d, 0d, 0d));
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "pestle",
+            DisplayName = "Pestle",
+            Category = ToolCategory.Handheld,
+            UsedInHand = true
+        }, new SpatialPosition(1d, 0d, 0d));
+        inventory.PickUp("mortar");
+        inventory.PlaceLeftHandOnBoard(new[] { new SpatialPosition(5d, 0d, 5d) });
+        inventory.PickUp("pestle");
+        inventory.GetRequiredTool("mortar").Contents["ice"] = 1d;
+
+        var grind = new OperationSpec
+        {
+            Id = "manual_grind",
+            DisplayName = "Manual Grind",
+            RequiredHandheldToolId = "pestle",
+            ResultTargetToolId = "mortar",
+            RequiredAction = 0.5d
+        };
+        grind.RequiredPlacementToolIds.Add("mortar");
+        grind.InputTargets["coffee_beans"] = 1d;
+        grind.Outputs["ground_coffee"] = 1d;
+
+        var snapshot = new DrinkSnapshot();
+        var service = new ProcessExecutionService(inventory, snapshot);
+        service.ConfigureOperations(new[] { grind });
+        var outcome = service.ExecuteBoardOperation(
+            grind,
+            1d,
+            () => 0d,
+            0d,
+            true,
+            new TestLiquidTarget(300d));
+
+        Assert.That(outcome.Kind, Is.EqualTo(ProcessExecutionKind.Failed));
+        Assert.That(outcome.Attempt.Failure, Is.EqualTo(ProcessFailure.WrongIngredients));
+        Assert.That(inventory.GetRequiredTool("mortar").ContentsAreWaste, Is.True);
+        Assert.That(snapshot.FailedOperations, Is.EqualTo(1));
+        Assert.That(snapshot.CompletedSteps, Does.Not.Contain("manual_grind"));
+    }
+
+    [Test]
+    public void ProcessExecutionService_PreservesRandomRollAcrossBlocksAndRecoversPartially()
+    {
+        var inventory = new ToolInventoryService();
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "filter",
+            DisplayName = "Filter",
+            Category = ToolCategory.Placement,
+            CanContainIngredients = true
+        }, new SpatialPosition(0d, 0d, 0d));
+        inventory.PickUp("filter");
+        inventory.PlaceLeftHandOnBoard(new[] { new SpatialPosition(5d, 0d, 5d) });
+        var filter = inventory.GetRequiredTool("filter");
+        filter.Contents["ground_coffee"] = 1d;
+
+        var extract = new OperationSpec
+        {
+            Id = "manual_extract",
+            DisplayName = "Manual Extract",
+            ResultTargetToolId = "filter",
+            RequiredAction = 0.5d,
+            RepeatRecoveryInputIngredientId = "coffee_extract",
+            RepeatRecoveryCap = 0.96d,
+            RepeatRecoveryFraction = 0.42d
+        };
+        extract.RequiredPlacementToolIds.Add("filter");
+        extract.InputTargets["ground_coffee"] = 1d;
+        extract.InputTargets["water"] = 30d;
+        extract.Outputs["coffee_extract"] = 30d;
+        var snapshot = new DrinkSnapshot();
+        var service = new ProcessExecutionService(inventory, snapshot);
+        service.ConfigureOperations(new[] { extract });
+        var rollCalls = 0;
+        double NextRoll()
+        {
+            rollCalls++;
+            return 0d;
+        }
+
+        var dry = service.ExecuteBoardOperation(
+            extract,
+            1d,
+            NextRoll,
+            0d,
+            false,
+            new TestLiquidTarget(300d));
+        Assert.That(dry.Kind, Is.EqualTo(ProcessExecutionKind.NonDestructiveBlock));
+        Assert.That(dry.BlockReason, Is.EqualTo(ProcessBlockReason.KettleEmpty));
+        Assert.That(rollCalls, Is.Zero);
+        Assert.That(filter.ContentsAreWaste, Is.False);
+        Assert.That(filter.Contents["ground_coffee"], Is.EqualTo(1d));
+
+        filter.Contents.Clear();
+        filter.Contents["coffee_extract"] = 30d;
+        filter.ContentCompletionRatio = 0.72d;
+
+        var incomplete = service.ExecuteBoardOperation(
+            extract,
+            0.1d,
+            NextRoll,
+            0d,
+            true,
+            new TestLiquidTarget(300d));
+        Assert.That(incomplete.BlockReason, Is.EqualTo(ProcessBlockReason.RepeatActionIncomplete));
+        Assert.That(rollCalls, Is.Zero);
+        Assert.That(filter.ContentCompletionRatio, Is.EqualTo(0.72d));
+
+        var recovered = service.ExecuteBoardOperation(
+            extract,
+            1d,
+            NextRoll,
+            0d,
+            true,
+            new TestLiquidTarget(300d));
+        Assert.That(recovered.Kind, Is.EqualTo(ProcessExecutionKind.RepeatRecovery));
+        Assert.That(recovered.FullRecovery, Is.True);
+        Assert.That(recovered.Attempt.CompletionRatio, Is.GreaterThan(0.72d).And.LessThanOrEqualTo(0.96d));
+        Assert.That(rollCalls, Is.EqualTo(1));
+        Assert.That(service.RepeatRecoveryCounts["manual_extract"], Is.EqualTo(1));
+    }
+
+    [Test]
     public void MyopiaProgression_UsesThirtyDayCampaignCurve()
     {
         Assert.That(MyopiaProgression.DegreesForDay(1), Is.EqualTo(50f));
@@ -396,5 +649,32 @@ public sealed class DomainTests
         Assert.That(
             () => GameplayCatalogValidator.ValidateRecipeCompatibility(recipe, new List<OperationSpec>()),
             Throws.TypeOf<GameplayCatalogValidationException>());
+    }
+
+    private sealed class TestLiquidTarget : IProcessLiquidTarget
+    {
+        public TestLiquidTarget(double capacity)
+        {
+            Capacity = capacity;
+        }
+
+        public double Capacity { get; }
+        public double CurrentAmount { get; private set; }
+        public double SpilledAmount { get; private set; }
+
+        public double Add(string ingredientId, double amount)
+        {
+            var accepted = System.Math.Min(System.Math.Max(0d, amount), Capacity - CurrentAmount);
+            CurrentAmount += accepted;
+            SpilledAmount += System.Math.Max(0d, amount - accepted);
+            return accepted;
+        }
+
+        public double Empty()
+        {
+            var amount = CurrentAmount;
+            CurrentAmount = 0d;
+            return amount;
+        }
     }
 }

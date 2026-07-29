@@ -4,7 +4,7 @@ using GlassesBar.Domain;
 
 namespace GlassesBar;
 
-public sealed class LiquidContainer : ILiquidContainer
+public sealed class LiquidContainer : ILiquidContainer, IProcessLiquidTarget
 {
     private readonly Dictionary<string, double> _ingredients = new(StringComparer.Ordinal);
 

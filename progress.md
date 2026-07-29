@@ -4,6 +4,28 @@
 
 用途：新对话先读本文件，再读 `docs/CONTEXT_HANDOFF.md`。正式配方、平衡值、顾客内容和最终美术仍未批准；下述数值与灰盒均为开发占位。
 
+## 2026-07-29｜第二批职责迁移：工序执行服务
+
+### 已完成的事项
+
+- 新增 `src/Domain/ProcessExecutionService.cs`，把工序目录、砧板能力/选择、来源合并、规则鉴定、成功输出、失败废品、重复补救、液体接纳/溢出和工序统计从 `DrinkWorkstation` 迁入纯 C# 服务。
+- 新增类型化 `ProcessExecutionOutcome`、`ProcessBlockReason` 与 `ProcessTransitionHint`；`DrinkWorkstation` 保留原有公开 API，只负责把 outcome 格式化为既有中文反馈、发布 signal 和提供卫生/水壶环境输入。
+- `LiquidContainer` 通过纯领域 `IProcessLiquidTarget` 窄端口接入；工序服务不引用 Godot Node、材质、动画、IK、骨骼或 UI。
+- 新增 4 项领域测试，覆盖精确工序选择与输出提交、液体接纳/溢出、错误材料变废，以及缺水/重复补救的随机数消费边界。
+- 完整验证通过：资产 16 项 0 错误、领域测试 23/23、Debug/Release 0 警告/0 错误、Godot 导入、`SMOKE_TESTS_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS`。本批无视觉改动，没有新增截图。
+
+### 关键决策
+
+- `ProcessExecutionService` 是工序选择与提交的唯一应用服务；Gameplay facade 不再直接合并来源、调用规则或写入工序输出/废品。
+- 随机数仍由 facade 提供为延迟调用：缺水、重复补救动作不足和重复补救错误工具路径不会额外消费排队鉴定值，普通工序保持既有取得时机。
+- 当前杯只以 `IProcessLiquidTarget` 暂时接入；下一批 `DrinkAssemblyState` 将成为液体、当前饮品完成度和评价输入的正式 owner。
+
+### 未完成的待办
+
+1. P1：从 `DrinkWorkstation` 拆出 `DrinkAssemblyState`，接管当前杯、液体、溢出/浪费聚合、当前饮品完成度和评价输入。
+2. P1：随后按审查顺序拆分 `GrayboxLevelBuilder`、`PlayerController`、`StationInteractable` 和共用设置服务。
+3. P2/M3 与外部阻塞不变：正式存档产品层、正式配方/平衡、首批 GLB 和真实键鼠手感验收仍待后续。
+
 ## 2026-07-29｜架构审查后首批职责迁移
 
 ### 已完成的事项
@@ -21,10 +43,9 @@
 
 ### 未完成的待办
 
-1. P1：继续从 `DrinkWorkstation` 拆出 `ProcessExecutionService`，迁移工序选择、规则调用、输出/废品、重复补救与结果写入。
-2. P1：拆出 `DrinkAssemblyState`，接管当前杯、完成度与评价输入。
-3. P1：随后按审查顺序拆分 `GrayboxLevelBuilder`、`PlayerController`、`StationInteractable` 和共用设置服务。
-4. P2/M3 与外部阻塞不变：正式存档产品层、正式配方/平衡、首批 GLB 和真实键鼠手感验收仍待后续。
+1. P1：`ProcessExecutionService` 已完成；继续拆出 `DrinkAssemblyState`，接管当前杯、完成度与评价输入。
+2. P1：随后按审查顺序拆分 `GrayboxLevelBuilder`、`PlayerController`、`StationInteractable` 和共用设置服务。
+3. P2/M3 与外部阻塞不变：正式存档产品层、正式配方/平衡、首批 GLB 和真实键鼠手感验收仍待后续。
 
 ## 2026-07-29｜完整结构审查、纠错与架构边界
 
@@ -54,7 +75,7 @@
 
 ### 未完成的待办
 
-1. P1：`ToolInventoryService` 已完成；继续把 `DrinkWorkstation` 的 `ProcessExecutionService`、`DrinkAssemblyState` 拆出，保留 Godot facade/signal 桥。
+1. P1：`ToolInventoryService`、`ProcessExecutionService` 已完成；继续把 `DrinkAssemblyState` 拆出，保留 Godot facade/signal 桥。
 2. P1：把 `GrayboxLevelBuilder` 的组合根、布局数据、建筑/柜体/站点生成分离。
 3. P1：把 `PlayerController` 的移动、交互探测、动作输入和手持表现分离。
 4. P1：将 `StationInteractable` 的 Kind `switch` 改为站点定义 Resource + 动作 handler 注册。
@@ -138,7 +159,7 @@
 ### P1｜技术结构
 
 - `OpeningMenuController` 负责输入模式、实时文字、选择器和页面请求；拆分纹理只负责视觉。
-- `ToolInventoryService` 是工具集合、双手、砧板槽、工具位置与内容转移的权威 owner；`DrinkWorkstation` 仍负责水壶、量酒器端位、洗手、工序、液体和完成度编排；`ToolProcessModel` 负责概率惩罚与有限恢复规则。
+- `ToolInventoryService` 是工具集合、双手、砧板槽、工具位置与内容转移的权威 owner；`ProcessExecutionService` 负责工序选择、规则调用、输出/废品与补救；`DrinkWorkstation` 仍负责水壶、量酒器端位、洗手、液体和评价聚合。
 - `GrayboxLevelBuilder` 负责参数化吧台/工具/柜体布局；`CabinetInteractable` 负责门扇、抽屉、碰撞和单开互锁。
 - 正式 GLB 仍须以稳定 ID 和玩法包装场景接入，不直接修改导入节点；当前灰盒只在实际资产通过运行与截图复核后替换。
 

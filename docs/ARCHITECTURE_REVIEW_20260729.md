@@ -21,12 +21,13 @@
 
 ## 审查后重构进展
 
-2026-07-29 已完成 `DrinkWorkstation` 第一批职责迁移：
+2026-07-29 已完成 `DrinkWorkstation` 前两批职责迁移：
 
 - 新增无 Godot 依赖的 `ToolInventoryService`，接管工具实例集合、左右手槽、拿放、防重叠、砧板槽、材料装载/板上转移、每日重置及工具快照往返。
-- `DrinkWorkstation` 保留原有公开 API，转为 Godot signal facade、工具表现同步与跨服务编排入口；玩法逻辑和提示语义未改变。
-- 新增 3 项纯领域测试覆盖手位/防重叠、砧板内容转移、捕获/恢复/重置；完整回归现为领域 19/19，资产、Debug/Release、Godot 导入、冒烟、输入和流程全部 PASS。
-- 下一批仍是 `ProcessExecutionService` 与 `DrinkAssemblyState`；不得把工具库存首批迁移误报为整个 `DrinkWorkstation` 拆分完成。
+- 新增无 Godot 依赖的 `ProcessExecutionService`，接管工序目录、能力/选择、来源合并、规则鉴定、成功输出、失败废品、重复补救、溢出与工序统计；以类型化 outcome 交给 facade 格式化反馈。
+- `DrinkWorkstation` 保留原有公开 API，转为 Godot signal facade、工具表现同步、反馈文本与跨服务编排入口；玩法逻辑、提示语义和随机数消费时机未改变。
+- 新增 7 项纯领域测试覆盖两批服务；完整回归现为领域 23/23，资产、Debug/Release、Godot 导入、冒烟、输入和流程全部 PASS。
+- 下一批是 `DrinkAssemblyState`；不得把前两批迁移误报为整个 `DrinkWorkstation` 拆分完成。
 
 表现系统边界同步锁定：Gameplay 只允许通过事件、signal 或动作结果通知表现层，不得直接依赖或控制动画、IK、Skeleton/Bone 等表现实现；表现层不得反向决定玩法结果。
 
@@ -146,7 +147,7 @@ flowchart TD
 - 工具连续摆放坐标不再从视觉 Node 反向读取。
 - `ToolInventoryService` 已成为工具集合、双手、砧板槽和内容转移的权威 owner；`DrinkWorkstation` 只负责适配与编排。
 - 目录校验会拒绝错误分类、缺失工具引用、无效量酒器端位和不能容纳结果的目标工具。
-- 剩余风险：工序编排仍会直接修改工具内容，需由 `ProcessExecutionService` 接管。
+- 工序造成的内容消耗、输出和废品标记已由 `ProcessExecutionService` 提交；当前杯液体仍通过窄化的 `IProcessLiquidTarget` 端口接入，等待 `DrinkAssemblyState` 成为正式 owner。
 
 ### 配方系统
 
@@ -159,12 +160,13 @@ flowchart TD
 
 ### 工序系统
 
-状态：规则层纯 C#，连续动作与结算边界明确。
+状态：规则、选择与结算均已进入纯 C# 服务，连续动作与提交边界明确。
 
 - `ToolProcessModel` 负责分类、冲突、材料集合、比例概率和有限补救。
-- `WorkboardInteractable` 保存短生命周期手势过程；`DrinkWorkstation` 在提交时修改实例。
+- `WorkboardInteractable` 保存短生命周期手势过程；提交时由 `ProcessExecutionService` 修改工具、输出、废品、完成度和统计。
 - 允许错误工具/材料进入结果，仍只阻止物理不成立的动作。
-- 剩余风险：工序选择、来源合并、转场提示、重复补救和结果写入均在 `DrinkWorkstation`；需要拆出 `ProcessExecutionService`。
+- `DrinkWorkstation` 只把服务的类型化 outcome 转为既有中文反馈并发布 signal。
+- 剩余风险：当前杯、液体与评价输入仍由 facade 直接编排，需要拆出 `DrinkAssemblyState`。
 
 ### 存档系统
 
@@ -215,7 +217,7 @@ flowchart TD
 
 1. `DrinkWorkstation`：
    - `ToolInventoryService`：双手、拿放、位置、内容转移（第一批已完成）。
-   - `ProcessExecutionService`：工序选择、规则调用、输出/废品/补救。
+   - `ProcessExecutionService`：工序选择、规则调用、输出/废品/补救（第二批已完成）。
    - `DrinkAssemblyState`：当前杯、完成度、评价输入。
    - `DrinkWorkstation` 保留为 Godot signal facade 和组合入口。
 2. `GrayboxLevelBuilder`：

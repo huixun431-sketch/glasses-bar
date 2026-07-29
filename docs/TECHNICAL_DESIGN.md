@@ -12,7 +12,7 @@
 
 - 定义层：Godot Resource 只定义工具、工序、配方、原料和资产；加载后转为 `ToolSpec`、`OperationSpec`、`RecipeTargets`。
 - 校验层：`GameplayCatalogValidator` 在创建实例前检查稳定 ID、工具分类、工序引用、输入输出、结果容器以及配方/工序漂移。
-- 实例层：`ToolInstanceState`、`ToolInventoryService`、`LiquidContainer`、`DayFlow` 和 `GameSession` 保存权威运行时状态，不引用表现 Node。
+- 实例层：`ToolInstanceState`、`ToolInventoryService`、`ProcessExecutionService`、`LiquidContainer`、`DayFlow` 和 `GameSession` 保存或提交权威运行时状态，不引用表现 Node。
 - 动作层：`GameplayActionPipeline` 统一执行“只读检查 → 拒绝/开始 → 提交/取消”，连续动作只在提交时修改玩法状态。
 - 表现层：`ToolPresentationBinding`、世界 controller、HUD、材质和标签只呈现权威状态。
 - 持久化边界：`GameSaveSnapshot` 按 schema version 保存会话、工作台、工具实例、玩家姿态和柜体开合；不保存 Node、材质、Tween、HUD 或活动动作。
@@ -43,6 +43,8 @@ Gameplay 与表现之间的依赖只能单向流动：Gameplay 通过事件、Go
 - 砧板有三个放置类工具位。它的可实现工序完全由已放置工具 ID 集合解析，`RequiredPlacementToolIds` 原生支持复数工具组合。
 - 工具可通过 `BoardConflictGroup` 声明砧板冲突；当前研钵与传统滤具占用同一准备容器角色，不能同时上板，高球杯可与滤具组成过滤组合。
 - 砧板交互顺序为：放置左手工具 → 用右手工具放入原材料 → 在材料存在后尝试当前组合支持的工序。系统不会在入料时验证配方正确性。
+- `ProcessExecutionService` 是无 Godot 依赖的工序应用服务，负责目录、能力/选择、来源合并、规则鉴定、输出/废品、重复补救和工序统计。它返回类型化 `ProcessExecutionOutcome`；`DrinkWorkstation` 只将 outcome 格式化为既有反馈并发 signal。
+- 当前杯暂以纯领域 `IProcessLiquidTarget` 窄端口供工序服务写入接纳量与溢出，不向服务暴露 Node、材质、动画或 UI。下一批由 `DrinkAssemblyState` 接管该端口及评价输入。
 
 ## 错误、概率与恢复
 
@@ -90,7 +92,7 @@ Gameplay 与表现之间的依赖只能单向流动：Gameplay 通过事件、Go
 ## 状态与验证
 
 - `ToolProcessModel` 是无 Godot 依赖的分类、冲突、材料集合、偏离度与结果规则层。
-- `ToolInstanceState` 管理单件工具的权威运行时状态；`ToolInventoryService` 已接管工具集合、双手、连续摆放、砧板槽和内容转移，并能独立捕获/恢复工具快照。`DrinkWorkstation` 保留 Godot signal facade、表现同步、卫生/水壶、工序和饮品编排；下一步优先拆出 `ProcessExecutionService` 与 `DrinkAssemblyState`。
+- `ToolInstanceState` 管理单件工具的权威运行时状态；`ToolInventoryService` 已接管工具集合、双手、连续摆放、砧板槽和内容转移；`ProcessExecutionService` 已接管工序选择与提交。`DrinkWorkstation` 保留 Godot signal facade、表现同步、卫生/水壶、反馈和当前杯/评价聚合；下一步拆出 `DrinkAssemblyState`。
 - `GameSession` 管理菜单、天数、世界模式和日流程；接单直接进入 `Preparation`，`RecipeObservation` 只保留为兼容路径，不再是制作必经状态。
 - 自动化必须覆盖双手容量、实体移动、防重叠、复数砧板工具、冲突、单一载料、错误工具/材料、比例成功/失败、手动清废、每日洗手、双头量酒器、固定水壶、重复工序恢复、动作开始/提交/取消、存档往返、柜体通行、无戴镜制作、交付与跨天重置。
 

@@ -25,7 +25,7 @@ public partial class DrinkWorkstation
             WastedAmount = _snapshot.WastedAmount,
             FailedOperations = _snapshot.FailedOperations,
             CompletedSteps = new HashSet<string>(_snapshot.CompletedSteps, StringComparer.Ordinal),
-            RepeatRecoveryCounts = new Dictionary<string, int>(_repeatRecoveryCounts, StringComparer.Ordinal),
+            RepeatRecoveryCounts = _processes.CaptureRepeatRecoveryCounts(),
             Tools = _inventory.CaptureToolSnapshots()
         };
         return state;
@@ -51,9 +51,7 @@ public partial class DrinkWorkstation
         _snapshot.SpilledAmount = Glass.SpilledAmount;
         _snapshot.CraftCompletionRatio = 1d;
         _snapshot.FailedOperations = Math.Max(0, snapshot.FailedOperations);
-        _repeatRecoveryCounts.Clear();
-        foreach (var recovery in snapshot.RepeatRecoveryCounts)
-            _repeatRecoveryCounts[recovery.Key] = Math.Max(0, recovery.Value);
+        _processes.RestoreRepeatRecoveryCounts(snapshot.RepeatRecoveryCounts);
 
         foreach (var state in _inventory.Tools.Values)
         {

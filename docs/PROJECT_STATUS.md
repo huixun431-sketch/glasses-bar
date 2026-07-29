@@ -4,6 +4,9 @@
 
 ## 已完成
 
+- 完成 `DrinkWorkstation` 第二批职责迁移：新增无 Godot 依赖的 `ProcessExecutionService`，接管工序目录、能力/选择、来源合并、规则鉴定、成功输出、失败废品、重复补救、溢出与工序统计；`DrinkWorkstation` 只格式化类型化 outcome 并发布原有 signal。
+- 当前杯通过纯领域 `IProcessLiquidTarget` 窄端口接入工序服务；Gameplay 服务没有 Node、材质、动画、IK、骨骼或 UI 依赖。原公开 API、反馈语义、玩法结果与随机数消费时机保持不变。
+- 2026-07-29 第二批回归：新增 4 项工序服务领域测试，纯领域测试现为 23/23；资产 16 项 0 错误、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS。此次仍无视觉改动，无需新增截图。
 - 按架构审查开始渐进式重构：新增无 Godot 依赖的 `ToolInventoryService`，把工具实例集合、左右手槽、拿放、防重叠、砧板槽、内容装载/转移、重置和工具快照往返从 `DrinkWorkstation` 迁出；原 facade 的公开 API、signal、提示和玩法逻辑保持不变。
 - 明确后续动画/IK/骨骼表现边界：Gameplay 只能通过事件、signal 或动作结果通知表现层，不得直接依赖或控制动画播放器、IK、Skeleton/Bone 等实现，表现层不得反向决定玩法结果。
 - 2026-07-29 重构回归：新增 3 项工具库存领域测试，纯领域测试现为 19/19；资产 16 项 0 错误、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS。此次无场景/视觉参数改动，无需新增视觉截图。
@@ -74,7 +77,7 @@
 
 ## 计划中
 
-- 继续拆分 `DrinkWorkstation` 的 `ProcessExecutionService` 与 `DrinkAssemblyState`，再按 P1 顺序处理 `GrayboxLevelBuilder`、`PlayerController` 和 `StationInteractable`，避免新增内容继续扩大集中式 facade。
+- 继续拆分 `DrinkWorkstation` 的 `DrinkAssemblyState`，再按 P1 顺序处理 `GrayboxLevelBuilder`、`PlayerController` 和 `StationInteractable`，避免新增内容继续扩大集中式 facade。
 - 长期存档进入产品实现时，在现有 schema 基础上补充磁盘槽、原子写入、备份、显式迁移器、损坏回退与“继续游戏”，不把 Node 或表现状态写入存档。
 - 由用户在新版 Windows 包中至少完整游玩两天，主动覆盖提前制作/误猜、正确流程、载料落台提示、左手优先、拿错工具、放错材料、比例偏差、手动清废、暂停重开、柜体和跨天近视，按反馈调整双手切换、摆放半径、砧板操作、UI 节奏、封闭空间和模糊强度。
 - 使用固定的 Blender 4.5.5 LTS 开始首批物品建模，并按资产规范交付 GLB。

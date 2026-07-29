@@ -17,14 +17,18 @@ public partial class DrinkWorkstation : Node
 
     private readonly DrinkSnapshot _snapshot = new();
     private readonly Dictionary<string, ToolSpec> _toolSpecs = new(StringComparer.Ordinal);
-    private readonly List<OperationSpec> _operations = new();
     private readonly ToolInventoryService _inventory = new();
+    private readonly ProcessExecutionService _processes;
     private readonly Dictionary<string, ToolPresentationBinding> _toolPresentations = new(StringComparer.Ordinal);
     private readonly RandomNumberGenerator _random = new();
-    private readonly Dictionary<string, int> _repeatRecoveryCounts = new(StringComparer.Ordinal);
     private RecipeTargets _recipeTargets = new() { IsPrototype = true };
     private bool _timing;
     private double? _nextAttemptRoll;
+
+    public DrinkWorkstation()
+    {
+        _processes = new ProcessExecutionService(_inventory, _snapshot);
+    }
 
     public LiquidContainer Glass { get; private set; } = new(300d);
     public string LeftHandToolId => _inventory.LeftHandToolId;
@@ -151,7 +155,7 @@ public partial class DrinkWorkstation : Node
         if (recipe is null)
             throw new InvalidOperationException("Prototype recipe resource could not be loaded.");
         _recipeTargets = recipe.BuildTargets();
-        GameplayCatalogValidator.ValidateRecipeCompatibility(_recipeTargets, _operations);
+        GameplayCatalogValidator.ValidateRecipeCompatibility(_recipeTargets, _processes.Operations);
         GameSession.Instance.DayPhaseChanged += OnPhaseChanged;
     }
 
@@ -167,8 +171,7 @@ public partial class DrinkWorkstation : Node
         _toolSpecs.Clear();
         foreach (var pair in validated.Tools)
             _toolSpecs.Add(pair.Key, pair.Value);
-        _operations.Clear();
-        _operations.AddRange(validated.Operations);
+        _processes.ConfigureOperations(validated.Operations);
     }
 
     public ToolSpec GetToolSpec(string toolId) =>
@@ -177,7 +180,7 @@ public partial class DrinkWorkstation : Node
             : throw new InvalidOperationException($"Unknown tool ID: {toolId}");
 
     public OperationComplexity GetOperationComplexity(string operationId) =>
-        _operations.First(operation => operation.Id == operationId).ResolveComplexity();
+        _processes.Operations.First(operation => operation.Id == operationId).ResolveComplexity();
 
     public void RegisterTool(ToolInteractable node, string toolId, Vector3 initialPosition)
     {
@@ -327,7 +330,7 @@ public partial class DrinkWorkstation : Node
     public bool CanCollectBoardIngredient(out string reason)
     {
         reason = string.Empty;
-        var intermediateIds = _operations
+        var intermediateIds = _processes.Operations
             .Where(operation => operation.ResolveComplexity() != OperationComplexity.Simple && operation.ResultTargetToolId != "highball_glass")
             .SelectMany(operation => operation.Outputs.Keys)
             .ToHashSet(StringComparer.Ordinal);
@@ -373,39 +376,31 @@ public partial class DrinkWorkstation : Node
         return true;
     }
 
-    public bool CanUseSimpleOperation =>
-        !string.IsNullOrEmpty(LeftHandToolId) && !string.IsNullOrEmpty(RightHandToolId) &&
-        _inventory.GetRequiredTool(RightHandToolId).Contents.Count > 0 &&
-        _operations.Any(operation => operation.ResolveComplexity() == OperationComplexity.Simple &&
-            operation.IsEnabledBy(new HashSet<string>(new[] { LeftHandToolId }, StringComparer.Ordinal)));
+    public bool CanUseSimpleOperation => _processes.CanUseSimpleOperation;
 
     public OperationResult TryUseSimpleOperation()
     {
         if (!CanUseSimpleOperation)
             return new OperationResult { Feedback = "当前双手组合无法进行简易工序；左手需持放置类工具，右手工具需携带原材料。" };
 
-        var placementIds = new HashSet<string>(new[] { LeftHandToolId }, StringComparer.Ordinal);
-        var carrier = _inventory.GetRequiredTool(RightHandToolId);
-        var operation = SelectBestOperation(_operations.Where(candidate =>
-            candidate.ResolveComplexity() == OperationComplexity.Simple && candidate.IsEnabledBy(placementIds)), carrier.Contents);
-        if (operation is null)
+        var outcome = _processes.ExecuteSimpleOperation(
+            NextRoll,
+            SuccessProbabilityPenalty,
+            Glass);
+        if (outcome is null)
             return new OperationResult { Feedback = "没有由当前左手工具支持的简易工序。" };
 
-        var result = ProcessRules.Evaluate(operation, RightHandToolId, carrier.Contents, 1d, NextRoll(), SuccessProbabilityPenalty);
-        return ApplyAttempt(operation, result, new[] { carrier });
+        return PublishProcessOutcome(outcome);
     }
 
-    public IReadOnlyList<OperationSpec> GetBoardCapabilities()
-    {
-        var ids = new HashSet<string>(_inventory.BoardToolIds, StringComparer.Ordinal);
-        return _operations.Where(operation => operation.ResolveComplexity() != OperationComplexity.Simple && operation.IsEnabledBy(ids)).ToArray();
-    }
+    public IReadOnlyList<OperationSpec> GetBoardCapabilities() => _processes.GetBoardCapabilities();
 
     public string GetBoardCapabilityText()
     {
         var capabilities = GetBoardCapabilities();
-        var recovery = capabilities.FirstOrDefault(operation => TryGetRepeatRecoveryTarget(operation, out _));
-        var transition = GetBoardTransitionHint();
+        var recovery = capabilities.FirstOrDefault(operation =>
+            _processes.TryGetRepeatRecoveryTarget(operation, out _));
+        var transition = FormatTransitionHint(_processes.GetBoardTransitionHint());
         if (recovery is not null)
             return string.IsNullOrEmpty(transition)
                 ? $"可重复{recovery.DisplayName}，有限恢复工序完成度"
@@ -416,54 +411,33 @@ public partial class DrinkWorkstation : Node
             capabilities.Select(operation => $"{operation.DisplayName}（{ComplexityDisplay(operation.ResolveComplexity())}）"));
     }
 
-    public OperationSpec? SelectBoardOperation()
-    {
-        var candidates = GetBoardCapabilities();
-        if (candidates.Count == 0 ||
-            !_inventory.BoardToolIds.Any(id => _inventory.GetRequiredTool(id).Contents.Count > 0))
-            return null;
-        var best = SelectBestOperation(candidates, null);
-        if (best is not null && OperationInputsMatch(best))
-            return best;
-        var recovery = candidates.FirstOrDefault(operation => TryGetRepeatRecoveryTarget(operation, out _));
-        if (recovery is not null)
-            return recovery;
-        return best;
-    }
+    public OperationSpec? SelectBoardOperation() => _processes.SelectBoardOperation();
 
     public string GetBoardAttemptWarning()
     {
         var operation = SelectBoardOperation();
         if (operation is null)
             return string.Empty;
-        if (TryGetRepeatRecoveryTarget(operation, out var recoveryTarget))
+        if (_processes.TryGetRepeatRecoveryTarget(operation, out var recoveryTarget))
             return $"重复{operation.DisplayName}可有限恢复{recoveryTarget.ContentCompletionRatio:P0}完成度，开发占位上限 {operation.RepeatRecoveryCap:P0}。";
-        if (GetBoardTransitionHint() is { Length: > 0 } transition)
+        if (FormatTransitionHint(_processes.GetBoardTransitionHint()) is { Length: > 0 } transition)
             return transition;
-        var actual = MergeContents(GetOperationSourceStates(operation)).Where(pair => pair.Value > 0.000001d)
-            .Select(pair => pair.Key).ToHashSet(StringComparer.Ordinal);
-        var expected = operation.InputTargets.Keys.ToHashSet(StringComparer.Ordinal);
-        return actual.SetEquals(expected)
+        return _processes.OperationInputsMatch(operation)
             ? string.Empty
             : $"当前材料不匹配{operation.DisplayName}；仍可尝试，但会产生废品。";
     }
 
     public ProcessAttemptResult CompleteBoardOperation(OperationSpec operation, double action)
     {
-        var sources = GetOperationSourceStates(operation);
-        var ingredients = MergeContents(sources);
-        if (operation.Id == "manual_extract" && ingredients.ContainsKey("ground_coffee") && !ingredients.ContainsKey("water"))
-        {
-            var feedback = KettleWaterAmountMl <= 0.000001d
-                ? "萃取尚未开始：水壶无水，无法用量酒器给滤具加水；咖啡粉保持可用，没有被误判为废品。"
-                : "萃取尚未开始：滤具里缺水；先用双头量酒器从水壶接水并倒入滤具。咖啡粉保持可用。";
-            return ReportNonDestructiveBlock(feedback);
-        }
-        if (TryGetRepeatRecoveryTarget(operation, out var target))
-            return ApplyRepeatRecovery(operation, target, action);
-        var result = ProcessRules.Evaluate(operation, RightHandToolId, ingredients, action, NextRoll(), SuccessProbabilityPenalty);
-        ApplyAttempt(operation, result, sources);
-        return result;
+        var outcome = _processes.ExecuteBoardOperation(
+            operation,
+            action,
+            NextRoll,
+            SuccessProbabilityPenalty,
+            KettleWaterAmountMl > 0.000001d,
+            Glass);
+        PublishProcessOutcome(outcome);
+        return outcome.Attempt;
     }
 
     public bool TryDiscardHeldContents(out string feedback)
@@ -513,7 +487,7 @@ public partial class DrinkWorkstation : Node
         LastProcessResult = null;
         HandsWashedToday = false;
         KettleWaterAmountMl = PrototypeKettleCapacityMl;
-        _repeatRecoveryCounts.Clear();
+        _processes.Reset();
         _inventory.ResetAll();
         foreach (var state in _inventory.Tools.Values)
         {
@@ -553,214 +527,70 @@ public partial class DrinkWorkstation : Node
         return $"左手:{LeftHandDisplayName}｜右手:{RightHandDisplayName}{measure}｜洗手:{(HandsWashedToday ? "已完成" : "未完成(-4%)")}｜水壶:{KettleWaterAmountMl:0} ml｜砧板:{board} [{GetBoardCapabilityText()}]｜杯量:{Glass.CurrentAmount:0.0}/300 ml｜完成度:{DrinkCompletionRatio:P0}｜失败:{_snapshot.FailedOperations}｜浪费:{TotalWaste:0.00}";
     }
 
-    private bool TryGetRepeatRecoveryTarget(OperationSpec operation, out ToolInstanceState target)
+    private OperationResult PublishProcessOutcome(ProcessExecutionOutcome outcome)
     {
-        target = null!;
-        if (string.IsNullOrEmpty(operation.RepeatRecoveryInputIngredientId) ||
-            !_inventory.Tools.TryGetValue(operation.ResultTargetToolId, out var candidate) ||
-            !_inventory.BoardToolIds.Contains(operation.ResultTargetToolId) || candidate.ContentsAreWaste ||
-            candidate.ContentCompletionRatio >= operation.RepeatRecoveryCap - 0.000001d ||
-            candidate.Contents.Count != 1 || !candidate.Contents.ContainsKey(operation.RepeatRecoveryInputIngredientId))
-            return false;
-        target = candidate;
-        return true;
-    }
-
-    private ProcessAttemptResult ApplyRepeatRecovery(OperationSpec operation, ToolInstanceState target, double action)
-    {
-        if (Math.Max(0d, action) < Math.Max(0d, operation.RequiredAction))
-            return ReportNonDestructiveBlock($"重复{operation.DisplayName}尚未完成；继续操作可尝试补救，材料保持可用。");
-        if (!operation.AcceptsHandheldTool(RightHandToolId))
-        {
-            var wrongTool = ProcessRules.Evaluate(operation, RightHandToolId, operation.InputTargets, action, 0d,
-                SuccessProbabilityPenalty);
-            ApplyAttempt(operation, wrongTool, new[] { target });
-            return wrongTool;
-        }
-
-        var chance = Math.Clamp(1d - SuccessProbabilityPenalty, 0d, 1d);
-        var fullRecovery = NextRoll() <= chance;
-        var fraction = operation.RepeatRecoveryFraction * (fullRecovery ? 1d : 0.35d);
-        var recovered = ProcessRules.RecoverCompletion(target.ContentCompletionRatio, operation.RepeatRecoveryCap, fraction);
-        target.ContentCompletionRatio = recovered;
-        _snapshot.CraftCompletionRatio = recovered;
-        _repeatRecoveryCounts.TryGetValue(operation.Id, out var count);
-        _repeatRecoveryCounts[operation.Id] = count + 1;
-        var result = new ProcessAttemptResult
-        {
-            Completed = true,
-            SuccessProbability = chance,
-            CompletionRatio = recovered
-        };
-        LastProcessResult = result;
-        LastOperationFeedback = fullRecovery
-            ? $"重复{operation.DisplayName}完成：已有限恢复到 {recovered:P0}，开发占位上限 {operation.RepeatRecoveryCap:P0}，不会抹平全部损失。"
-            : $"重复{operation.DisplayName}出现偏差：仅少量恢复到 {recovered:P0}；仍可继续补救但上限不变。";
-        EmitHandsAndState(LastOperationFeedback);
-        return result;
-    }
-
-    private ProcessAttemptResult ReportNonDestructiveBlock(string feedback)
-    {
-        var result = new ProcessAttemptResult
-        {
-            Failure = ProcessFailure.InsufficientAction,
-            SuccessProbability = 1d,
-            CompletionRatio = 0d
-        };
-        LastProcessResult = result;
+        var feedback = FormatProcessFeedback(outcome);
         LastOperationFeedback = feedback;
+        LastProcessResult = outcome.Attempt;
         EmitHandsAndState(feedback);
-        return result;
-    }
-
-    private OperationResult ApplyAttempt(OperationSpec operation, ProcessAttemptResult result,
-        IEnumerable<ToolInstanceState> sourceStates)
-    {
-        var sources = sourceStates.Distinct().ToArray();
-        var inheritedCompletion = sources.Where(state => state.Contents.Count > 0)
-            .Select(state => state.ContentCompletionRatio)
-            .DefaultIfEmpty(1d)
-            .Min();
-        var outputCompletion = Math.Min(inheritedCompletion, result.CompletionRatio);
-        string feedback;
-        if (result.Completed)
-        {
-            foreach (var source in sources)
-            {
-                if (source.Id == "highball_glass")
-                    Glass.Empty();
-                source.ClearContents();
-            }
-            if (_inventory.Tools.TryGetValue(operation.ResultTargetToolId, out var target))
-            {
-                foreach (var output in operation.Outputs)
-                    AddOutput(target, output.Key, output.Value, outputCompletion);
-            }
-            _snapshot.CompletedSteps.Add(operation.Id);
-            _snapshot.CraftCompletionRatio = Math.Min(_snapshot.CraftCompletionRatio, outputCompletion);
-            feedback = $"{operation.DisplayName}成功｜成品链完成度 {outputCompletion:P0}｜本次成功率 {result.SuccessProbability:P0}";
-        }
-        else if (result.Failure == ProcessFailure.InsufficientAction)
-        {
-            feedback = $"{operation.DisplayName}尚未完成；材料未报废，可继续操作。";
-        }
-        else
-        {
-            foreach (var source in sources.Where(state => state.Contents.Count > 0))
-                source.ContentsAreWaste = true;
-            _snapshot.FailedOperations++;
-            feedback = result.Failure switch
-            {
-                ProcessFailure.WrongHandheldTool => $"{operation.DisplayName}失败：右手工具不正确，原材料已成为废品；请手动拿起容器并倒入弃物桶。",
-                ProcessFailure.WrongIngredients => $"{operation.DisplayName}失败：原材料种类不符合任何对应配方，已成为废品；请手动清理。",
-                ProcessFailure.ProportionCheckFailed => $"{operation.DisplayName}失败：比例偏离导致成功率仅 {result.SuccessProbability:P0}，本次鉴定未通过，材料已报废。",
-                _ => $"{operation.DisplayName}失败，材料已成为废品。"
-            };
-        }
-        EmitHandsAndState(feedback);
-        LastOperationFeedback = feedback;
-        LastProcessResult = result;
         return new OperationResult
         {
-            Completed = result.Completed,
-            Intensity = outputCompletion,
+            Completed = outcome.Attempt.Completed,
+            Intensity = outcome.OutputCompletion,
             Feedback = feedback
         };
     }
 
-    private void AddOutput(ToolInstanceState target, string ingredientId, double amount, double completion)
+    private static string FormatProcessFeedback(ProcessExecutionOutcome outcome)
     {
-        var accepted = Math.Max(0d, amount);
-        if (target.Id == "highball_glass")
+        var operation = outcome.Operation;
+        if (outcome.Kind == ProcessExecutionKind.NonDestructiveBlock)
         {
-            var spillBefore = Glass.SpilledAmount;
-            accepted = Glass.Add(ingredientId, amount);
-            _snapshot.SpilledAmount += Glass.SpilledAmount - spillBefore;
-            _snapshot.IngredientAmounts.TryGetValue(ingredientId, out var existingSnapshot);
-            _snapshot.IngredientAmounts[ingredientId] = existingSnapshot + accepted;
-        }
-        target.Contents.TryGetValue(ingredientId, out var existing);
-        target.Contents[ingredientId] = existing + accepted;
-        target.ContentCompletionRatio = Math.Min(target.ContentCompletionRatio, completion);
-    }
-
-    private List<ToolInstanceState> GetOperationSourceStates(OperationSpec operation)
-    {
-        var states = _inventory.BoardToolIds
-            .Select(_inventory.GetRequiredTool)
-            .Where(state => state.Contents.Count > 0)
-            .ToList();
-        if (states.Count > 1 && states.Any(state => state.Id == operation.ResultTargetToolId))
-        {
-            var nonTargetHasInput = states.Where(state => state.Id != operation.ResultTargetToolId)
-                .SelectMany(state => state.Contents.Keys).Any(operation.InputTargets.ContainsKey);
-            if (nonTargetHasInput)
-                states.RemoveAll(state => state.Id == operation.ResultTargetToolId);
-        }
-        return states;
-    }
-
-    private OperationSpec? SelectBestOperation(IEnumerable<OperationSpec> candidates, IReadOnlyDictionary<string, double>? directContents)
-    {
-        return candidates
-            .Select(operation =>
+            return outcome.BlockReason switch
             {
-                var contents = directContents ?? MergeContents(GetOperationSourceStates(operation));
-                var actual = contents.Where(pair => pair.Value > 0.000001d).Select(pair => pair.Key).ToHashSet(StringComparer.Ordinal);
-                var expected = operation.InputTargets.Keys.ToHashSet(StringComparer.Ordinal);
-                return new
-                {
-                    Operation = operation,
-                    Exact = actual.SetEquals(expected) ? 1 : 0,
-                    Overlap = actual.Count(expected.Contains),
-                    PlacementCount = operation.RequiredPlacementToolIds.Count
-                };
-            })
-            .OrderByDescending(candidate => candidate.Exact)
-            .ThenByDescending(candidate => candidate.Overlap)
-            .ThenByDescending(candidate => candidate.PlacementCount)
-            .Select(candidate => candidate.Operation)
-            .FirstOrDefault();
-    }
-
-    private bool OperationInputsMatch(OperationSpec operation)
-    {
-        var actual = MergeContents(GetOperationSourceStates(operation)).Where(pair => pair.Value > 0.000001d)
-            .Select(pair => pair.Key).ToHashSet(StringComparer.Ordinal);
-        return actual.SetEquals(operation.InputTargets.Keys);
-    }
-
-    private string GetBoardTransitionHint()
-    {
-        if (_inventory.BoardToolIds.Count == 0)
-            return string.Empty;
-        var contents = MergeContents(_inventory.BoardToolIds
-            .Select(_inventory.GetRequiredTool)
-            .Where(state => !state.ContentsAreWaste));
-        var actual = contents.Where(pair => pair.Value > 0.000001d).Select(pair => pair.Key).ToHashSet(StringComparer.Ordinal);
-        if (actual.Count == 0)
-            return string.Empty;
-        var placementIds = new HashSet<string>(_inventory.BoardToolIds, StringComparer.Ordinal);
-        var next = _operations.FirstOrDefault(operation => operation.ResolveComplexity() != OperationComplexity.Simple &&
-            !operation.IsEnabledBy(placementIds) && actual.SetEquals(operation.InputTargets.Keys));
-        if (next is null)
-            return string.Empty;
-        var missing = next.RequiredPlacementToolIds.Where(id => !placementIds.Contains(id))
-            .Select(id => _inventory.Tools.TryGetValue(id, out var state) ? state.Definition.DisplayName : id);
-        return $"中间产物已完成；加入{string.Join("＋", missing)}后可{next.DisplayName}";
-    }
-
-    private static Dictionary<string, double> MergeContents(IEnumerable<ToolInstanceState> states)
-    {
-        var result = new Dictionary<string, double>(StringComparer.Ordinal);
-        foreach (var state in states)
-        foreach (var pair in state.Contents)
-        {
-            result.TryGetValue(pair.Key, out var existing);
-            result[pair.Key] = existing + pair.Value;
+                ProcessBlockReason.KettleEmpty =>
+                    "萃取尚未开始：水壶无水，无法用量酒器给滤具加水；咖啡粉保持可用，没有被误判为废品。",
+                ProcessBlockReason.MissingMeasuredWater =>
+                    "萃取尚未开始：滤具里缺水；先用双头量酒器从水壶接水并倒入滤具。咖啡粉保持可用。",
+                ProcessBlockReason.RepeatActionIncomplete =>
+                    $"重复{operation.DisplayName}尚未完成；继续操作可尝试补救，材料保持可用。",
+                _ => $"{operation.DisplayName}尚未开始；材料保持可用。"
+            };
         }
-        return result;
+
+        if (outcome.Kind == ProcessExecutionKind.RepeatRecovery)
+        {
+            return outcome.FullRecovery
+                ? $"重复{operation.DisplayName}完成：已有限恢复到 {outcome.Attempt.CompletionRatio:P0}，开发占位上限 {operation.RepeatRecoveryCap:P0}，不会抹平全部损失。"
+                : $"重复{operation.DisplayName}出现偏差：仅少量恢复到 {outcome.Attempt.CompletionRatio:P0}；仍可继续补救但上限不变。";
+        }
+
+        if (outcome.Kind == ProcessExecutionKind.Completed)
+            return $"{operation.DisplayName}成功｜成品链完成度 {outcome.OutputCompletion:P0}｜本次成功率 {outcome.Attempt.SuccessProbability:P0}";
+        if (outcome.Kind == ProcessExecutionKind.InsufficientAction)
+            return $"{operation.DisplayName}尚未完成；材料未报废，可继续操作。";
+
+        return outcome.Attempt.Failure switch
+        {
+            ProcessFailure.WrongHandheldTool =>
+                $"{operation.DisplayName}失败：右手工具不正确，原材料已成为废品；请手动拿起容器并倒入弃物桶。",
+            ProcessFailure.WrongIngredients =>
+                $"{operation.DisplayName}失败：原材料种类不符合任何对应配方，已成为废品；请手动清理。",
+            ProcessFailure.ProportionCheckFailed =>
+                $"{operation.DisplayName}失败：比例偏离导致成功率仅 {outcome.Attempt.SuccessProbability:P0}，本次鉴定未通过，材料已报废。",
+            _ => $"{operation.DisplayName}失败，材料已成为废品。"
+        };
+    }
+
+    private string FormatTransitionHint(ProcessTransitionHint? hint)
+    {
+        if (hint is null)
+            return string.Empty;
+        var missing = hint.MissingPlacementToolIds
+            .Select(id => _inventory.Tools.TryGetValue(id, out var state)
+                ? state.Definition.DisplayName
+                : id);
+        return $"中间产物已完成；加入{string.Join("＋", missing)}后可{hint.Operation.DisplayName}";
     }
 
     private static SpatialPosition ToSpatialPosition(Vector3 value) => new(value.X, value.Y, value.Z);

@@ -15,12 +15,16 @@
 
 - 用户已批准按照架构审查结论开始渐进式重构；必须保持现有功能与测试全部通过，不改变玩法逻辑。
 - 首批职责迁移以 `DrinkWorkstation` 为入口，优先把双手、工具实例、摆放、砧板槽位与内容转移迁入无 Godot 依赖的 `ToolInventoryService`；`DrinkWorkstation` 保留 signal facade、Godot 表现同步和跨服务编排。
+- 第二批职责迁移目标为无 Godot 依赖的 `ProcessExecutionService`：接管工序能力/选择、来源合并、规则调用、成功输出、失败废品、重复补救和工序统计；`DrinkWorkstation` 只保留反馈文本格式化、signal 发布、卫生/水壶环境输入与跨服务 facade。
+- 第二批必须保持既有随机数消费时机：非破坏性缺水、重复补救动作不足和重复补救的错误手持工具固定失败路径不得额外消费随机数；普通工序仍按既有调用顺序取得鉴定值，测试排队的下一次鉴定值不能因重构漂移。
 - 后续动画、IK、骨骼等均属于可替换表现实现。Gameplay 只能通过事件、signal 或动作结果通知表现层，不得直接依赖、查询或控制动画播放器、IK 求解器、Skeleton/Bone 或其他表现实现；表现层不得反向决定玩法结果。
 - 本轮仍须保留用户已有的 `export_presets.cfg` 未提交改动，不纳入重构提交。
 
 ## P1｜2026-07-29 活动状态
 
-- 已完成审查后首批重构：`ToolInventoryService` 接管工具集合、双手、拿放、防重叠、砧板槽、内容装载/转移、重置与工具快照；`DrinkWorkstation` 保留公开 API、signal、表现同步和尚未迁出的工序/饮品编排。
+- 已完成审查后第二批重构：`ProcessExecutionService` 接管工序目录、能力/选择、来源合并、规则鉴定、输出/废品、重复补救、溢出与工序统计；`DrinkWorkstation` 只格式化类型化 outcome 并发 signal。
+- 已验证（2026-07-29 第二批回归）：资产 16 项 0 错误、纯领域测试 23/23、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS；本轮仍无视觉改动，无需新增截图。
+- 已完成审查后首批重构：`ToolInventoryService` 接管工具集合、双手、拿放、防重叠、砧板槽、内容装载/转移、重置与工具快照。
 - 已验证（2026-07-29 重构回归）：资产 16 项 0 错误、纯领域测试 19/19、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS；本轮无视觉改动，无需新增截图。
 - 已完成交互、物品、配方、工序、存档和眼镜系统结构审查；总体结论见 `docs/ARCHITECTURE_REVIEW_20260729.md`，脚本职责/拆分表见 `docs/SCRIPT_RESPONSIBILITIES.md`。
 - 已实现统一动作管线：玩家交互、切镜、简易/连续工序、量酒器切换和跨天命令统一经过检查、拒绝/开始、提交/取消；连续动作只在提交时写玩法状态。
@@ -29,7 +33,7 @@
 - 已修复丢弃旧饮品后历史原料/完成度污染重做评价、`TotalWaste` 跨天不清零，以及原型标记与数量评分策略耦合的问题。
 - 已更新 `docs/TECHNICAL_DESIGN.md` 的旧柜体描述为当前 `2.31 m` 通道、8 抽屉、6 大门吊柜和 `1.69 m` 开抽屉通行带。
 - 已验证（2026-07-29）：资产 16 项 0 错误、纯领域测试 16/16、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入、完整流程全部 PASS。
-- 下一代码拆分优先级：`DrinkWorkstation.ProcessExecutionService` → `DrinkAssemblyState` → `GrayboxLevelBuilder` → `PlayerController` → `StationInteractable`；不得把首批工具库存迁移误报为整个工作台拆分完成。
+- 下一代码拆分优先级：`DrinkAssemblyState` → `GrayboxLevelBuilder` → `PlayerController` → `StationInteractable`；不得把前两批迁移误报为整个工作台拆分完成。
 
 ## P0｜不可丢失的决策与边界
 
@@ -118,6 +122,7 @@
 - 主场景：`scenes/Main.tscn`
 - 核心会话：`scripts/core/GameSession.cs`
 - 工具/工序领域规则：`src/Domain/ToolProcessModel.cs`
+- 工具库存与工序执行：`src/Domain/ToolInventoryService.cs`、`src/Domain/ProcessExecutionService.cs`
 - 工具与工序开发目录：`data/gameplay/prototype_gameplay_catalog.tres`
 - 双手与权威物品状态：`scripts/gameplay/DrinkWorkstation.cs`
 - 组合砧板：`scripts/gameplay/WorkboardInteractable.cs`

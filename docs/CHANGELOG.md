@@ -2,6 +2,9 @@
 
 ## 2026-07-29
 
+- 完成第二批 `DrinkWorkstation` 职责迁移：新增纯 C# `ProcessExecutionService`，接管工序能力/选择、来源合并、规则鉴定、输出/废品、重复补救、溢出和工序统计。
+- 新增类型化 `ProcessExecutionOutcome` 与 `IProcessLiquidTarget` 窄端口；`DrinkWorkstation` 保留原公开 API，只负责既有反馈格式化、signal 与跨服务编排，不依赖任何动画、IK 或骨骼实现。
+- 新增 4 项工序执行领域测试；第二批回归为资产 16 项 0 错误、领域测试 23/23、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入与完整流程全部 PASS。
 - 开始执行架构审查后的渐进式重构：新增纯 C# `ToolInventoryService`，接管工具实例集合、左右手槽、拿放、防重叠、砧板槽、内容装载/转移、每日重置与工具快照往返。
 - `DrinkWorkstation` 保留公开 API、Godot signal、提示和表现同步，工具玩法状态不再由 facade 自行拥有；现有玩法逻辑未改变。
 - 记录动画/IK/骨骼表现隔离约束：Gameplay 仅通过事件、signal 或动作结果通知表现层，不直接依赖或控制表现实现。
