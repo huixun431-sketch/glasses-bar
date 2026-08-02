@@ -4,7 +4,7 @@
 
 本文件是长任务与上下文压缩后的首读入口。只保留当前决策、验证状态、阻塞和下一动作；详细内容回到链接文档读取。
 
-## P0｜2026-08-03 环境 GLB 合同已完成，开始建筑轮廓候选
+## P0｜2026-08-03 建筑轮廓候选完成，等待检查点 1
 
 - 用户确认大部分问题已解决，并要求：后吧台下柜改为推拉门；前吧客侧台面向客区延长 `0.30 m`；修复抽屉与前吧主体重合造成的实机错误；水槽下方补足可见内容。用户明确要求无需再次复核，修好后自行执行下一步计划。
 - 权威补充规格与执行计划分别为 `docs/superpowers/specs/2026-08-03-bar-graybox-detail-corrections-design.md` 和 `docs/superpowers/plans/2026-08-03-bar-graybox-detail-corrections.md`。
@@ -15,7 +15,10 @@
 - 已在 RTX 5070 上用 Godot 4.7.1 Vulkan Forward+ 生成并逐张人工检查 `artifacts/visual_review_bar_graybox_z3_h3_detail_fix/` 的 20 张 `1920×1080` PNG；哈希与检查结论见 `docs/assets/BAR_GRAYBOX_Z3_H3_DETAIL_FIX_CAPTURE_20260803.md`。
 - 生产模型计划 Task 6 已完成：六个环境模块已加入清单且保持占位；合同锁定 `16 × 10 × 4.5 m`、稳定根/节点、空心前吧、水槽裸露管线、五组推拉下柜、十扇上柜门和五湾瓶架。验证器新增根节点、必需节点和导出根单位变换检查。
 - Task 6 验证通过：自测 4/4、资产清单 21/0、领域 28/28、Debug/Release 0 警告/0 错误，Godot 导入及全部布局、储物、几何、冒烟、Stage 1/2、输入和流程场景 PASS。
-- 下一动作：依 `.agents/skills/modeling-glasses-bar-assets/references/workflow.md` 执行 Task 7，只生成 ignored `artifacts/` 下的中性建筑轮廓候选与审查图，在用户检查点 1 暂停；不得提前创建正式 GLB、包装或切换 placeholder。
+- Task 7 已推进到 Skill 强制检查点 1：新增确定性 Blender 公共帮助器、主场景生成、模块导出、审查渲染和合同测试；首轮图因构图/曝光/Y-up 翻滚失败后已返修并完全重拍。
+- 第二轮六张 `1600×1000` 中性图已逐张人工检查，开口、护墙板、南北地板方向、16:10 俯视比例和 1.83 m 人体参照均可读。证据与哈希见 `docs/assets/BAR_ARCHITECTURE_SILHOUETTE_REVIEW_20260803.md`。
+- Blender 合同 `BAR_MODEL_CONTRACT_PASS`，候选资产 1/0，正式占位清单 21/0。候选 GLB、`.blend` 和 PNG 均只在 ignored `artifacts/`；没有正式 GLB、Godot 包装或 placeholder 切换。
+- 当前唯一下一动作是等待用户明确批准或返修建筑轮廓检查点 1；批准前不得开始前后吧正式候选、材质抛光或 Godot 接入。
 - 用户现有 `export_presets.cfg` 修改继续保留且不得纳入任何提交；不推送、不发布。
 
 ## P1｜2026-08-03 Z3/H3 完整酒吧灰盒重建基线

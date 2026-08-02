@@ -445,25 +445,25 @@ git commit -m "feat: define production bar asset contract"
 - Generate locally: `artifacts/blender/bar_interior_master.blend`
 - Generate candidate locally: `artifacts/blender_candidates/bar_architecture.glb`
 
-- [ ] **Step 1: Write failing Blender contract tests**
+- [x] **Step 1: Write failing Blender contract tests**
 
 Use background Blender Python to assert scene unit scale 1.0 meters, +Y up/-Z forward export convention, named collections for all six modules, identity transforms at export roots, exact room/opening bounds, and no duplicate stable names.
 
-- [ ] **Step 2: Run the contract test and confirm missing scripts/collections fail**
+- [x] **Step 2: Run the contract test and confirm missing scripts/collections fail**
 
 ```powershell
 & 'D:\Applications\Blender 4.5 LTS\blender.exe' --background --factory-startup --python tools/blender/tests/test_bar_model_contract.py
 ```
 
-- [ ] **Step 3: Implement shared low-poly modeling helpers**
+- [x] **Step 3: Implement shared low-poly modeling helpers**
 
 Add deterministic helpers for bevelled boxes, wall segments, cylindrical bases, material slots, empty anchors, collection isolation, transform application, triangle counting, GLB export, and review-camera setup. All dimensions come from one Python metric table copied verbatim from the approved Godot layout contract and cross-checked by the test; do not hand-type independent coordinate variants inside individual module builders.
 
-- [ ] **Step 4: Build the master scene and architecture geometry**
+- [x] **Step 4: Build the master scene and architecture geometry**
 
 Create the approved 16 m × 10 m × 4.5 m shell, segmented south entry/window wall, north service door, deep-red walnut 1.05 m wainscot geometry, upper plaster faces, 0.18 m-wide north-south warm-oak floor boards, frames, handles, and trim. Keep south window and both doors as distinct named objects. Do not add backstage geometry.
 
-- [ ] **Step 5: Export and validate only the silhouette candidate**
+- [x] **Step 5: Export and validate only the silhouette candidate**
 
 ```powershell
 & 'D:\Applications\Blender 4.5 LTS\blender.exe' --background --factory-startup --python tools/blender/build_bar_master.py -- --output artifacts/blender/bar_interior_master.blend
@@ -475,6 +475,8 @@ Keep the silhouette GLB and review images ignored under `artifacts/`. Do not add
 - [ ] **Step 6: Render clay views and request architecture silhouette approval**
 
 Render north/south/east/west interior elevations and an overhead view to `artifacts/blender_review/architecture/`. Verify openings, wainscot break, floor direction, and player-scale reference mannequin. Apply user corrections before continuing.
+
+Status 2026-08-03: six neutral views rendered and manually inspected; waiting for explicit user checkpoint-1 approval. Evidence: `docs/assets/BAR_ARCHITECTURE_SILHOUETTE_REVIEW_20260803.md`.
 
 - [ ] **Step 7: Proposed commit boundary after approval and explicit permission**
 
