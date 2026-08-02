@@ -41,20 +41,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def make_neutral_materials() -> dict[str, bpy.types.Material]:
-    """Create intentionally non-final materials for silhouette readability."""
+    """Create the one intentionally non-final material for silhouette review."""
     metal = make_material(
         "Neutral_Silhouette_Metal",
         (0.46, 0.49, 0.52, 1.0),
         metallic=0.46,
         roughness=0.44,
     )
-    interior = make_material(
-        "Neutral_Silhouette_Interior",
-        (0.10, 0.12, 0.14, 1.0),
-        metallic=0.16,
-        roughness=0.78,
-    )
-    return {"metal": metal, "interior": interior}
+    return {"metal": metal}
 
 
 def add_mesh_object(
@@ -222,20 +216,20 @@ def add_pickup_spoon(
 def build_traditional_filter(materials: dict[str, bpy.types.Material]) -> bpy.types.Object:
     root = add_root("traditional_filter")
     metal = materials["metal"]
-    interior = materials["interior"]
     add_frustum_shell(root, "FilterCup", 0.078, 0.142, 0.104, 0.122, 0.094, 0.110, metal,
                       close_bottom=False, close_top=False)
-    add_frustum_shell(root, "FunnelBasket", 0.028, 0.128, 0.024, 0.108, 0.010, 0.094, interior,
+    add_frustum_shell(root, "FunnelBasket", 0.028, 0.128, 0.024, 0.108, 0.010, 0.094, metal,
                       close_bottom=False, close_top=False)
-    add_torus(root, "FunnelDepthRing", 0.055, 0.004, 0.070, interior)
-    add_torus(root, "OutletThroat", 0.016, 0.004, 0.031, interior)
+    add_torus(root, "FunnelShoulderRing", 0.092, 0.005, 0.079, metal)
+    add_torus(root, "FunnelDepthRing", 0.055, 0.004, 0.070, metal)
+    add_torus(root, "OutletThroat", 0.016, 0.004, 0.031, metal)
     add_oriented_cylinder(root, "HandleBridgeLower", 0.009, 0.060, (0.145, 0.0, 0.073),
                           (0.0, math.pi / 2, 0.0), metal)
     add_oriented_cylinder(root, "HandleBridgeUpper", 0.009, 0.060, (0.145, 0.0, 0.126),
                           (0.0, math.pi / 2, 0.0), metal)
     grip_handle = add_cylinder(root, "GripHandle", 0.012, 0.077, 0.100, metal, vertices=8)
     grip_handle.location.x = 0.170
-    add_cylinder(root, "BottomSpout", 0.018, 0.036, 0.018, interior, vertices=12)
+    add_cylinder(root, "BottomSpout", 0.018, 0.036, 0.018, metal, vertices=12)
     add_torus(root, "StabilityFoot", 0.044, 0.008, 0.023, metal)
     add_anchor(root, "Grip", (0.170, 0.100, 0.0))
     add_anchor(root, "Placement", (0.0, 0.0, 0.0))
