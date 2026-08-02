@@ -9,5 +9,7 @@ builds/
 *.user
 *.tmp
 *.log
+__pycache__/
+*.pyc
 artifacts/
 .worktrees/
