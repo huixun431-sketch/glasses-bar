@@ -45,7 +45,7 @@
 - Create: `tests/tools/test_stage2_asset_contract.py`
 
 **Interfaces:**
-- Produces: `AssetContract(asset_id, envelope, anchors, hand, material_group)` 和只读映射 `STAGE2_ASSETS`。
+- Produces: `AssetContract(asset_id, envelope, anchors, hand, material_group)`、只读映射 `STAGE2_ASSETS`、`validate_contracts(contracts) -> list[str]` 和 `review_manifest_assets(model_prefix) -> list[dict]`。
 - Consumes: `GameplaySceneComposer.ToolMesh()`、`HeldToolPresenter.UpdateMeshes()` 的现有灰盒包络，以及阶段 1 `jigger_medium` 的 `0.18 m` 高、`0.13 m` 最大直径和锚点方向。
 
 - [ ] **Step 1: 写失败的合同测试**
@@ -58,29 +58,42 @@
   from pathlib import Path
 
   sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools" / "modeling"))
-  from stage2_asset_contract import STAGE2_ASSETS
+  from stage2_asset_contract import (
+      AssetContract, STAGE2_ASSETS, review_manifest_assets, validate_contracts,
+  )
 
 
   class Stage2AssetContractTests(unittest.TestCase):
-      def test_ids_hands_anchors_and_review_envelopes_are_locked(self):
+      def test_approved_contracts_validate_and_emit_review_manifest_entries(self):
+          self.assertEqual(validate_contracts(STAGE2_ASSETS), [])
+          entries = review_manifest_assets("models")
+          self.assertEqual([entry["id"] for entry in entries], list(STAGE2_ASSETS))
+          self.assertTrue(all(entry["placeholder"] is False for entry in entries))
           self.assertEqual(
-              set(STAGE2_ASSETS),
-              {"traditional_filter", "bean_scoop", "ice_tongs", "jigger_small", "jigger_large"},
+              entries[0],
+              {
+                  "id": "traditional_filter",
+                  "path": "models/traditional_filter.glb",
+                  "placeholder": False,
+                  "required_anchors": ["Grip", "Placement", "Spout", "Interaction"],
+              },
           )
-          self.assertEqual(STAGE2_ASSETS["traditional_filter"].hand, "left")
-          self.assertTrue(all(STAGE2_ASSETS[key].hand == "right" for key in STAGE2_ASSETS if key != "traditional_filter"))
-          self.assertEqual(STAGE2_ASSETS["traditional_filter"].anchors, ("Grip", "Placement", "Spout", "Interaction"))
-          self.assertEqual(STAGE2_ASSETS["bean_scoop"].anchors, ("Grip", "Placement", "FillOrigin"))
-          self.assertEqual(STAGE2_ASSETS["ice_tongs"].anchors, ("Grip", "Placement", "Interaction"))
-          self.assertEqual(STAGE2_ASSETS["jigger_small"].envelope, (0.11, 0.15, 0.11))
-          self.assertEqual(STAGE2_ASSETS["jigger_large"].envelope, (0.15, 0.21, 0.15))
 
-      def test_material_groups_match_approved_mix_c(self):
-          self.assertEqual(STAGE2_ASSETS["traditional_filter"].material_group, "warm_brushed")
-          self.assertEqual(STAGE2_ASSETS["bean_scoop"].material_group, "dark_satin")
-          self.assertEqual(STAGE2_ASSETS["ice_tongs"].material_group, "dark_satin")
-          self.assertEqual(STAGE2_ASSETS["jigger_small"].material_group, "bright_silver")
-          self.assertEqual(STAGE2_ASSETS["jigger_large"].material_group, "bright_silver")
+      def test_validation_rejects_invalid_hand_envelope_anchor_and_material_group(self):
+          broken = {
+              "broken": AssetContract(
+                  "broken", (0.2, 0.0, 0.1), ("Grip",), "center", "painted_plastic"
+              )
+          }
+          self.assertEqual(
+              validate_contracts(broken),
+              [
+                  "broken: envelope dimensions must be positive meters",
+                  "broken: Placement anchor is required",
+                  "broken: hand must be left or right",
+                  "broken: unknown material group painted_plastic",
+              ],
+          )
   ```
 
 - [ ] **Step 2: 运行测试确认失败**
@@ -113,13 +126,43 @@
       "jigger_small": AssetContract("jigger_small", (0.11, 0.15, 0.11), ("Grip", "Placement", "FillOrigin", "Spout"), "right", "bright_silver"),
       "jigger_large": AssetContract("jigger_large", (0.15, 0.21, 0.15), ("Grip", "Placement", "FillOrigin", "Spout"), "right", "bright_silver"),
   }
+
+  MATERIAL_GROUPS = {"warm_brushed", "dark_satin", "bright_silver"}
+
+
+  def validate_contracts(contracts: dict[str, AssetContract]) -> list[str]:
+      errors: list[str] = []
+      for key, contract in contracts.items():
+          if contract.asset_id != key:
+              errors.append(f"{key}: asset_id must match mapping key")
+          if any(dimension <= 0 for dimension in contract.envelope):
+              errors.append(f"{key}: envelope dimensions must be positive meters")
+          if "Placement" not in contract.anchors:
+              errors.append(f"{key}: Placement anchor is required")
+          if contract.hand not in {"left", "right"}:
+              errors.append(f"{key}: hand must be left or right")
+          if contract.material_group not in MATERIAL_GROUPS:
+              errors.append(f"{key}: unknown material group {contract.material_group}")
+      return errors
+
+
+  def review_manifest_assets(model_prefix: str) -> list[dict]:
+      return [
+          {
+              "id": contract.asset_id,
+              "path": f"{model_prefix}/{contract.asset_id}.glb",
+              "placeholder": False,
+              "required_anchors": list(contract.anchors),
+          }
+          for contract in STAGE2_ASSETS.values()
+      ]
   ```
 
 - [ ] **Step 4: 运行合同测试确认通过**
 
   Run: `python -m unittest discover -s tests/tools -p "test_stage2_asset_contract.py" -v`
 
-  Expected: 2 tests PASS，退出码 0。
+  Expected: 2 tests PASS，退出码 0；把任一错误合同恢复为有效值会使第二项测试失败，证明测试覆盖真实校验分支。
 
 - [ ] **Step 5: 提交合同与测试**
 
@@ -138,7 +181,7 @@
 
 **Interfaces:**
 - Consumes: `STAGE2_ASSETS`；阶段 1 的 `reset_scene()`、`make_material()`、`add_root()`、`add_anchor()`、`add_cylinder()`、`add_torus()`、`add_frustum_shell()`、`export_asset()`。
-- Produces: `build_traditional_filter(materials)`、`build_bean_scoop(materials)`、`build_ice_tongs(materials)`、`build_jigger_variant(asset_id, height, lower_radius, upper_radius, materials)` 和 `write_review_manifest(output_root)`。
+- Produces: `build_traditional_filter(materials)`、`build_bean_scoop(materials)`、`build_ice_tongs(materials)`、`build_jigger_variant(asset_id, height, target_radius, materials)` 和 `write_review_manifest(output_root)`。
 
 - [ ] **Step 1: 运行不存在的生成器确认失败**
 
@@ -192,7 +235,7 @@
     add_anchor(root, "FillOrigin", (0.0, 0.105 * z_scale, 0.0))
     add_anchor(root, "Spout", (0.0, height, -target_radius))
     ```
-  - `write_review_manifest()` 写入米制、轴向、五项 `placeholder=false` 和对应锚点；该文件只位于 `artifacts/`，不修改正式清单。
+  - `write_review_manifest()` 调用 `review_manifest_assets("models")` 写入米制、轴向、五项 `placeholder=false` 和对应锚点；该文件只位于 `artifacts/`，不修改正式清单。
 
 - [ ] **Step 3: 后台生成候选 GLB**
 
@@ -329,25 +372,26 @@
 - Consumes: 用户批准的 Task 3 轮廓和混合 C 材质映射。
 - Produces: `--mode final` 五项正式 GLB和包装根 metadata `asset_id`；正式清单仍保持阶段 2 五项为占位，直到检查点 2 通过。
 
-- [ ] **Step 1: 添加材质模式的合同测试并确认失败**
+- [ ] **Step 1: 运行尚未实现的最终生成模式确认失败**
 
-  在 `tests/tools/test_stage2_asset_contract.py` 增加断言：`final_material_values()` 必须返回三组互不相同的 base color，且 metallic 均不低于 `0.68`，roughness 满足 `warm_brushed > dark_satin > bright_silver`。
+  Run:
 
-  Run: `python -m unittest discover -s tests/tools -p "test_stage2_asset_contract.py" -v`
+  ```powershell
+  & 'D:\Applications\Blender 4.5 LTS\blender.exe' --background --python tools/modeling/generate_stage2_assets.py -- --mode final --output artifacts/stage2_final_candidate/models
+  ```
 
-  Expected: FAIL，因为 `final_material_values()` 尚不存在。
+  Expected: FAIL，参数解析或模式分派明确报告 `final` 尚未支持；失败发生在写入任何正式 GLB 之前。
 
 - [ ] **Step 2: 实现混合 C 最小 PBR 参数**
 
-  在合同模块加入可测试纯值，在 Blender 生成器中只消费这些值：
+  在 Blender 生成器中加入以下批准参数，并由实际生成、GLB 结构验证和后续 Forward+ 审图验证最终行为：
 
   ```python
-  def final_material_values():
-      return {
-          "warm_brushed": {"color": (0.46, 0.29, 0.10, 1.0), "metallic": 0.76, "roughness": 0.34},
-          "dark_satin": {"color": (0.16, 0.18, 0.20, 1.0), "metallic": 0.72, "roughness": 0.27},
-          "bright_silver": {"color": (0.72, 0.78, 0.84, 1.0), "metallic": 0.78, "roughness": 0.17},
-      }
+  FINAL_MATERIALS = {
+      "warm_brushed": {"color": (0.46, 0.29, 0.10, 1.0), "metallic": 0.76, "roughness": 0.34},
+      "dark_satin": {"color": (0.16, 0.18, 0.20, 1.0), "metallic": 0.72, "roughness": 0.27},
+      "bright_silver": {"color": (0.72, 0.78, 0.84, 1.0), "metallic": 0.78, "roughness": 0.17},
+  }
   ```
 
   亮银杯沿／腰环继续复用阶段 1 `Worn_Silver_Edge` 的明度、金属度和粗糙度关系；暖金属与旧钢不增加纹理贴图、锈迹或污渍。
@@ -361,7 +405,7 @@
   & 'D:\Applications\Blender 4.5 LTS\blender.exe' --background --python tools/modeling/generate_stage2_assets.py -- --mode final --output assets/models
   ```
 
-  Expected: 全部 Python 测试 PASS；五个正式 GLB 写入 `assets/models/`。
+  Expected: 合同校验与清单行为测试全部 PASS；五个正式 GLB 写入 `assets/models/`，生成器退出码 0。材质是否达到批准的暖金属／旧钢／亮银视觉目标由 Task 6 的实际 Forward+ 截图决定，不由常量断言代替。
 
 - [ ] **Step 4: 创建手写包装场景**
 
