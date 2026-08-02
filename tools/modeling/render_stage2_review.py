@@ -139,9 +139,10 @@ def add_jigger_scale() -> None:
 def render_lineup(candidate_root: Path, output_root: Path, three_quarter: bool) -> None:
     reset_scene()
     add_studio()
+    lineup_scale = 1.0 if three_quarter else 0.78
     for asset_id in REVIEW_ASSETS:
         root = import_asset(candidate_root, asset_id)
-        root.location.x = LINEUP_X[asset_id]
+        root.location.x = LINEUP_X[asset_id] * lineup_scale
     camera = (1.15, -2.55, 0.78) if three_quarter else (0.0, -2.85, 0.65)
     add_camera(camera, (-0.04, 0.0, 0.13), 62.0)
     scene = bpy.context.scene
