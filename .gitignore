@@ -10,3 +10,4 @@ builds/
 *.tmp
 *.log
 artifacts/
+.worktrees/
