@@ -33,11 +33,15 @@ public partial class PlayerController : CharacterBody3D
             GetNode<RayCast3D>("Head/Camera3D/InteractionRay"),
             GetNode<ShapeCast3D>("Head/Camera3D/InteractionProbe"));
         _actionInput = new PlayerActionInput(this, _motor, sensor, _actions);
+        var leftHandAnchor = GetNode<Node3D>("Head/Camera3D/LeftHandAnchor");
+        var rightHandAnchor = GetNode<Node3D>("Head/Camera3D/RightHandAnchor");
         _heldToolPresenter = new HeldToolPresenter(
-            GetNode<MeshInstance3D>("Head/Camera3D/LeftHandAnchor/HeldTool"),
-            GetNode<MeshInstance3D>("Head/Camera3D/RightHandAnchor/HeldTool"),
-            GetNode<Label3D>("Head/Camera3D/LeftHandAnchor/Label"),
-            GetNode<Label3D>("Head/Camera3D/RightHandAnchor/Label"));
+            leftHandAnchor,
+            rightHandAnchor,
+            leftHandAnchor.GetNode<MeshInstance3D>("HeldTool"),
+            rightHandAnchor.GetNode<MeshInstance3D>("HeldTool"),
+            leftHandAnchor.GetNode<Label3D>("Label"),
+            rightHandAnchor.GetNode<Label3D>("Label"));
 
         _actionInput.PromptChanged += OnPromptChanged;
         _actionInput.OperationChanged += (prompt, active) =>

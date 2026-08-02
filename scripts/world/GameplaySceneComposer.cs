@@ -92,7 +92,12 @@ public sealed class GameplaySceneComposer
         {
             var spec = workstation.GetToolSpec(layout.ToolId);
             var node = new ToolInteractable { Position = layout.Position };
-            node.Configure(workstation, spec, ToolMesh(layout.ToolId), layout.Color);
+            node.Configure(
+                workstation,
+                spec,
+                ToolMesh(layout.ToolId),
+                layout.Color,
+                ToolVisualLibrary.Instantiate(layout.ToolId));
             _neutral.AddChild(node);
             workstation.RegisterTool(node, layout.ToolId, layout.Position);
         }

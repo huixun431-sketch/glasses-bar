@@ -110,24 +110,19 @@ public partial class InputIntegrationTests : Node
             var rightHeldVisual = player.GetNode<MeshInstance3D>("Head/Camera3D/RightHandAnchor/HeldTool");
             main.GetNode<ToolInteractable>("NeutralGameplay/mortar").Interact(context);
             main.GetNode<ToolInteractable>("NeutralGameplay/pestle").Interact(context);
-            Require(leftHeldVisual.Visible && leftHeldVisual.Mesh is CylinderMesh
-                    {
-                        TopRadius: 0.135f,
-                        BottomRadius: 0.165f,
-                        Height: 0.16f
-                    },
-                "left-hand presentation consumes the hand-state signal and keeps the mortar mesh");
-            Require(rightHeldVisual.Visible && rightHeldVisual.Mesh is CylinderMesh
-                    {
-                        TopRadius: 0.034f,
-                        BottomRadius: 0.049f,
-                        Height: 0.3f
-                    },
-                "right-hand presentation consumes the hand-state signal and keeps the pestle mesh");
+            var leftHeldAsset = player.GetNode<Node3D>("Head/Camera3D/LeftHandAnchor/HeldAssetVisual");
+            var rightHeldAsset = player.GetNode<Node3D>("Head/Camera3D/RightHandAnchor/HeldAssetVisual");
+            Require(!leftHeldVisual.Visible && leftHeldAsset.Visible &&
+                    leftHeldAsset.GetMeta("asset_id").AsString() == "mortar",
+                "left-hand presentation consumes the hand-state signal and shows the mortar wrapper");
+            Require(!rightHeldVisual.Visible && rightHeldAsset.Visible &&
+                    rightHeldAsset.GetMeta("asset_id").AsString() == "pestle",
+                "right-hand presentation consumes the hand-state signal and shows the pestle wrapper");
             workstation.ResetForNewDay();
             player.ResetForNewDay();
-            Require(!leftHeldVisual.Visible && !rightHeldVisual.Visible,
-                "hand presentation hides both meshes after the authoritative hand state resets");
+            Require(!leftHeldVisual.Visible && !rightHeldVisual.Visible &&
+                    !leftHeldAsset.Visible && !rightHeldAsset.Visible,
+                "hand presentation hides graybox and wrapper visuals after authoritative hand state resets");
             Require(probe.Enabled && probe.TargetPosition.Length() > 5f, "forgiving interaction probe is active");
             Require(Math.Abs(myopia.MyopiaDegrees - 50f) < 0.01f, "reality myopia defaults to 50 degrees");
             var blurMaterial = (ShaderMaterial)main.GetNode<ColorRect>("RealityEffects/RealityBlur").Material;

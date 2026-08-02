@@ -8,22 +8,33 @@ namespace GlassesBar;
 /// </summary>
 internal sealed class HeldToolPresenter
 {
+    private readonly Node3D _leftHandAnchor;
+    private readonly Node3D _rightHandAnchor;
     private readonly MeshInstance3D _leftHandVisual;
     private readonly MeshInstance3D _rightHandVisual;
     private readonly Label3D _leftHandLabel;
     private readonly Label3D _rightHandLabel;
     private DrinkWorkstation? _workstation;
+    private Node3D? _leftAssetVisual;
+    private Node3D? _rightAssetVisual;
+    private string _leftToolId = string.Empty;
+    private string _rightToolId = string.Empty;
 
     public HeldToolPresenter(
+        Node3D leftHandAnchor,
+        Node3D rightHandAnchor,
         MeshInstance3D leftHandVisual,
         MeshInstance3D rightHandVisual,
         Label3D leftHandLabel,
         Label3D rightHandLabel)
     {
+        _leftHandAnchor = leftHandAnchor;
+        _rightHandAnchor = rightHandAnchor;
         _leftHandVisual = leftHandVisual;
         _rightHandVisual = rightHandVisual;
         _leftHandLabel = leftHandLabel;
         _rightHandLabel = rightHandLabel;
+        GameSession.Instance.WorldModeChanged += OnWorldModeChanged;
     }
 
     public void Bind(DrinkWorkstation workstation)
@@ -43,8 +54,14 @@ internal sealed class HeldToolPresenter
 
     private void UpdateLabelsAndVisibility(string leftHand, string rightHand)
     {
-        _leftHandVisual.Visible = !string.IsNullOrWhiteSpace(leftHand) && leftHand != "空";
-        _rightHandVisual.Visible = !string.IsNullOrWhiteSpace(rightHand) && rightHand != "空";
+        var leftOccupied = !string.IsNullOrWhiteSpace(leftHand) && leftHand != "空";
+        var rightOccupied = !string.IsNullOrWhiteSpace(rightHand) && rightHand != "空";
+        _leftHandVisual.Visible = leftOccupied && _leftAssetVisual is null;
+        _rightHandVisual.Visible = rightOccupied && _rightAssetVisual is null;
+        if (_leftAssetVisual is not null)
+            _leftAssetVisual.Visible = leftOccupied && _leftAssetVisual.GetMeta("asset_id").AsString() == _leftToolId;
+        if (_rightAssetVisual is not null)
+            _rightAssetVisual.Visible = rightOccupied && _rightAssetVisual.GetMeta("asset_id").AsString() == _rightToolId;
         _leftHandLabel.Visible = false;
         _rightHandLabel.Visible = false;
         _leftHandLabel.Text = leftHand;
@@ -53,6 +70,8 @@ internal sealed class HeldToolPresenter
 
     private void UpdateMeshes(string leftToolId, string rightToolId)
     {
+        _leftToolId = leftToolId;
+        _rightToolId = rightToolId;
         _leftHandVisual.Mesh = leftToolId switch
         {
             "mortar" => new CylinderMesh { TopRadius = 0.135f, BottomRadius = 0.165f, Height = 0.16f },
@@ -68,5 +87,61 @@ internal sealed class HeldToolPresenter
             "ice_tongs" => new BoxMesh { Size = new Vector3(0.08f, 0.06f, 0.4f) },
             _ => new BoxMesh { Size = new Vector3(0.14f, 0.08f, 0.3f) }
         };
+        var leftUsesAsset = UpdateAssetVisual(_leftHandAnchor, ref _leftAssetVisual, leftToolId);
+        var rightUsesAsset = UpdateAssetVisual(_rightHandAnchor, ref _rightAssetVisual, rightToolId);
+        _leftHandVisual.Visible = !string.IsNullOrWhiteSpace(leftToolId) && !leftUsesAsset;
+        _rightHandVisual.Visible = !string.IsNullOrWhiteSpace(rightToolId) && !rightUsesAsset;
+    }
+
+    private static bool UpdateAssetVisual(Node3D handAnchor, ref Node3D? current, string toolId)
+    {
+        if (string.IsNullOrWhiteSpace(toolId))
+        {
+            if (current is not null)
+                current.Visible = false;
+            return false;
+        }
+
+        if (current is not null && current.GetMeta("asset_id").AsString() == toolId)
+        {
+            current.Visible = true;
+            ToolVisualLibrary.ApplyWorldStyle(current, GameSession.Instance.WorldMode);
+            return true;
+        }
+
+        if (current is not null)
+        {
+            handAnchor.RemoveChild(current);
+            current.Free();
+            current = null;
+        }
+
+        var visual = ToolVisualLibrary.Instantiate(toolId);
+        if (visual is null)
+            return false;
+
+        visual.Name = "HeldAssetVisual";
+        handAnchor.AddChild(visual);
+        AlignGripToHand(visual);
+        ToolVisualLibrary.ApplyWorldStyle(visual, GameSession.Instance.WorldMode);
+        current = visual;
+        return true;
+    }
+
+    private static void AlignGripToHand(Node3D visual)
+    {
+        var grip = ToolVisualLibrary.FindAnchor(visual, "Grip");
+        if (grip is null)
+            return;
+        var gripInVisual = visual.GlobalTransform.AffineInverse() * grip.GlobalTransform;
+        visual.Position = -(visual.Basis * gripInVisual.Origin);
+    }
+
+    private void OnWorldModeChanged(int mode)
+    {
+        if (_leftAssetVisual is not null)
+            ToolVisualLibrary.ApplyWorldStyle(_leftAssetVisual, (WorldMode)mode);
+        if (_rightAssetVisual is not null)
+            ToolVisualLibrary.ApplyWorldStyle(_rightAssetVisual, (WorldMode)mode);
     }
 }

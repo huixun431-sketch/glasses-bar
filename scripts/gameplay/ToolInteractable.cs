@@ -8,12 +8,18 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
     private DrinkWorkstation _workstation = null!;
     private CollisionShape3D _collision = null!;
     private MeshInstance3D _visual = null!;
+    private Node3D? _assetVisual;
     private Label3D _label = null!;
 
     public string ToolId { get; private set; } = string.Empty;
     public ToolSpec Spec { get; private set; } = null!;
 
-    public void Configure(DrinkWorkstation workstation, ToolSpec spec, Mesh mesh, Color color)
+    public void Configure(
+        DrinkWorkstation workstation,
+        ToolSpec spec,
+        Mesh mesh,
+        Color color,
+        Node3D? assetVisual = null)
     {
         _workstation = workstation;
         Spec = spec;
@@ -35,6 +41,14 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
             MaterialOverride = MakeMaterial(color)
         };
         AddChild(_visual);
+        if (assetVisual is not null)
+        {
+            _assetVisual = assetVisual;
+            _assetVisual.Name = "AssetVisual";
+            AddChild(_assetVisual);
+            _visual.Visible = false;
+            ToolVisualLibrary.ApplyWorldStyle(_assetVisual, GameSession.Instance.WorldMode);
+        }
         _label = new Label3D
         {
             Name = "GlassesLabel",
@@ -52,6 +66,8 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
         {
             _label.Visible = (WorldMode)mode == WorldMode.Glasses && Visible;
             _visual.MaterialOverride = MakeMaterial((WorldMode)mode == WorldMode.Glasses ? new Color("2dd4bf") : color);
+            if (_assetVisual is not null)
+                ToolVisualLibrary.ApplyWorldStyle(_assetVisual, (WorldMode)mode);
         };
     }
 
@@ -92,7 +108,9 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
     {
         GlobalPosition = position;
         Visible = visible;
-        _visual.Visible = visible;
+        _visual.Visible = visible && _assetVisual is null;
+        if (_assetVisual is not null)
+            _assetVisual.Visible = visible;
         _label.Visible = visible && GameSession.Instance.WorldMode == WorldMode.Glasses;
         _collision.SetDeferred(CollisionShape3D.PropertyName.Disabled, !visible);
     }
