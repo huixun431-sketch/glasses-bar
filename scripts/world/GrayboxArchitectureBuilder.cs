@@ -38,11 +38,14 @@ public sealed class GrayboxArchitectureBuilder
         AddStaticBox(_neutral, "CeilingCollider", _layout.Ceiling.Position, _layout.Ceiling.Size);
         foreach (var wall in BuildWallSegments())
             AddStaticBox(_neutral, wall.Name + "Collider", wall.Position, wall.Size);
-        foreach (var body in _layout.FrontBarBodySections)
-            AddStaticBox(_neutral, body.Name + "Collider", body.Position, body.Size, 2);
-        foreach (var chamfer in _layout.FrontBarInnerChamfers)
-            AddStaticRotatedBox(_neutral, chamfer.Name + "Collider", chamfer.Position,
-                chamfer.Size, chamfer.RotationDegrees, 2);
+        BarPolygonGeometry.CreateCollisionBody(
+            _neutral, "FrontBarBodyCollider", _layout.FrontBodyFootprint, 2);
+        BarPolygonGeometry.CreateCollisionBody(
+            _neutral, "PlayerWorktopCollider", _layout.FrontPlayerTopFootprint, 2);
+        BarPolygonGeometry.CreateCollisionBody(
+            _neutral, "GuestCounterRiserCollider", _layout.FrontGuestRiserFootprint, 2);
+        BarPolygonGeometry.CreateCollisionBody(
+            _neutral, "GuestCounterTopCollider", _layout.FrontGuestTopFootprint, 2);
         AddStaticBox(_neutral, "RearWallShelfCollider", _layout.RearWallShelf.Position, _layout.RearWallShelf.Size, 2);
         AddStaticBox(_neutral, "UpperBackCabinetCollider", _layout.UpperBackCabinet.Position, _layout.UpperBackCabinet.Size, 2);
         for (var index = 0; index < _layout.CounterReturns.Count; index++)
@@ -72,36 +75,22 @@ public sealed class GrayboxArchitectureBuilder
         BuildWainscot(_reality, false);
         BuildWainscot(_glasses, true);
 
-        foreach (var body in _layout.FrontBarBodySections)
-        {
-            CreateBox(_reality, body, new Color("5b3524"));
-            CreateBox(_glasses, body, new Color("075366"), true);
-        }
-        foreach (var chamfer in _layout.FrontBarInnerChamfers)
-        {
-            CreateRotatedBox(_reality,
-                new BarBoxLayout(chamfer.Name, chamfer.Position, chamfer.Size),
-                chamfer.RotationDegrees, new Color("5b3524"), false);
-            CreateRotatedBox(_glasses,
-                new BarBoxLayout(chamfer.Name, chamfer.Position, chamfer.Size),
-                chamfer.RotationDegrees, new Color("075366"), true);
-        }
-        CreateBox(_reality, _layout.FrontBarTop, new Color("8b5634"));
-        CreateBox(_glasses, _layout.FrontBarTop, new Color("0f98a4"), true);
-        foreach (var worktop in _layout.PlayerWorktopSections)
-        {
-            CreateBox(_reality, worktop, new Color("76503a"));
-            CreateBox(_glasses, worktop, new Color("0b8d9a"), true);
-        }
-        foreach (var chamfer in _layout.PlayerWorktopChamfers)
-        {
-            CreateRotatedBox(_reality,
-                new BarBoxLayout(chamfer.Name, chamfer.Position, chamfer.Size),
-                chamfer.RotationDegrees, new Color("76503a"), false);
-            CreateRotatedBox(_glasses,
-                new BarBoxLayout(chamfer.Name, chamfer.Position, chamfer.Size),
-                chamfer.RotationDegrees, new Color("0b8d9a"), true);
-        }
+        BarPolygonGeometry.CreateVisual(
+            _reality, _layout.FrontBodyFootprint, MakeMaterial(new Color("5b3524")));
+        BarPolygonGeometry.CreateVisual(
+            _glasses, _layout.FrontBodyFootprint, MakeMaterial(new Color("075366"), true));
+        BarPolygonGeometry.CreateVisual(
+            _reality, _layout.FrontPlayerTopFootprint, MakeMaterial(new Color("76503a")));
+        BarPolygonGeometry.CreateVisual(
+            _glasses, _layout.FrontPlayerTopFootprint, MakeMaterial(new Color("0b8d9a"), true));
+        BarPolygonGeometry.CreateVisual(
+            _reality, _layout.FrontGuestRiserFootprint, MakeMaterial(new Color("5b3524")));
+        BarPolygonGeometry.CreateVisual(
+            _glasses, _layout.FrontGuestRiserFootprint, MakeMaterial(new Color("075366"), true));
+        BarPolygonGeometry.CreateVisual(
+            _reality, _layout.FrontGuestTopFootprint, MakeMaterial(new Color("8b5634")));
+        BarPolygonGeometry.CreateVisual(
+            _glasses, _layout.FrontGuestTopFootprint, MakeMaterial(new Color("0f98a4"), true));
 
         CreateBox(_reality, _layout.RearWallShelf, new Color("76503a"));
         CreateBox(_glasses, _layout.RearWallShelf, new Color("0b8d9a"), true);

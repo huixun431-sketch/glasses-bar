@@ -75,7 +75,8 @@ public partial class BarProductionLayoutContractTests : Node
             "obsolete overlay chamfers and placeholder bottles are absent");
         Require(layout.FrontBodyFootprint.Footprint.Count >= 6 &&
                 layout.FrontPlayerTopFootprint.Footprint.Count >= 6 &&
-                layout.FrontGuestTopFootprint.Footprint.Count >= 6,
+                layout.FrontGuestRiserFootprint.Footprint.Count >= 4 &&
+                layout.FrontGuestTopFootprint.Footprint.Count >= 4,
             "front body and both worktops use authoritative polygon outlines");
         Require(layout.BottleRackBays.Count == 5 &&
                 layout.BottleRackBays.All(bay => bay.Shelves.Count == 2),

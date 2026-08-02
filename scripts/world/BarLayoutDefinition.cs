@@ -198,14 +198,21 @@ public sealed class BarLayoutDefinition
 
         var westEdge = BarCenterX - FrontOutlineWidth * 0.5f;
         var eastEdge = BarCenterX + FrontOutlineWidth * 0.5f;
-        var fullFrontFootprint = Array.AsReadOnly(new[]
+        var playerTopFootprint = Array.AsReadOnly(new[]
         {
-            new Vector2(westEdge, -0.85f),
-            new Vector2(eastEdge, -0.85f),
+            new Vector2(westEdge, -1.15f),
+            new Vector2(eastEdge, -1.15f),
             new Vector2(eastEdge, -1.60f),
             new Vector2(eastEdge - FrontChamferRun, FrontBarInnerEdgeZ),
             new Vector2(westEdge + FrontChamferRun, FrontBarInnerEdgeZ),
             new Vector2(westEdge, -1.60f)
+        });
+        var guestTopFootprint = Array.AsReadOnly(new[]
+        {
+            new Vector2(westEdge, -0.85f),
+            new Vector2(eastEdge, -0.85f),
+            new Vector2(eastEdge, -1.15f),
+            new Vector2(westEdge, -1.15f)
         });
         var bodyEastEdge = eastEdge - FrontChamferRun - FrontSinkBayWidth;
         var bodyFootprint = Array.AsReadOnly(new[]
@@ -220,9 +227,11 @@ public sealed class BarLayoutDefinition
         FrontBodyFootprint = new BarPolygonPrismLayout(
             "FrontBarBody", bodyFootprint, 0f, PlayerWorktopHeight - 0.04f);
         FrontPlayerTopFootprint = new BarPolygonPrismLayout(
-            "PlayerWorktop", fullFrontFootprint, PlayerWorktopHeight - 0.04f, PlayerWorktopHeight);
+            "PlayerWorktop", playerTopFootprint, PlayerWorktopHeight - 0.04f, PlayerWorktopHeight);
+        FrontGuestRiserFootprint = new BarPolygonPrismLayout(
+            "GuestCounterRiser", guestTopFootprint, PlayerWorktopHeight, FrontBarTopHeight - 0.06f);
         FrontGuestTopFootprint = new BarPolygonPrismLayout(
-            "GuestCounterTop", fullFrontFootprint, FrontBarTopHeight - 0.06f, FrontBarTopHeight);
+            "GuestCounterTop", guestTopFootprint, FrontBarTopHeight - 0.06f, FrontBarTopHeight);
 
         FrontBarBody = BoundsOf(FrontBodyFootprint);
         FrontBarTop = BoundsOf(FrontGuestTopFootprint);
@@ -426,6 +435,7 @@ public sealed class BarLayoutDefinition
     public IReadOnlyList<BarOpeningLayout> SouthWindows { get; }
     public BarPolygonPrismLayout FrontBodyFootprint { get; }
     public BarPolygonPrismLayout FrontPlayerTopFootprint { get; }
+    public BarPolygonPrismLayout FrontGuestRiserFootprint { get; }
     public BarPolygonPrismLayout FrontGuestTopFootprint { get; }
     public BarBoxLayout FrontBarBody { get; }
     public IReadOnlyList<BarBoxLayout> FrontBarBodySections { get; }
@@ -503,6 +513,7 @@ public sealed class BarLayoutDefinition
             throw new InvalidOperationException("Rear five-bay width and margins must recalculate to 9.10 metres.");
         if (FrontBodyFootprint.Footprint.Count < 3 ||
             FrontPlayerTopFootprint.Footprint.Count < 3 ||
+            FrontGuestRiserFootprint.Footprint.Count < 3 ||
             FrontGuestTopFootprint.Footprint.Count < 3)
             throw new InvalidOperationException("Every front-bar polygon must have at least three points.");
         if (FrontBarInnerChamfers.Count != 0 || PlayerWorktopChamfers.Count != 0 || LiquorBottles.Count != 0)
