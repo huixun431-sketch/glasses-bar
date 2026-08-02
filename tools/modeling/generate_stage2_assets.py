@@ -61,14 +61,16 @@ FINAL_MATERIALS = {
         "roughness": 0.34,
     },
     "dark_satin": {
-        "color": (0.16, 0.18, 0.20, 1.0),
-        "metallic": 0.72,
-        "roughness": 0.27,
+        "color": (0.025, 0.035, 0.05, 1.0),
+        "metallic": 0.08,
+        "roughness": 0.68,
     },
     "bright_silver": {
-        "color": (0.72, 0.78, 0.84, 1.0),
-        "metallic": 0.78,
-        "roughness": 0.17,
+        "color": (0.58, 0.72, 0.88, 1.0),
+        "metallic": 0.18,
+        "roughness": 0.20,
+        "coat_weight": 0.38,
+        "coat_roughness": 0.06,
     },
 }
 
@@ -82,6 +84,8 @@ def make_final_materials(asset_id: str) -> dict[str, bpy.types.Material]:
         settings["color"],
         metallic=settings["metallic"],
         roughness=settings["roughness"],
+        coat_weight=settings.get("coat_weight", 0.0),
+        coat_roughness=settings.get("coat_roughness", 0.2),
     )
     if contract.material_group != "bright_silver":
         return {"metal": metal, "edge": metal}
@@ -240,20 +244,40 @@ def add_pickup_spoon(
     center: tuple[float, float, float],
     material: bpy.types.Material,
 ) -> bpy.types.Object:
-    """Create a small curved spoon head for gripping ice."""
-    segments = 8
-    vertices = [(0.0, 0.0, -0.006)]
+    """Create a closed, concave oval spoon head that reads from either side."""
+    segments = 12
+    radius_x = 0.017
+    radius_y = 0.040
+    vertices = [(0.0, 0.0, -0.008)]
     for index in range(segments):
         angle = math.tau * index / segments
         vertices.append((
-            math.cos(angle) * 0.010,
-            math.sin(angle) * 0.023,
-            0.003,
+            math.cos(angle) * radius_x,
+            math.sin(angle) * radius_y,
+            0.004,
         ))
-    faces = [
+    outer_center_index = len(vertices)
+    vertices.append((0.0, 0.0, -0.012))
+    outer_ring_start = len(vertices)
+    for index in range(segments):
+        angle = math.tau * index / segments
+        vertices.append((
+            math.cos(angle) * radius_x,
+            math.sin(angle) * radius_y,
+            0.001,
+        ))
+
+    faces: list[tuple[int, ...]] = [
         (0, 1 + index, 1 + (index + 1) % segments)
         for index in range(segments)
     ]
+    for index in range(segments):
+        inner_current = 1 + index
+        inner_next = 1 + (index + 1) % segments
+        outer_current = outer_ring_start + index
+        outer_next = outer_ring_start + (index + 1) % segments
+        faces.append((outer_center_index, outer_next, outer_current))
+        faces.append((inner_current, outer_current, outer_next, inner_next))
     spoon = add_mesh_object(root, name, vertices, faces, material)
     spoon.location = center
     return spoon
@@ -305,7 +329,7 @@ def build_ice_tongs(materials: dict[str, bpy.types.Material]) -> bpy.types.Objec
         (-0.016, -0.185, 0.030),
         (-0.018, -0.100, 0.030),
         (-0.026, 0.040, 0.030),
-        (-0.037, 0.166, 0.030),
+        (-0.032, 0.166, 0.030),
     ]
     right_strip_points = [(-x, y, z) for x, y, z in left_strip_points]
     spring_points = [
@@ -315,8 +339,8 @@ def build_ice_tongs(materials: dict[str, bpy.types.Material]) -> bpy.types.Objec
         (0.016, -0.207, 0.030),
         right_strip_points[0],
     ]
-    left_jaw_center = (-0.037, 0.185, 0.030)
-    right_jaw_center = (0.037, 0.185, 0.030)
+    left_jaw_center = (-0.032, 0.185, 0.030)
+    right_jaw_center = (0.032, 0.185, 0.030)
     add_metal_strip(root, "LeftStrip", left_strip_points, 0.012, 0.004, metal)
     add_metal_strip(root, "RightStrip", right_strip_points, 0.012, 0.004, metal)
     add_metal_strip(root, "SpringBridge", spring_points, 0.008, 0.004, metal)
@@ -326,7 +350,7 @@ def build_ice_tongs(materials: dict[str, bpy.types.Material]) -> bpy.types.Objec
         (left_coordinate + right_coordinate) / 2.0
         for left_coordinate, right_coordinate in zip(left_jaw_center, right_jaw_center)
     )
-    add_anchor(root, "Grip", (0.0, 0.030, 0.080))
+    add_anchor(root, "Grip", (0.0, 0.030, 0.0))
     add_anchor(root, "Placement", (0.0, 0.0, 0.0))
     add_anchor(root, "Interaction", (jaw_midpoint[0], jaw_midpoint[2], -jaw_midpoint[1]))
     return root

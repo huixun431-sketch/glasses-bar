@@ -53,7 +53,7 @@ internal static class ToolVisualLibrary
             "highball_glass" => 0.84f,
             "jigger_medium" => 0.90f,
             "traditional_filter" => 0.72f,
-            "bean_scoop" => 1.08f,
+            "bean_scoop" => 0.90f,
             "ice_tongs" => 0.92f,
             "jigger_small" => 0.94f,
             "jigger_large" => 0.82f,
@@ -65,8 +65,8 @@ internal static class ToolVisualLibrary
             "pestle" => new Vector3(0f, 0f, 12f),
             "jigger_medium" => new Vector3(0f, 0f, 7f),
             "traditional_filter" => new Vector3(0f, 0f, -8f),
-            "bean_scoop" => new Vector3(8f, -32f, 8f),
-            "ice_tongs" => new Vector3(20f, -38f, -28f),
+            "bean_scoop" => new Vector3(42f, -52f, 8f),
+            "ice_tongs" => new Vector3(28f, -35f, -125f),
             "jigger_small" or "jigger_large" => new Vector3(0f, 0f, 7f),
             _ => Vector3.Zero
         };
