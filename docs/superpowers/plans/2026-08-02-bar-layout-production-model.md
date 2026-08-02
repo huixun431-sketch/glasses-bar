@@ -392,34 +392,34 @@ git commit -m "test: approve production bar graybox scale"
 - Modify: `tools/validate_assets.py`
 - Modify: `tools/run_verification.ps1`
 
-- [ ] **Step 1: Write failing validator self-tests for roots and required nodes**
+- [x] **Step 1: Write failing validator self-tests for roots and required nodes**
 
 Add a good fixture with the expected root and required nodes, a wrong-root fixture, a missing-required-node fixture, and a non-identity-transform fixture. Require errors to name the asset and missing contract item.
 
-- [ ] **Step 2: Run validator self-test and confirm failure**
+- [x] **Step 2: Run validator self-test and confirm failure**
 
 ```powershell
 python tools/validate_assets.py --self-test
 ```
 
-- [ ] **Step 3: Extend the manifest schema without breaking existing assets**
+- [x] **Step 3: Extend the manifest schema without breaking existing assets**
 
 Support optional `required_root` and `required_nodes` keys in addition to `required_anchors`. Register:
 
 ```json
 {"id":"bar_architecture","path":"models/bar_architecture.glb","placeholder":true,"required_root":"bar_architecture","required_nodes":["room_shell","south_main_entry","south_east_window","north_east_service_door"]}
-{"id":"bar_counter","path":"models/bar_counter.glb","placeholder":true,"required_root":"bar_counter","required_anchors":["Placement"],"required_nodes":["front_drawer_2_upper","east_sink","waste_bin","manual_shelf"]}
-{"id":"bar_backbar","path":"models/bar_backbar.glb","placeholder":true,"required_root":"bar_backbar","required_nodes":["back_cabinet_1_left","back_cabinet_1_right","back_cabinet_2_left","back_cabinet_2_right","back_cabinet_3_left","back_cabinet_3_right"]}
+{"id":"bar_counter","path":"models/bar_counter.glb","placeholder":true,"required_root":"bar_counter","required_anchors":["Placement"],"required_nodes":["front_drawer_2_upper","east_sink","sink_plumbing","waste_bin","employee_gate","manual_shelf"]}
+{"id":"bar_backbar","path":"models/bar_backbar.glb","placeholder":true,"required_root":"bar_backbar","required_nodes":["rear_lower_cabinet_1_fixed","rear_lower_cabinet_1_moving","rear_lower_cabinet_2_fixed","rear_lower_cabinet_2_moving","rear_lower_cabinet_3_fixed","rear_lower_cabinet_3_moving","rear_lower_cabinet_4_fixed","rear_lower_cabinet_4_moving","rear_lower_cabinet_5_fixed","rear_lower_cabinet_5_moving","back_cabinet_1_left","back_cabinet_1_right","back_cabinet_2_left","back_cabinet_2_right","back_cabinet_3_left","back_cabinet_3_right","back_cabinet_4_left","back_cabinet_4_right","back_cabinet_5_left","back_cabinet_5_right","bottle_rack_bay_1","bottle_rack_bay_5"]}
 {"id":"bar_furniture","path":"models/bar_furniture.glb","placeholder":true,"required_root":"bar_furniture","required_nodes":["stool_1","stool_6","lounge_table_1","lounge_table_3","lounge_chair_1","lounge_chair_12"]}
 {"id":"bar_lighting","path":"models/bar_lighting.glb","placeholder":true,"required_root":"bar_lighting","required_nodes":["pendant_1","pendant_3","rear_linear_1","rear_linear_2","east_sconce_1","east_sconce_2","west_sconce_1","west_sconce_2"]}
 {"id":"bar_wear_overlays","path":"models/bar_wear_overlays.glb","placeholder":true,"required_root":"bar_wear_overlays","required_nodes":["wear_overlay_root"]}
 ```
 
-- [ ] **Step 4: Document module ownership and every detachable pivot**
+- [x] **Step 4: Document module ownership and every detachable pivot**
 
 In `BAR_INTERIOR_ASSET_CONTRACT.md`, list meters/+Y/-Z, root names, stable node names, `Placement`/`Grip` anchors, applied transforms, material slots, detachable drawers/doors/manual parts, non-colliding overlays, and the rule that real lights/collisions live in Godot wrappers.
 
-- [ ] **Step 5: Run validator and full regression**
+- [x] **Step 5: Run validator and full regression**
 
 ```powershell
 python tools/validate_assets.py --self-test
@@ -427,7 +427,7 @@ python tools/validate_assets.py assets/asset_manifest.json --allow-placeholders
 powershell -ExecutionPolicy Bypass -File tools/run_verification.ps1
 ```
 
-- [ ] **Step 6: Proposed commit boundary after explicit permission**
+- [x] **Step 6: Commit boundary authorized by the user's continue-next-plan instruction**
 
 ```powershell
 git add docs/assets/BAR_INTERIOR_ASSET_CONTRACT.md assets/asset_manifest.json tools/validate_assets.py tools/run_verification.ps1
@@ -443,7 +443,7 @@ git commit -m "feat: define production bar asset contract"
 - Create: `tools/blender/render_bar_review.py`
 - Create: `tools/blender/tests/test_bar_model_contract.py`
 - Generate locally: `artifacts/blender/bar_interior_master.blend`
-- Create: `models/bar_architecture.glb`
+- Generate candidate locally: `artifacts/blender_candidates/bar_architecture.glb`
 
 - [ ] **Step 1: Write failing Blender contract tests**
 
@@ -461,17 +461,16 @@ Add deterministic helpers for bevelled boxes, wall segments, cylindrical bases, 
 
 - [ ] **Step 4: Build the master scene and architecture geometry**
 
-Create the 12 m × 9 m × 3.5 m shell, segmented south entry/window wall, north service door, deep-red walnut 1.05 m wainscot geometry, upper plaster faces, 0.18 m-wide north-south warm-oak floor boards, frames, handles, and trim. Keep south window and both doors as distinct named objects. Do not add backstage geometry.
+Create the approved 16 m × 10 m × 4.5 m shell, segmented south entry/window wall, north service door, deep-red walnut 1.05 m wainscot geometry, upper plaster faces, 0.18 m-wide north-south warm-oak floor boards, frames, handles, and trim. Keep south window and both doors as distinct named objects. Do not add backstage geometry.
 
-- [ ] **Step 5: Export and validate only `bar_architecture.glb`**
+- [ ] **Step 5: Export and validate only the silhouette candidate**
 
 ```powershell
 & 'D:\Applications\Blender 4.5 LTS\blender.exe' --background --factory-startup --python tools/blender/build_bar_master.py -- --output artifacts/blender/bar_interior_master.blend
-& 'D:\Applications\Blender 4.5 LTS\blender.exe' --background artifacts/blender/bar_interior_master.blend --python tools/blender/export_bar_modules.py -- --module bar_architecture --output models/bar_architecture.glb
-python tools/validate_assets.py assets/asset_manifest.json --allow-placeholders
+& 'D:\Applications\Blender 4.5 LTS\blender.exe' --background artifacts/blender/bar_interior_master.blend --python tools/blender/export_bar_modules.py -- --module bar_architecture --mode silhouette --output artifacts/blender_candidates/bar_architecture.glb
 ```
 
-Change only `bar_architecture.placeholder` to `false` after validation passes.
+Keep the silhouette GLB and review images ignored under `artifacts/`. Do not add a formal GLB, wrapper, or manifest switch before checkpoint-1 approval.
 
 - [ ] **Step 6: Render clay views and request architecture silhouette approval**
 
@@ -495,7 +494,7 @@ git commit -m "feat: build modular bar architecture asset"
 
 - [ ] **Step 1: Add failing geometry and pivot assertions**
 
-Assert all Task 3 dimensions, eight detachable drawer roots at 0.38 m animation direction, the exact stable ice drawer ID, six upper-door hinge pivots at the correct edges, 85° collision-free sample poses, the employee gate, sink under-clearance, waste opening, manual shelf slope/stops, three-slot workboard, three rear bays, two rack levels, and absence of a front footrail object.
+Assert all current approved Z3/H3 dimensions, eight detachable drawer roots at 0.38 m animation direction, the exact stable ice drawer ID, ten upper-door hinge pivots at the correct edges, 85° collision-free sample poses, five lower sliding-door pairs, the employee gate, sink under-clearance with exposed plumbing and no cabinet, waste opening, manual shelf slope/stops, three-slot workboard, five rear bays, two rack levels, hollow front carcass clearance, and absence of a front footrail object.
 
 - [ ] **Step 2: Run Blender contract tests and confirm failure**
 
@@ -505,7 +504,7 @@ Build the asymmetric U, 45° inner chamfers, split-level tops, front toe recess,
 
 - [ ] **Step 4: Model `bar_backbar` from the approved metric table**
 
-Build the 5.60 m rear counter, three lower sliding-panel modules, continuous-backed three-bay/two-level bottle rack with thin uprights and 12 mm lips, set-back upper cabinet, and six independent upper doors with correct hinge pivots. The lower sliding panels remain noninteractive geometry.
+Build the approved rear counter as five regular bays: five lower sliding-door pairs, a continuous-backed five-bay/two-level bottle rack with thin non-overlapping uprights and 12 mm lips, set-back upper cabinets, and ten independent upper doors with correct hinge pivots. Preserve bottle-storage capacity while removing obsolete overlapping rack geometry.
 
 - [ ] **Step 5: Export, validate, and inspect open states**
 
@@ -515,7 +514,7 @@ Build the 5.60 m rear counter, three lower sliding-panel modules, continuous-bac
 python tools/validate_assets.py assets/asset_manifest.json --allow-placeholders
 ```
 
-Set the two manifest placeholders to `false` only after both pass. Render closed/open drawers, all six upper doors, sink under-clearance, waste/manual reach, and a player-eye view. Request user approval before material polish.
+Keep both manifest entries as placeholders until the formal candidates pass Forward+ checkpoint 2. Render closed/open drawers, all ten upper doors, lower sliding doors, sink under-clearance/plumbing, waste/manual reach, and a player-eye view. Request user approval before material polish.
 
 - [ ] **Step 6: Proposed commit boundary after approval and explicit permission**
 
