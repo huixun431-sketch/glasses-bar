@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/jigger_small.glb" id="1_model"]
+
+[node name="AssetVisual" type="Node3D"]
+metadata/asset_id = "jigger_small"
+
+[node name="Model" parent="." instance=ExtResource("1_model")]
+position = Vector3(0, -0.075, 0)

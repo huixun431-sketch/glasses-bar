@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Generate checkpoint-one neutral silhouettes for the stage-two hand tools.
+"""Generate review silhouettes or final GLBs for the stage-two hand tools.
 
 Run with Blender 4.5.5 LTS:
   blender --background --python tools/modeling/generate_stage2_assets.py -- \
     --mode silhouette --output artifacts/stage2_checkpoint1/models
+
+  blender --background --python tools/modeling/generate_stage2_assets.py -- \
+    --mode final --output assets/models
 """
 
 from __future__ import annotations
@@ -35,7 +38,7 @@ from stage2_asset_contract import STAGE2_ASSETS, review_manifest_assets
 def parse_args() -> argparse.Namespace:
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=("silhouette",), required=True)
+    parser.add_argument("--mode", choices=("silhouette", "final"), required=True)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args(argv)
 
@@ -48,7 +51,50 @@ def make_neutral_materials() -> dict[str, bpy.types.Material]:
         metallic=0.46,
         roughness=0.44,
     )
-    return {"metal": metal}
+    return {"metal": metal, "edge": metal}
+
+
+FINAL_MATERIALS = {
+    "warm_brushed": {
+        "color": (0.46, 0.29, 0.10, 1.0),
+        "metallic": 0.76,
+        "roughness": 0.34,
+    },
+    "dark_satin": {
+        "color": (0.16, 0.18, 0.20, 1.0),
+        "metallic": 0.72,
+        "roughness": 0.27,
+    },
+    "bright_silver": {
+        "color": (0.72, 0.78, 0.84, 1.0),
+        "metallic": 0.78,
+        "roughness": 0.17,
+    },
+}
+
+
+def make_final_materials(asset_id: str) -> dict[str, bpy.types.Material]:
+    """Create the approved mixed-C material group for one final asset."""
+    contract = STAGE2_ASSETS[asset_id]
+    settings = FINAL_MATERIALS[contract.material_group]
+    metal = make_material(
+        f"Stage2_{contract.material_group}",
+        settings["color"],
+        metallic=settings["metallic"],
+        roughness=settings["roughness"],
+    )
+    if contract.material_group != "bright_silver":
+        return {"metal": metal, "edge": metal}
+
+    edge = make_material(
+        "Worn_Silver_Edge",
+        (0.92, 0.95, 0.98, 1.0),
+        metallic=0.82,
+        roughness=0.10,
+        coat_weight=0.32,
+        coat_roughness=0.05,
+    )
+    return {"metal": metal, "edge": edge}
 
 
 def add_mesh_object(
@@ -294,6 +340,7 @@ def build_jigger_variant(
 ) -> bpy.types.Object:
     root = add_root(asset_id)
     metal = materials["metal"]
+    edge = materials["edge"]
     z_scale = height / 0.18
     radial_scale = target_radius / 0.065
     add_frustum_shell(root, "LowerCup", 0.0, 0.078 * z_scale,
@@ -306,11 +353,11 @@ def build_jigger_variant(
                       0.018 * radial_scale, 0.058 * radial_scale, metal,
                       close_bottom=False, close_top=True)
     add_torus(root, "LowerRim", 0.052 * radial_scale, 0.003 * radial_scale,
-              0.003 * z_scale, metal)
+              0.003 * z_scale, edge)
     add_torus(root, "UpperRim", 0.062 * radial_scale, 0.003 * radial_scale,
-              0.177 * z_scale, metal)
+              0.177 * z_scale, edge)
     add_torus(root, "WaistBand", 0.024 * radial_scale, 0.003 * radial_scale,
-              0.094 * z_scale, metal)
+              0.094 * z_scale, edge)
     add_anchor(root, "Grip", (0.0, 0.09 * z_scale, 0.0))
     add_anchor(root, "Placement", (0.0, 0.0, 0.0))
     add_anchor(root, "FillOrigin", (0.0, 0.105 * z_scale, 0.0))
@@ -327,13 +374,15 @@ BUILDERS = {
 }
 
 
-def write_review_manifest(output_root: Path) -> Path:
-    manifest_path = output_root.parent / "review_manifest.json"
+def write_review_manifest(
+    manifest_path: Path,
+    model_prefix: str,
+) -> Path:
     manifest = {
         "units": "meters",
         "up_axis": "+Y",
         "forward_axis": "-Z",
-        "assets": review_manifest_assets("models"),
+        "assets": review_manifest_assets(model_prefix),
     }
     import json
 
@@ -348,11 +397,23 @@ def main() -> None:
     output_root = args.output.resolve()
     for asset_id, builder in BUILDERS.items():
         reset_scene()
-        root = builder(make_neutral_materials())
+        materials = (
+            make_neutral_materials()
+            if args.mode == "silhouette"
+            else make_final_materials(asset_id)
+        )
+        root = builder(materials)
         if root.name != asset_id or asset_id not in STAGE2_ASSETS:
             raise ValueError(f"invalid stage-two builder {asset_id}")
         export_asset(root, output_root / f"{asset_id}.glb")
-    write_review_manifest(output_root)
+    if args.mode == "silhouette":
+        write_review_manifest(output_root.parent / "review_manifest.json", "models")
+    else:
+        repository_root = SCRIPT_DIRECTORY.parent.parent
+        write_review_manifest(
+            repository_root / "artifacts" / "stage2_final_candidate" / "review_manifest.json",
+            "../../assets/models",
+        )
 
 
 if __name__ == "__main__":

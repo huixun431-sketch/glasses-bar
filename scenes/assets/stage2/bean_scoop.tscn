@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/bean_scoop.glb" id="1_model"]
+
+[node name="AssetVisual" type="Node3D"]
+metadata/asset_id = "bean_scoop"
+
+[node name="Model" parent="." instance=ExtResource("1_model")]
+position = Vector3(0, -0.05, 0)
