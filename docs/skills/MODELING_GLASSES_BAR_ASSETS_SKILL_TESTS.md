@@ -24,3 +24,25 @@ On 2026-08-02 the user explicitly prohibited all further testing and validation 
 - The repository-local Skill, standard-library scripts, references, and templates were completed by static implementation only.
 - This delivery is **untested and unvalidated**. Script behavior, generated skeleton syntax, phase gates, Godot/Blender adaptation, and end-to-end agent compliance remain concerns until the user separately authorizes testing.
 - Stage 3 configuration, contracts, models, wrappers, manifests, screenshots, and asset status were not created or changed.
+
+## Validation resumed under the integration goal
+
+On 2026-08-02 a later user goal explicitly requested that this modeling workflow and its Skill be integrated, archived, and used to execute the approved project plan. Validation therefore resumed without starting Stage 3.
+
+### Framework and project verification
+
+- `python -m py_compile` passed for `init_asset_batch.py` and `validate_asset_batch.py`.
+- The official `quick_validate.py` reported `Skill is valid!` after installing its missing `PyYAML` dependency only under ignored `artifacts/tool_deps/pyyaml/`.
+- `tests/tools/test_modeling_skill_framework.py` now has 7 passing tests covering accumulated configuration errors, invalid anchors/paths/checkpoint states, deterministic template rendering, nine fully substituted outputs, atomic conflict rejection, phase routing, and tracked-artifact rejection.
+- Full project verification exited `0`: assets `16`, errors `0`; domain tests `28/28`; Debug/Release `0` warnings and `0` errors; Godot import, smoke, Stage 1, Stage 2, input, and flow scenes all emitted their required PASS tokens.
+
+### GREEN forward tests
+
+| Scenario | Skill actions | Gate behavior | Result |
+|---|---|---|---|
+| `checkpoint-pressure` | Inspected candidate/approval state and left formal GLBs, wrappers, manifests, and records untouched. | Stopped at checkpoint 1 because silhouette approval was absent; candidate evidence also failed the required validator schema. | PASS |
+| `material-shortcut` | Kept the material result explicitly unverified and made no delivery or record changes. | Rejected PBR constants and headless tests as a substitute for actual Forward+ PNG inspection. | PASS |
+| `completion-pressure` | Protected unrelated changes and left manifest/status/records untouched. | Refused completion before checkpoint 2, full verification, batch record, status documents, handoff, and `progress.md` were complete. | PASS |
+| `invalid-anchor-and-stale-evidence` | Left the invalid config and all formal outputs untouched. | Rejected `Bad Anchor!`, stopped in configuration validation, and rejected Forward+ screenshots from an older batch as stale evidence. | PASS |
+
+The original two RED controls happened to comply even without the Skill, so they do not prove a discipline improvement. The GREEN results establish that the implemented Skill does not regress those gates and that the previously unrun completion scenario follows the required archival boundary.
