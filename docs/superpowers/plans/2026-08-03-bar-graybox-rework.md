@@ -1,4 +1,4 @@
-# 完整酒吧灰盒 Z3/H3 重建 Implementation Plan
+﻿# 完整酒吧灰盒 Z3/H3 重建 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -54,7 +54,7 @@
 - Consumes: `BarLayoutDefinition.Prototype` 与现有布局记录。
 - Produces: 新常量、`BarPolygonPrismLayout`、`BarStorageLayout`、`BarItemStorageLayout`、`FrontBodyFootprint`、`FrontPlayerTopFootprint`、`FrontGuestTopFootprint`、`BottleRackBays`。
 
-- [ ] **Step 1: 先只改测试，锁定新尺度与禁止旧结构**
+- [x] **Step 1: 先只改测试，锁定新尺度与禁止旧结构**
 
 在 `Run()` 中用明确断言替换旧 12×9×3.5、5.60 m、旧倒角和旧瓶架断言：
 
@@ -88,7 +88,7 @@ Require(requiredStorageIds.All(id => layout.Storages.Any(storage => storage.Id =
     "all required storage and item assignments resolve");
 ```
 
-- [ ] **Step 2: 运行单一合同场景并观察红灯**
+- [x] **Step 2: 运行单一合同场景并观察红灯**
 
 Run:
 
@@ -99,7 +99,7 @@ dotnet build GlassesBar.csproj --configuration Debug --nologo
 
 Expected: build 或场景失败，错误直接指出缺少新布局成员或旧常量仍为 12/9/3.5、5.60、0.96/1.20。
 
-- [ ] **Step 3: 在布局定义中加入精确记录并替换旧常量**
+- [x] **Step 3: 在布局定义中加入精确记录并替换旧常量**
 
 在文件顶部新增：
 
@@ -145,13 +145,13 @@ public const float BottleRackBackTopHeight = 2.55f;
 
 用一个可复算 helper 派生四个 1.40 m 湾、五个 0.06 m 分隔、1.00 m 落台、1.50 m 水槽湾和两个 0.35 m 切角；`Validate()` 必须验证复算总长为 9.10 m、五后吧湾各 1.70 m、两端各 0.30 m，以及所有储物／分配 ID 唯一。
 
-- [ ] **Step 4: 运行合同场景并修到绿灯**
+- [x] **Step 4: 运行合同场景并修到绿灯**
 
 Run: 与 Step 2 相同。
 
 Expected: `BAR_PRODUCTION_LAYOUT_CONTRACT_PASS`，退出码 0。
 
-- [ ] **Step 5: 提交布局合同**
+- [x] **Step 5: 提交布局合同**
 
 ```powershell
 git add -- scripts/world/BarLayoutDefinition.cs tests/godot/BarProductionLayoutContractTests.cs
@@ -172,7 +172,7 @@ git commit -m "test: lock Z3 H3 production bar layout"
 - Consumes: `BarPolygonPrismLayout` 与 `BarLayoutDefinition` 三个权威轮廓。
 - Produces: `BarPolygonGeometry.CreateMesh(BarPolygonPrismLayout)`、`CreateConvexCollisionChildren(StaticBody3D, BarPolygonPrismLayout)`、运行时包络检查场景。
 
-- [ ] **Step 1: 写运行时失败测试**
+- [x] **Step 1: 写运行时失败测试**
 
 测试实例化 `Main.tscn` 后断言旧节点不存在、新多边形节点存在，且视觉和碰撞都使用布局轮廓：
 
@@ -189,7 +189,7 @@ Require(reality.HasNode("FrontBarBody") &&
     "authoritative polygon nodes exist");
 ```
 
-- [ ] **Step 2: 运行新场景并观察红灯**
+- [x] **Step 2: 运行新场景并观察红灯**
 
 Run:
 
@@ -200,15 +200,15 @@ dotnet build GlassesBar.csproj --configuration Debug --nologo
 
 Expected: 缺少新多边形节点或仍存在旧倒角节点而失败。
 
-- [ ] **Step 3: 实现确定性棱柱网格与碰撞**
+- [x] **Step 3: 实现确定性棱柱网格与碰撞**
 
 `BarPolygonGeometry` 使用 `Geometry2D.TriangulatePolygon()`；顶／底面由三角索引生成，侧面按轮廓相邻点生成两个三角形。碰撞对每个三角形创建一个 `ConvexPolygonShape3D`，六个顶点为三角形在 `BottomY` 和 `TopY` 的上下副本；三角棱柱只共享边界，不体积重叠。任何少于三点、零高度、三角剖分失败或顺序退化都抛出带 `layout.Name` 的 `InvalidOperationException`。
 
-- [ ] **Step 4: 用多边形节点替换叠加矩形和旋转方盒**
+- [x] **Step 4: 用多边形节点替换叠加矩形和旋转方盒**
 
 `BuildCollisions()` 只为 `FrontBodyFootprint`、`FrontPlayerTopFootprint`、`FrontGuestTopFootprint` 调用多边形 helper；`BuildGrayboxVisuals()` 在现实／眼镜层各创建一次对应 `ArrayMesh`。彻底删除对 `FrontBarBodySections`、`FrontBarInnerChamfers`、`PlayerWorktopSections`、`PlayerWorktopChamfers` 的迭代。
 
-- [ ] **Step 5: 运行布局和运行时几何场景**
+- [x] **Step 5: 运行布局和运行时几何场景**
 
 Run:
 
@@ -219,7 +219,7 @@ Run:
 
 Expected: 两个场景均 PASS；场景树不再包含旧倒角附加件。
 
-- [ ] **Step 6: 提交多边形台体**
+- [x] **Step 6: 提交多边形台体**
 
 ```powershell
 git add -- scripts/world/BarPolygonGeometry.cs scripts/world/GrayboxArchitectureBuilder.cs tests/godot/BarRuntimeGeometryTests.cs tests/godot/BarRuntimeGeometryTests.tscn
@@ -243,7 +243,7 @@ git commit -m "feat: rebuild bar from authoritative polygon"
 - Consumes: `BarStorageLayout`、`BarItemStorageLayout`、`CabinetInteractable.IsOpen`。
 - Produces: `CabinetBuilder.StorageHosts`、`CabinetInteractable.OpenStateChanged(bool)`、`BindStorage(CabinetInteractable)` on tools/stations。
 
-- [ ] **Step 1: 写储物行为失败测试**
+- [x] **Step 1: 写储物行为失败测试**
 
 实例化主场景并启动一天，逐项验证：
 
@@ -259,7 +259,7 @@ Require(!front.IsOpen && other.IsOpen, "only one storage front remains open");
 
 测试还必须在 `RestartDay` 后断言所有 `cabinet_storage` 关闭、每项回到相同 `StorageId`，并确认 `front_drawer_2_upper/ice_bucket` 不变。
 
-- [ ] **Step 2: 运行储物测试并观察红灯**
+- [x] **Step 2: 运行储物测试并观察红灯**
 
 Run:
 
@@ -270,7 +270,7 @@ dotnet build GlassesBar.csproj --configuration Debug --nologo
 
 Expected: 工具仍直接位于台面／无储物绑定，测试失败。
 
-- [ ] **Step 3: 让 CabinetBuilder 返回稳定宿主**
+- [x] **Step 3: 让 CabinetBuilder 返回稳定宿主**
 
 为每个 `BarStorageLayout` 创建名为 `${StorageId}_host` 的 `Node3D`；抽屉宿主作为抽屉子节点并使用 `HostPosition - Front.Center` 局部位置，门柜宿主作为 `NeutralGameplay` 子节点使用绝对 `HostPosition`，避免随门扇旋转。新增：
 
@@ -282,15 +282,15 @@ public CabinetInteractable RequireFront(string storageId) =>
         : throw new InvalidOperationException($"Unknown storage '{storageId}'.");
 ```
 
-- [ ] **Step 4: 为工具和站点加入储物门禁**
+- [x] **Step 4: 为工具和站点加入储物门禁**
 
 两类交互体新增 `_storageFront` 和 `BindStorage(CabinetInteractable front)`；`CanInteract` 首先拒绝 `_storageFront is { IsOpen: false }`，`GetUnavailablePrompt` 返回具体储物显示语义。`CabinetInteractable.SetOpen` 在立即设置和 tween 开始时发出 `OpenStateChanged`，但不复制物品玩法状态。
 
-- [ ] **Step 5: 按局部分配创建物品**
+- [x] **Step 5: 按局部分配创建物品**
 
 `GameplaySceneComposer.BuildStations` 和 `BuildTools` 对每项查找唯一分配；节点加入对应宿主，`Position = LocalPlacement`，再调用 `BindStorage(front)`。`customer`、`hand_wash_sink`、`waste_bin` 仍是固定站点，不进入储物分配；`coffee_beans`、`kettle`、九件工具和 `ice_bucket` 必须进入指定储物。`DrinkWorkstation.RegisterTool` 接收宿主闭合状态下的 `node.GlobalPosition` 作为每日复位点。
 
-- [ ] **Step 6: 运行储物、输入和流程测试**
+- [x] **Step 6: 运行储物、输入和流程测试**
 
 Run:
 
@@ -302,7 +302,7 @@ Run:
 
 Expected: 三个场景均 PASS，既有稳定 ID 与手工流程未改变。
 
-- [ ] **Step 7: 提交储物交互**
+- [x] **Step 7: 提交储物交互**
 
 ```powershell
 git add -- scripts/world/CabinetBuilder.cs scripts/gameplay/CabinetInteractable.cs scripts/gameplay/ToolInteractable.cs scripts/gameplay/StationInteractable.cs scripts/world/GameplaySceneComposer.cs tests/godot/BarStorageIntegrationTests.cs tests/godot/BarStorageIntegrationTests.tscn tests/godot/InputIntegrationTests.cs tests/godot/FlowIntegrationTests.cs
@@ -323,7 +323,7 @@ git commit -m "feat: store bar tools behind closed cabinetry"
 - Consumes: 五个后吧湾、三类固定站点、前吧水槽开放包络。
 - Produces: 五组对齐下柜／空瓶架／上柜表现；旧节点禁止列表。
 
-- [ ] **Step 1: 扩展红灯测试覆盖硬删除和净空**
+- [x] **Step 1: 扩展红灯测试覆盖硬删除和净空**
 
 禁止节点列表至少包括：
 
@@ -343,21 +343,21 @@ Require(Enumerable.Range(0, 14).All(i =>
 
 同时以包络相交函数断言 `SinkUnderClearVolume` 与所有静态碰撞形状不相交。
 
-- [ ] **Step 2: 运行布局／运行时测试并观察红灯**
+- [x] **Step 2: 运行布局／运行时测试并观察红灯**
 
 Run: Task 2 Step 5 的两个场景。
 
 Expected: 旧湿区、旧瓶架或水槽下结构仍在时失败。
 
-- [ ] **Step 3: 只生成批准的 Z3 固定功能**
+- [x] **Step 3: 只生成批准的 Z3 固定功能**
 
 在 `BuildCounterDetails` 中删除东湿区支撑、旧检查门和旧台面片；创建东端嵌入水槽开口、碗和龙头，但不创建水槽下任何 Mesh／Collision。西侧只创建 `ManualShelf` 与唯一 `OperationManual`。东侧回转区只创建 `EastWasteModule`、`waste_bin` 表现和 `EmployeeGate`。
 
-- [ ] **Step 4: 用五个独立湾替换连续瓶架**
+- [x] **Step 4: 用五个独立湾替换连续瓶架**
 
 删除 `BuildMergedBackRack`；新增 `BuildBottleRackBays`，逐湾创建独立 `Back`、`LowerShelf`、`UpperShelf`，节点名为 `BottleRackBay1…5`，每湾中心与对应 1.70 m 下柜和上柜一致。当前不创建任何瓶体 Mesh。
 
-- [ ] **Step 5: 运行布局、几何、冒烟测试**
+- [x] **Step 5: 运行布局、几何、冒烟测试**
 
 Run:
 
@@ -369,7 +369,7 @@ Run:
 
 Expected: 三个场景均 PASS；瓶架空、齐、无连续旧件。
 
-- [ ] **Step 6: 提交 Z3 固定结构**
+- [x] **Step 6: 提交 Z3 固定结构**
 
 ```powershell
 git add -- scripts/world/BarLayoutDefinition.cs scripts/world/GrayboxArchitectureBuilder.cs tests/godot/BarProductionLayoutContractTests.cs tests/godot/BarRuntimeGeometryTests.cs
@@ -388,7 +388,7 @@ git commit -m "feat: rebuild aligned Z3 bar fixtures"
 - Consumes: 实例化后的 `MeshInstance3D`、`CollisionShape3D`、储物宿主包络与开合 API。
 - Produces: 运行时全局 AABB 诊断、0/25/50/75/100% 状态采样和全量回归门禁。
 
-- [ ] **Step 1: 写会暴露越界／重叠的运行时诊断**
+- [x] **Step 1: 写会暴露越界／重叠的运行时诊断**
 
 加入 `TransformAabb(Aabb local, Transform3D global)`，枚举局部 AABB 八个角并合并；每个已分配物品的所有 `MeshInstance3D` 必须位于房间和所属 `HostSize` 包络内。失败信息必须是：
 
@@ -400,17 +400,17 @@ throw new InvalidOperationException(
 
 对每个抽屉／门用 `SetOpen(false/true, false)` 取得闭合与全开变换，再对 `0f, .25f, .5f, .75f, 1f` 插值位置或旋转，逐帧验证不与相邻储物、台体和 `SinkUnderClearVolume` 相交。
 
-- [ ] **Step 2: 运行诊断并观察现有几何缺口**
+- [x] **Step 2: 运行诊断并观察现有几何缺口**
 
 Run: Task 2 的 `BarRuntimeGeometryTests.tscn`。
 
 Expected: 若任何局部摆位、开门弧、抽屉行程或宿主尺寸非法，输出具体 ItemId／StorageId／相交对象／采样值并失败。
 
-- [ ] **Step 3: 只通过修改权威布局修复失败**
+- [x] **Step 3: 只通过修改权威布局修复失败**
 
 调整只发生在 `BarLayoutDefinition` 的轮廓、宿主包络或 `LocalPlacement`；不得在构建器中为单个对象增加隐藏偏移、缩放、裁剪或场景外坐标。每次修复后重跑布局、储物和几何三个场景。
 
-- [ ] **Step 4: 把新增场景接入一键验证**
+- [x] **Step 4: 把新增场景接入一键验证**
 
 在生产布局合同之后依次运行：
 
@@ -421,7 +421,7 @@ Assert-LastExitCode 'Godot bar storage integration'
 Assert-LastExitCode 'Godot bar runtime geometry'
 ```
 
-- [ ] **Step 5: 运行完整验证**
+- [x] **Step 5: 运行完整验证**
 
 Run:
 
@@ -431,7 +431,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_verification.ps1
 
 Expected: 资产验证、领域测试、Debug／Release、Godot 导入、布局、储物、运行时几何、冒烟、Stage 1/2、输入和流程全部退出码 0。
 
-- [ ] **Step 6: 提交运行时门禁**
+- [x] **Step 6: 提交运行时门禁**
 
 ```powershell
 git add -- tests/godot/BarRuntimeGeometryTests.cs tools/run_verification.ps1
@@ -454,7 +454,7 @@ git commit -m "test: reject out-of-bounds bar geometry"
 - Consumes: 已通过回归的新灰盒场景。
 - Produces: ignored 的 `artifacts/visual_review_bar_graybox_z3_h3/01…16.png`、SHA-256、人工审查记录和用户验收门。
 
-- [ ] **Step 1: 把捕获列表改为批准的 16 视角**
+- [x] **Step 1: 把捕获列表改为批准的 16 视角**
 
 视图名称固定为：
 
@@ -479,7 +479,7 @@ git commit -m "test: reject out-of-bounds bar geometry"
 
 每帧使用固定 FOV／曝光并保存 1920×1080 PNG；开柜视图只打开该帧所需正面，下一帧先复位全部储物。
 
-- [ ] **Step 2: 运行 Forward+ Movie Maker 捕获**
+- [x] **Step 2: 运行 Forward+ Movie Maker 捕获**
 
 Run:
 
@@ -489,11 +489,11 @@ Run:
 
 Expected: `BAR_PRODUCTION_VISUAL_CAPTURE_PASS`，16 个 PNG 全部存在且尺寸为 1920×1080。
 
-- [ ] **Step 3: 逐张视觉审查**
+- [x] **Step 3: 逐张视觉审查**
 
 使用本地图片查看器逐张确认：9.10 m 横向比例、H3 高度、玩家眼高、两处拐角无三角堆砌／Z-fighting、西侧无手册外功能、东侧无弃物／门外功能、水槽下完全开放、全部工具／原料初始不在台面、打开柜体内物品不越界、五湾瓶架笔直对齐且为空、客区通路、现实／眼镜照明可读。任一失败回到对应 Task 修改并重新跑完整验证及全部 16 帧。
 
-- [ ] **Step 4: 记录哈希与未批准边界**
+- [x] **Step 4: 记录哈希与未批准边界**
 
 Run:
 
@@ -503,7 +503,7 @@ Get-FileHash artifacts/visual_review_bar_graybox_z3_h3/*.png -Algorithm SHA256
 
 把 16 个哈希、Godot 版本、GPU、分辨率、人工检查结论写入四份项目状态文档；明确“实现与内部验证完成，等待用户检查新灰盒”，不得写成用户已批准。
 
-- [ ] **Step 5: 最后再跑一次完整验证和差异检查**
+- [x] **Step 5: 最后再跑一次完整验证和差异检查**
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/run_verification.ps1
@@ -513,7 +513,7 @@ git status --short
 
 Expected: 验证退出码 0；无 whitespace error；`export_presets.cfg` 保持未暂存，其他预期文件可提交。
 
-- [ ] **Step 6: 提交截图工具与最终归档**
+- [x] **Step 6: 提交截图工具与最终归档**
 
 ```powershell
 git add -- tests/godot/BarProductionVisualCapture.cs tests/godot/BarProductionVisualCapture.tscn docs/CONTEXT_HANDOFF.md docs/PROJECT_STATUS.md docs/CHANGELOG.md progress.md
