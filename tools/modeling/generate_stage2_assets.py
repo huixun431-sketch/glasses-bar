@@ -108,6 +108,67 @@ def add_oriented_cylinder(
     return part
 
 
+def add_u_spring(
+    root: bpy.types.Object,
+    name: str,
+    left_join: tuple[float, float, float],
+    right_join: tuple[float, float, float],
+    material: bpy.types.Material,
+) -> bpy.types.Object:
+    """Create an open, low-poly U spring whose ends attach to the tong arms."""
+    curve_segments = 6
+    tube_segments = 6
+    tube_radius = 0.013
+    center_x = (left_join[0] + right_join[0]) / 2.0
+    center_y = (left_join[1] + right_join[1]) / 2.0
+    center_z = (left_join[2] + right_join[2]) / 2.0
+    curve_radius = (right_join[0] - left_join[0]) / 2.0
+    points = [
+        (
+            center_x + curve_radius * math.cos(math.pi - math.pi * index / curve_segments),
+            center_y - curve_radius * math.sin(math.pi - math.pi * index / curve_segments),
+            center_z,
+        )
+        for index in range(curve_segments + 1)
+    ]
+
+    vertices: list[tuple[float, float, float]] = []
+    for index, point in enumerate(points):
+        previous = points[max(0, index - 1)]
+        following = points[min(len(points) - 1, index + 1)]
+        tangent_x = following[0] - previous[0]
+        tangent_y = following[1] - previous[1]
+        tangent_length = math.hypot(tangent_x, tangent_y)
+        side_x = -tangent_y / tangent_length
+        side_y = tangent_x / tangent_length
+        for tube_index in range(tube_segments):
+            angle = math.tau * tube_index / tube_segments
+            vertices.append((
+                point[0] + tube_radius * math.cos(angle) * side_x,
+                point[1] + tube_radius * math.cos(angle) * side_y,
+                point[2] + tube_radius * math.sin(angle),
+            ))
+
+    faces: list[tuple[int, ...]] = [tuple(reversed(range(tube_segments)))]
+    for row in range(curve_segments):
+        start = row * tube_segments
+        next_start = (row + 1) * tube_segments
+        for index in range(tube_segments):
+            nxt = (index + 1) % tube_segments
+            faces.append((start + index, start + nxt, next_start + nxt, next_start + index))
+    last_start = curve_segments * tube_segments
+    faces.append(tuple(last_start + index for index in range(tube_segments)))
+
+    mesh = bpy.data.meshes.new(f"{name}_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(material)
+    mesh.update()
+    spring = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(spring)
+    spring.parent = root
+    return spring
+
+
 def build_traditional_filter(materials: dict[str, bpy.types.Material]) -> bpy.types.Object:
     root = add_root("traditional_filter")
     metal = materials["metal"]
@@ -142,18 +203,29 @@ def build_bean_scoop(materials: dict[str, bpy.types.Material]) -> bpy.types.Obje
 def build_ice_tongs(materials: dict[str, bpy.types.Material]) -> bpy.types.Object:
     root = add_root("ice_tongs")
     metal = materials["metal"]
-    add_oriented_cylinder(root, "LeftArm", 0.013, 0.340, (-0.025, 0.0, 0.030),
+    left_arm_center = (-0.025, 0.0, 0.030)
+    right_arm_center = (0.025, 0.0, 0.030)
+    arm_length = 0.340
+    left_jaw_center = (-0.042, 0.175, 0.026)
+    right_jaw_center = (0.042, 0.175, 0.026)
+    add_oriented_cylinder(root, "LeftArm", 0.013, arm_length, left_arm_center,
                           (math.pi / 2, -0.11, 0.0), metal)
-    add_oriented_cylinder(root, "RightArm", 0.013, 0.340, (0.025, 0.0, 0.030),
+    add_oriented_cylinder(root, "RightArm", 0.013, arm_length, right_arm_center,
                           (math.pi / 2, 0.11, 0.0), metal)
-    add_torus(root, "SpringLoop", 0.045, 0.012, 0.030, metal)
-    add_oriented_cylinder(root, "LeftJaw", 0.022, 0.050, (-0.042, 0.175, 0.026),
+    left_spring_join = (left_arm_center[0], left_arm_center[1] - arm_length / 2.0, left_arm_center[2])
+    right_spring_join = (right_arm_center[0], right_arm_center[1] - arm_length / 2.0, right_arm_center[2])
+    add_u_spring(root, "SpringU", left_spring_join, right_spring_join, metal)
+    add_oriented_cylinder(root, "LeftJaw", 0.022, 0.050, left_jaw_center,
                           (math.pi / 2, 0.0, 0.0), metal, vertices=6)
-    add_oriented_cylinder(root, "RightJaw", 0.022, 0.050, (0.042, 0.175, 0.026),
+    add_oriented_cylinder(root, "RightJaw", 0.022, 0.050, right_jaw_center,
                           (math.pi / 2, 0.0, 0.0), metal, vertices=6)
+    jaw_midpoint = tuple(
+        (left_coordinate + right_coordinate) / 2.0
+        for left_coordinate, right_coordinate in zip(left_jaw_center, right_jaw_center)
+    )
     add_anchor(root, "Grip", (0.0, 0.04, -0.14))
     add_anchor(root, "Placement", (0.0, 0.0, 0.0))
-    add_anchor(root, "Interaction", (0.0, 0.03, -0.19))
+    add_anchor(root, "Interaction", (jaw_midpoint[0], jaw_midpoint[2], -jaw_midpoint[1]))
     return root
 
 
@@ -176,6 +248,12 @@ def build_jigger_variant(
                       0.023 * radial_scale, target_radius,
                       0.018 * radial_scale, 0.058 * radial_scale, metal,
                       close_bottom=False, close_top=True)
+    add_torus(root, "LowerRim", 0.052 * radial_scale, 0.003 * radial_scale,
+              0.003 * z_scale, metal)
+    add_torus(root, "UpperRim", 0.062 * radial_scale, 0.003 * radial_scale,
+              0.177 * z_scale, metal)
+    add_torus(root, "WaistBand", 0.024 * radial_scale, 0.003 * radial_scale,
+              0.094 * z_scale, metal)
     add_anchor(root, "Grip", (0.0, 0.09 * z_scale, 0.0))
     add_anchor(root, "Placement", (0.0, 0.0, 0.0))
     add_anchor(root, "FillOrigin", (0.0, 0.105 * z_scale, 0.0))
