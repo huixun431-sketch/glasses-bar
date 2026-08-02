@@ -4,10 +4,15 @@
 
 ## 已完成
 
+- 完成第二阶段手持核心资产建模：`traditional_filter`、`bean_scoop`、`ice_tongs`、`jigger_small`、`jigger_large` 已通过 Blender 轮廓检查点与实际 Godot Forward+ 世界／手持检查点，用户于 2026-08-02 明确批准两次检查结果。
+- 五项米制 GLB、手写包装、稳定锚点、现实可交互／眼镜只观察、灰盒回退和每日复位合同已接入；滤器为暖金属，豆铲／冰夹为深色旧钢，小／大量酒器为冷银家族。它们是批准进入 M1 的技术／材质候选，不是最终美术定稿。
+- 五项在两份正式资产清单中已标记为非占位；阶段 1 与阶段 2 共 9 项使用正式候选，其余 `water_kettle`、`ice_bucket`、`bar_sink`、`coffee_beans`、`waste_bin`、`cutting_board`、`bar_counter` 7 项继续保持灰盒。阶段 3 尚未开始。
+- 2026-08-02 第二阶段收尾完整回归：资产 16 项 0 错误（阶段 1 四项与阶段 2 五项 GLB 均为 `OK`，其余 7 项为允许的 graybox）、领域测试 28/28、Debug/Release 0 警告/0 错误；Godot 导入、`SMOKE_TESTS_PASS`、`STAGE1_ASSET_INTEGRATION_PASS`、`STAGE2_ASSET_INTEGRATION_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS` 全部通过。
+- 阶段 2 最终视觉证据与两次用户批准记录见 `docs/assets/STAGE2_ASSET_BATCH_20260802.md`。已知非阻塞问题为眼镜世界密集量酒器标签略有重叠，不遮挡资产主体。
 - 完成第一轮核心交互资产建模：`highball_glass`、`jigger_medium`、`mortar`、`pestle` 四项米制低多边形 GLB 已通过稳定根 ID、必需锚点、网格、材质、变换和包络校验，并由手写 Godot 包装接入世界摆放与第一人称双手。
 - 新增 `ToolVisualLibrary` 集中稳定 ID 到包装场景映射、现实/眼镜材质切换与手持姿态；`ToolInteractable`/`HeldToolPresenter` 在包装可用时隐藏旧灰盒，资源缺失时仍保留可恢复回退，不把玩法直接挂在导入 GLB 节点上。
 - 根据实际 Forward+ 截图修正四项底部接触面、研钵手持遮挡和暖光可读性；根据用户反馈强化量酒器拉丝银高光、杯沿/腰环，以及高球杯透明杯壁、亮杯沿、厚底和底部折射边。用户已于 2026-08-02 通过最终材质审核。
-- 四项在 `assets/asset_manifest.json` 与 `data/assets/asset_manifest.tres` 已标记为非占位；其余 12 项继续保持灰盒，阶段 2 尚未开始。
+- 阶段 1 四项在 `assets/asset_manifest.json` 与 `data/assets/asset_manifest.tres` 已标记为非占位；其余状态以文件开头的阶段 2 收尾记录为准。
 - 最终视觉证据位于 `artifacts/visual_review_20260802_stage1_material_round4/` 与 `artifacts/visual_review_20260802_stage1_godot_round4/`，已人工检查现实陈列、眼镜世界、研钵/研杵手持和高球杯/量酒器手持。
 - 2026-08-02 第一轮资产完整回归：资产 16 项 0 错误、领域测试 28/28、Debug/Release 0 警告/0 错误，Godot 导入、`SMOKE_TESTS_PASS`、`STAGE1_ASSET_INTEGRATION_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS` 全部通过。
 
@@ -95,7 +100,7 @@
 - 使用 `builds/windows/GlassesBar-Prototype-Test-20260723.zip` 解压后的测试版，实际确认 `1.42 m` 前台/`2.00 m` 眼高、`2.31 m` 工作通道、`0.62 m` 抽屉行程、上方吊柜、侧面手册、冰桶抽屉、每日洗手、三种量酒器、重复萃取/过滤补救，以及既有双手/犯错/30 天流程；自动化与截图验证不能替代主观手感验收。
 - 当前酒馆仍是参考预览图方向的灰盒布局，不是最终美术、最终灯光或固定陈设方案。
 - 正式冰美式配方与容差尚未由策划提供。
-- 首批美术和建模资产尚未交付。
+- 阶段 1／2 共 9 项 M1 技术／材质候选已交付；其余 7 项建模资产与最终美术仍未交付。
 - 本轮只改逻辑、架构和文档，没有改视觉参数；既有截图结论继续有效，但真实键鼠手感仍需人工游玩。
 
 ## 计划中
