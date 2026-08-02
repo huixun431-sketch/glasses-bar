@@ -45,9 +45,9 @@ public partial class GrayboxLevelBuilder : Node3D
         var cabinetry = new CabinetBuilder(layout, neutral);
         cabinetry.Build();
 
-        gameplay.BuildStations();
+        gameplay.BuildStations(cabinetry);
         gameplay.BuildWorkboard(workstation);
-        gameplay.BuildTools(workstation);
+        gameplay.BuildTools(workstation, cabinetry);
         gameplay.BindRuntime(workstation, cabinetry.ResetAll);
     }
 }

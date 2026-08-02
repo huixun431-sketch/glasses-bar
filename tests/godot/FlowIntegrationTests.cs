@@ -49,12 +49,16 @@ public partial class FlowIntegrationTests : Node
             var mortar = Tool(main, "mortar");
             var filter = Tool(main, "traditional_filter");
             var glass = Tool(main, "highball_glass");
+            OpenStorage(main, "front_drawer_1_upper");
             scoop.Interact(context);
+            OpenStorage(main, "rear_lower_cabinet_1");
             LoadBeans(main, context, 4);
+            OpenStorage(main, "front_drawer_1_lower");
             mortar.Interact(context);
             board.Interact(context);
             board.Interact(context);
             PlaceAt(workstation, "scoop_free");
+            OpenStorage(main, "front_drawer_1_lower");
             Tool(main, "pestle").Interact(context);
             workstation.QueueAttemptRollForTests(0d);
             Require(CompleteBoard(board, context, 0.7d).Completed, "mortar, beans and pestle complete prototype grinding");
@@ -64,6 +68,7 @@ public partial class FlowIntegrationTests : Node
             board.Interact(context);
             mortar.Interact(context);
             PlaceAt(workstation, "mortar_free");
+            OpenStorage(main, "front_drawer_1_upper");
             filter.Interact(context);
             board.Interact(context);
             board.Interact(context);
@@ -72,6 +77,7 @@ public partial class FlowIntegrationTests : Node
                 "ground coffee reaches the board-mounted traditional filter");
 
             var largeJigger = Tool(main, "jigger_large");
+            OpenStorage(main, "front_drawer_3_upper");
             largeJigger.Interact(context);
             workstation.SetKettleWaterForTests(0d);
             workstation.QueueAttemptRollForTests(0d);
@@ -82,6 +88,7 @@ public partial class FlowIntegrationTests : Node
             workstation.SetKettleWaterForTests(DrinkWorkstation.PrototypeKettleCapacityMl);
             Require(workstation.ToggleRightHandMeasureSide(out _) && Math.Abs(workstation.RightHandMeasureAmount - 25d) < 0.001d,
                 "large double-ended jigger can switch to its 25 ml prototype side");
+            OpenStorage(main, "rear_lower_cabinet_2");
             kettle.Interact(context);
             board.Interact(context);
             workstation.QueueAttemptRollForTests(0d);
@@ -96,6 +103,7 @@ public partial class FlowIntegrationTests : Node
                 "repeat extraction restores part of the loss but stays capped");
             PlaceAt(workstation, "jigger_large_free");
 
+            OpenStorage(main, "front_drawer_3_lower");
             glass.Interact(context);
             board.Interact(context);
             workstation.QueueAttemptRollForTests(0d);
@@ -108,9 +116,11 @@ public partial class FlowIntegrationTests : Node
                 "repeat filtering also provides bounded completion recovery");
 
             glass.Interact(context);
+            OpenStorage(main, "front_drawer_3_upper");
             Tool(main, "jigger_small").Interact(context);
             Require(Math.Abs(workstation.RightHandMeasureAmount - 30d) < 0.001d,
                 "small jigger defaults to its 30 ml end for keyboard-accessible measured water");
+            OpenStorage(main, "rear_lower_cabinet_2");
             kettle.Interact(context);
             workstation.QueueAttemptRollForTests(0d);
             Require(workstation.TryUseSimpleOperation().Completed &&
@@ -119,7 +129,9 @@ public partial class FlowIntegrationTests : Node
             PlaceAt(workstation, "glass_free");
             PlaceAt(workstation, "jigger_free");
             glass.Interact(context);
+            OpenStorage(main, "front_drawer_1_upper");
             Tool(main, "ice_tongs").Interact(context);
+            OpenStorage(main, "front_drawer_2_upper");
             ice.Interact(context);
             workstation.QueueAttemptRollForTests(0d);
             var iceResult = workstation.TryUseSimpleOperation();
@@ -181,7 +193,7 @@ public partial class FlowIntegrationTests : Node
         Require(layout.Stations.Count == 5 &&
                 layout.Tools.Count == 9 &&
                 layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.Drawer) == 8 &&
-                layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.Door) == 6 &&
+                layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.Door) == 15 &&
                 layout.Cabinets.Single(cabinet => cabinet.ContainsIceBucket).Id == "front_drawer_2_upper" &&
                 layout.Workboard.Slots.Count == 3,
             "immutable bar layout definition retains every stable gameplay node and cabinet slot");
@@ -205,38 +217,51 @@ public partial class FlowIntegrationTests : Node
                     station.Definition.Id.ToString() == station.EntityId &&
                     station.Definition.Kind == station.Kind),
             "every runtime station adapter is bound to its matching validated resource definition");
-        Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.20f) < 0.001f &&
-                Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 1.40f) < 0.001f,
-            "runtime uses the approved split-height counter and single-bartender aisle");
+        Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.38f) < 0.001f &&
+                Math.Abs(BarLayoutDefinition.PlayerWorktopHeight - 1.12f) < 0.001f &&
+                Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 1.55f) < 0.001f,
+            "runtime uses the approved H3 split-height counter and aisle");
         Require(Math.Abs(main.GetNode<Node3D>("Player/Head").GlobalPosition.Y - GrayboxLevelBuilder.PlayerEyeHeight) < 0.01f,
             "player capsule and camera use the approved eye height");
         var realityWorld = main.GetNode<Node3D>("RealityWorld");
-        Require(realityWorld.HasNode("MergedBottleRackBack"), "rear bar keeps the bottle-rack back");
+        Require(!realityWorld.HasNode("MergedBottleRackBack") &&
+                layout.BottleRackBays.All(bay => realityWorld.HasNode(bay.Back.Name) &&
+                    bay.Shelves.All(shelf => realityWorld.HasNode(shelf.Name))),
+            "rear bar uses five aligned empty rack bays without the obsolete merged rack: " +
+            string.Join(",", realityWorld.GetChildren().Select(node => node.Name.ToString())));
         Require(realityWorld.HasNode("UpperBackCabinet"), "rear bar keeps the approved upper cabinet");
         Require(realityWorld.HasNode("RearBarWorktop"), "rear bar uses the approved 0.96 metre worktop");
         Require(!main.GetNode<Node3D>("NeutralGameplay").HasNode("MergedBackBarCollider"),
             "obsolete low rear-bar collision stays removed");
-        Require(!main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarCollider") &&
-                main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarWestChamferCollider") &&
-                main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarEastChamferCollider") &&
-                realityWorld.HasNode("FrontBarWestChamfer") &&
-                realityWorld.HasNode("FrontBarEastChamfer"),
-            "front bar collision and graybox visuals expose both approved 45-degree inner chamfers");
+        Require(main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarBodyCollider") &&
+                !main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarWestChamferCollider") &&
+                !main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarEastChamferCollider") &&
+                realityWorld.GetNode<MeshInstance3D>("FrontBarBody").Mesh is ArrayMesh &&
+                !realityWorld.HasNode("FrontBarWestChamfer") &&
+                !realityWorld.HasNode("FrontBarEastChamfer"),
+            "front bar collision and visuals come from one authoritative polygon without overlay chamfers");
         Require(main.GetNode<Node3D>("RealityWorld/SouthWindows").GetChildCount() == 1,
             "runtime shell has exactly one south-east landscape window");
         Require(realityWorld.HasNode("Ceiling") &&
                 realityWorld.GetNode<Node3D>("Wainscot").GetChildCount() == 8,
             "runtime shell includes the ceiling and segmented 1.05 metre wainscot break around openings");
         Require(!realityWorld.HasNode("RearBooth"), "obsolete booths stay removed");
-        foreach (var toolLayout in layout.Tools)
-            Require(Tool(main, toolLayout.ToolId).Position.IsEqualApprox(toolLayout.Position),
-                $"{toolLayout.ToolId} starts in the approved central work cluster");
+        foreach (var assignment in layout.ItemStorageAssignments.Where(item =>
+                     layout.Tools.Any(tool => tool.ToolId == item.ItemId)))
+        {
+            var tool = Tool(main, assignment.ItemId);
+            Require(tool.StorageId == assignment.StorageId &&
+                    tool.GetParent().Name == assignment.StorageId + "_host" &&
+                    tool.Position.IsEqualApprox(assignment.LocalPlacement),
+                $"{assignment.ItemId} starts inside its assigned closed storage host");
+        }
         Require(Tool(main, "ice_tongs").GetNode<CollisionShape3D>("CollisionShape3D").Shape is BoxShape3D &&
                 Tool(main, "jigger_small").GetNode<CollisionShape3D>("CollisionShape3D").Shape is CylinderShape3D,
             "tool collision shapes now match their visible graybox families");
 
         var frontDrawerCount = 0;
         var backDoorCount = 0;
+        var rearLowerDoorCount = 0;
         var narrowestWalkingLane = float.MaxValue;
         foreach (var node in main.GetTree().GetNodesInGroup("cabinet_storage"))
         {
@@ -257,17 +282,20 @@ public partial class FlowIntegrationTests : Node
             {
                 backDoorCount++;
                 Require(cabinet.OutwardDirection.Z > 0f && Math.Abs(cabinet.OpenRotationY) > 1.4f &&
-                        cabinet.ClosedPosition.Y - cabinet.PanelSize.Y * 0.5f >= 2.10f &&
-                        cabinet.PanelSize.X >= 0.85f && cabinet.PanelSize.Y >= 0.9f,
-                    "six upper cabinet doors swing south from the approved lower edge");
+                        cabinet.ClosedPosition.Y - cabinet.PanelSize.Y * 0.5f >= 2.65f &&
+                        cabinet.PanelSize.X >= 0.80f && cabinet.PanelSize.Y >= 1.2f,
+                    "ten upper cabinet doors swing south from the approved H3 lower edge");
             }
+            if (name.StartsWith("rear_lower_cabinet_", StringComparison.Ordinal))
+                rearLowerDoorCount++;
         }
-        Require(frontDrawerCount == 8 && backDoorCount == 6,
-            "front bar keeps four double-drawer bays with a clear sink bay while three overhead cabinets use paired large doors");
-        Require(Math.Abs(sink.Position.Z - (-2.05f)) < 0.01f && sink.Position.X > -0.1f &&
+        Require(frontDrawerCount == 8 && backDoorCount == 10 && rearLowerDoorCount == 5,
+            "front bar has four double drawers while rear bar has five lower and five paired upper bays");
+        Require(Math.Abs(sink.Position.Z - (-1.40f)) < 0.01f &&
+                sink.Position.X > BarLayoutDefinition.BarCenterX &&
                 !main.GetNode<Node3D>("NeutralGameplay").HasNode("sink_left_drawer_upper") &&
                 !main.GetNode<Node3D>("NeutralGameplay").HasNode("sink_left_drawer_lower"),
-            "the east wet-side wash sink keeps clear space beneath it");
+            "the east front-bar wash sink keeps clear space beneath it");
         var manual = main.GetNode<Node3D>("NeutralGameplay/OperationManual");
         Require(manual.Position.X < -4.5f && manual.Position.Z < -2.3f &&
                 manual.HasNode("Grip") && manual.HasNode("Placement") &&
@@ -298,8 +326,9 @@ public partial class FlowIntegrationTests : Node
         Require(narrowestWalkingLane >= 1.0f,
             "a fully opened short-travel drawer keeps approximately one metre of aisle clearance");
         var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
-        Require(ice.GetParent() == iceDrawer && !ice.CanInteract(context),
-            "ice bucket is physically stored in the cutting-board-right upper drawer and is inaccessible while closed");
+        Require(ice.GetParent().Name == "front_drawer_2_upper_host" &&
+                ice.StorageId == "front_drawer_2_upper" && !ice.IsStorageAccessible,
+            "ice bucket is physically stored in its stable upper drawer host and is inaccessible while closed");
         var backDoor = main.GetNode<CabinetInteractable>("NeutralGameplay/back_cabinet_3_left");
         iceDrawer.SetOpen(true, false);
         backDoor.SetOpen(true, false);
@@ -323,21 +352,26 @@ public partial class FlowIntegrationTests : Node
             "three data-defined double-ended jiggers replace direct kettle pouring");
 
         var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
+        OpenStorage(main, "front_drawer_1_upper");
+        Tool(main, "bean_scoop").Interact(context);
         iceDrawer.Interact(context);
         Require(iceDrawer.IsOpen, "upper ice drawer opens before using its contents");
-        Tool(main, "bean_scoop").Interact(context);
         Require(!ice.CanInteract(context) && ice.GetUnavailablePrompt(context).Contains("无法在物理上携带冰块"),
             "ingredient scoop is explicitly forbidden from taking ice");
         PlaceAt(workstation, "scoop_free");
+        OpenStorage(main, "front_drawer_1_upper");
         Tool(main, "ice_tongs").Interact(context);
+        OpenStorage(main, "front_drawer_2_upper");
         ice.Interact(context);
         Require(Math.Abs(workstation.GetRightHandIngredientAmount("ice") - 1d) < 0.001d,
             "ice tongs can take one piece from the opened drawer bucket");
         bin.Interact(context);
         PlaceAt(workstation, "tongs_free");
 
+        OpenStorage(main, "front_drawer_3_upper");
         Tool(main, "jigger_small").Interact(context);
         var before = workstation.KettleWaterAmountMl;
+        OpenStorage(main, "rear_lower_cabinet_2");
         kettle.Interact(context);
         Require(Math.Abs(workstation.GetRightHandIngredientAmount("water") - 30d) < 0.001d &&
                 Math.Abs(workstation.KettleWaterAmountMl - (before - 30d)) < 0.001d,
@@ -349,7 +383,7 @@ public partial class FlowIntegrationTests : Node
         Require(workstation.RightHandToolId == "jigger_small" &&
                 Math.Abs(workstation.GetRightHandIngredientAmount("water") - 30d) < 0.001d &&
                 workstation.GetToolLocation("jigger_small") == ToolLocation.RightHand &&
-                main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper").IsOpen,
+                main.GetNode<CabinetInteractable>("NeutralGameplay/rear_lower_cabinet_2").IsOpen,
             "versioned save snapshot restores authoritative held-tool, contents, player and storage instance state without scene-node references");
         bin.Interact(context);
         PlaceAt(workstation, "jigger_free");
@@ -380,7 +414,12 @@ public partial class FlowIntegrationTests : Node
         new() { Player = player, Workstation = workstation };
 
     private static ToolInteractable Tool(Node3D main, string id) =>
-        main.GetNode<ToolInteractable>($"NeutralGameplay/{id}");
+        main.GetTree().GetNodesInGroup("movable_tool")
+            .OfType<ToolInteractable>()
+            .Single(tool => tool.ToolId == id);
+
+    private static void OpenStorage(Node3D main, string id) =>
+        main.GetNode<CabinetInteractable>($"NeutralGameplay/{id}").SetOpen(true, false);
 
     private static StationInteractable Station(Node3D main, string id)
     {

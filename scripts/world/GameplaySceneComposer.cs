@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Godot;
 
 namespace GlassesBar;
@@ -59,19 +60,31 @@ public sealed class GameplaySceneComposer
         _neutral.AddChild(rear);
     }
 
-    public void BuildStations()
+    public void BuildStations(CabinetBuilder cabinetry)
     {
         foreach (var station in _layout.Stations)
         {
-            CreateGameplayStation(
-                _neutral,
+            var assignment = _layout.ItemStorageAssignments
+                .SingleOrDefault(item => item.ItemId == station.Id);
+            var isStored = !string.IsNullOrEmpty(assignment.ItemId);
+            var parent = isStored ? cabinetry.RequireHost(assignment.StorageId) : _neutral;
+            var gameplay = CreateGameplayStation(
+                parent,
                 station.Id,
                 station.Kind,
-                station.Position,
+                isStored ? assignment.LocalPlacement : station.Position,
                 station.Size);
-            _architecture.CreateStationVisual(station, false);
-            if (station.Kind is StationKind.HandWashSink or StationKind.Kettle or StationKind.WasteBin)
-                _architecture.CreateStationVisual(station, true);
+            if (isStored)
+            {
+                gameplay.BindStorage(cabinetry.RequireFront(assignment.StorageId));
+                AddStoredStationVisual(gameplay, station);
+            }
+            else
+            {
+                _architecture.CreateStationVisual(station, false);
+                if (station.Kind is StationKind.HandWashSink or StationKind.WasteBin)
+                    _architecture.CreateStationVisual(station, true);
+            }
         }
     }
 
@@ -86,21 +99,45 @@ public sealed class GameplaySceneComposer
         _neutral.AddChild(board);
     }
 
-    public void BuildTools(DrinkWorkstation workstation)
+    public void BuildTools(DrinkWorkstation workstation, CabinetBuilder cabinetry)
     {
         foreach (var layout in _layout.Tools)
         {
+            var assignment = _layout.ItemStorageAssignments.Single(item => item.ItemId == layout.ToolId);
+            var parent = cabinetry.RequireHost(assignment.StorageId);
             var spec = workstation.GetToolSpec(layout.ToolId);
-            var node = new ToolInteractable { Position = layout.Position };
+            var node = new ToolInteractable { Position = assignment.LocalPlacement };
             node.Configure(
                 workstation,
                 spec,
                 ToolMesh(layout.ToolId),
                 layout.Color,
                 ToolVisualLibrary.Instantiate(layout.ToolId));
-            _neutral.AddChild(node);
-            workstation.RegisterTool(node, layout.ToolId, layout.Position);
+            node.BindStorage(cabinetry.RequireFront(assignment.StorageId));
+            parent.AddChild(node);
+            workstation.RegisterTool(node, layout.ToolId, node.GlobalPosition);
         }
+    }
+
+    private static void AddStoredStationVisual(StationInteractable gameplay, BarStationLayout station)
+    {
+        var visual = new MeshInstance3D
+        {
+            Name = "Visual",
+            Mesh = station.Kind is StationKind.CoffeeBeans or StationKind.Kettle
+                ? new CylinderMesh
+                {
+                    TopRadius = station.Size.X * 0.36f,
+                    BottomRadius = station.Size.X * 0.46f,
+                    Height = station.Size.Y
+                }
+                : new BoxMesh { Size = station.Size },
+            MaterialOverride = GrayboxArchitectureBuilder.MakeMaterial(
+                station.Kind == StationKind.CoffeeBeans ? new Color("7a4a27") : new Color("a88b64"))
+        };
+        gameplay.AddChild(visual);
+        GameSession.Instance.WorldModeChanged += mode =>
+            visual.Visible = (WorldMode)mode == WorldMode.Reality;
     }
 
     public void BindRuntime(DrinkWorkstation workstation, Action resetCabinetry)

@@ -11,6 +11,9 @@ public enum CabinetPartKind
 
 public partial class CabinetInteractable : StaticBody3D, IInteractable
 {
+    [Signal]
+    public delegate void OpenStateChangedEventHandler(bool open);
+
     private CabinetPartKind _kind;
     private Vector3 _closedPosition;
     private Vector3 _openPosition;
@@ -132,6 +135,7 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
                     other.SetOpen(false, animate);
         }
         IsOpen = open;
+        EmitSignal(SignalName.OpenStateChanged, open);
         _tween?.Kill();
         if (!animate)
         {

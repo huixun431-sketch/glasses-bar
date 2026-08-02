@@ -112,8 +112,8 @@ public sealed class GrayboxArchitectureBuilder
         CreateBox(_reality, _layout.EastWasteModuleTop, new Color("76503a"));
         CreateBox(_glasses, _layout.EastWasteModuleTop, new Color("0b8d9a"), true);
 
-        BuildMergedBackRack(_reality, false);
-        BuildMergedBackRack(_glasses, true);
+        BuildBottleRackBays(_reality, false);
+        BuildBottleRackBays(_glasses, true);
         BuildFrontWorktop(_reality, false);
         BuildFrontWorktop(_glasses, true);
         BuildCounterDetails(_reality, false);
@@ -297,29 +297,22 @@ public sealed class GrayboxArchitectureBuilder
             });
     }
 
-    private void BuildMergedBackRack(Node3D parent, bool glasses)
+    private void BuildBottleRackBays(Node3D parent, bool glasses)
     {
-        CreateBox(
-            parent,
-            _layout.BottleRackBack,
-            glasses ? new Color("074a5e") : new Color("402821"),
-            glasses);
-        foreach (var shelf in _layout.BottleRackShelves)
+        foreach (var bay in _layout.BottleRackBays)
+        {
             CreateBox(
                 parent,
-                shelf,
-                glasses ? new Color("0ba0a8") : new Color("795038"),
+                bay.Back,
+                glasses ? new Color("074a5e") : new Color("402821"),
                 glasses);
-        if (glasses)
-            return;
-        foreach (var bottle in _layout.LiquorBottles)
-            CreateCylinder(
-                parent,
-                bottle.Name,
-                bottle.Position,
-                bottle.Radius,
-                bottle.Height,
-                bottle.RealityColor);
+            foreach (var shelf in bay.Shelves)
+                CreateBox(
+                    parent,
+                    shelf,
+                    glasses ? new Color("0ba0a8") : new Color("795038"),
+                    glasses);
+        }
     }
 
     private void BuildFrontWorktop(Node3D parent, bool glasses)

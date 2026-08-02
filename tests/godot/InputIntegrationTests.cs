@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Godot;
 using GlassesBar.Domain;
 
@@ -90,13 +91,15 @@ public partial class InputIntegrationTests : Node
             Require(main.GetNode<Node3D>("RealityWorld/SouthWindows").GetChildCount() == 1 &&
                     !main.GetNode<Node3D>("RealityWorld").HasNode("RearBooth"),
                 "runtime shell has one south-east window and no obsolete booths");
-            player.GlobalPosition = new Vector3(-0.75f, 0.915f, BarLayoutDefinition.PlayerStartZ);
+            player.GlobalPosition = new Vector3(0.50f, 0.915f, BarLayoutDefinition.PlayerStartZ);
             Input.ActionPress("move_left");
             for (var frame = 0; frame < 30; frame++)
                 await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
             Input.ActionRelease("move_left");
-            Require(player.GlobalPosition.X < -0.30f,
-                "side return collision encloses the bartender work area and prevents walking out");
+            Require(player.GlobalPosition.X > 0.55f &&
+                    player.GlobalPosition.X < BarLayoutDefinition.BarCenterX +
+                        BarLayoutDefinition.FrontOutlineWidth * 0.5f - 0.45f,
+                "east employee gate encloses the widened bartender work area while allowing aisle movement");
             player.ResetForNewDay();
             await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
             var savedPosition = player.Position;
@@ -114,14 +117,18 @@ public partial class InputIntegrationTests : Node
                     player.Velocity.IsZeroApprox(),
                 "player motor preserves the existing pose snapshot and zero-velocity restore contract");
             var workstation = main.GetNode<DrinkWorkstation>("NeutralGameplay/DrinkWorkstation");
-            var glassPickup = main.GetNode<ToolInteractable>("NeutralGameplay/highball_glass");
+            var glassPickup = Tool(main, "highball_glass");
             var context = new InteractionContext { Player = player, Workstation = workstation };
-            Require(GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder && glassPickup.CanInteract(context),
-                "tools and crafting interactions are available before accepting an order");
+            Require(GameSession.Instance.Flow.Current == DayPhase.WaitingForOrder && !glassPickup.CanInteract(context),
+                "closed daily storage blocks tool pickup before accepting an order");
+            main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_3_lower").SetOpen(true, false);
+            Require(glassPickup.CanInteract(context),
+                "manually opening the assigned drawer exposes its tool before accepting an order");
             var leftHeldVisual = player.GetNode<MeshInstance3D>("Head/Camera3D/LeftHandAnchor/HeldTool");
             var rightHeldVisual = player.GetNode<MeshInstance3D>("Head/Camera3D/RightHandAnchor/HeldTool");
-            main.GetNode<ToolInteractable>("NeutralGameplay/mortar").Interact(context);
-            main.GetNode<ToolInteractable>("NeutralGameplay/pestle").Interact(context);
+            main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_1_lower").SetOpen(true, false);
+            Tool(main, "mortar").Interact(context);
+            Tool(main, "pestle").Interact(context);
             var leftHeldAsset = player.GetNode<Node3D>("Head/Camera3D/LeftHandAnchor/HeldAssetVisual");
             var rightHeldAsset = player.GetNode<Node3D>("Head/Camera3D/RightHandAnchor/HeldAssetVisual");
             Require(!leftHeldVisual.Visible && leftHeldAsset.Visible &&
@@ -227,7 +234,8 @@ public partial class InputIntegrationTests : Node
             Require(GameSession.Instance.Flow.Current == DayPhase.Preparation, "returning to reality preserves preparation");
             Require(GameSession.Instance.CanMove, "movement gate is enabled in reality world");
 
-            Require(glassPickup.CanInteract(context), "glass pickup is available during reality preparation");
+            main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_3_lower").SetOpen(true, false);
+            Require(glassPickup.CanInteract(context), "glass pickup is available after opening its drawer in reality preparation");
 
             SendPlayerAction(player, "toggle_glasses", true);
             SendPlayerAction(player, "toggle_glasses", false);
@@ -256,6 +264,11 @@ public partial class InputIntegrationTests : Node
     {
         player._UnhandledInput(new InputEventAction { Action = action, Pressed = pressed, Strength = pressed ? 1f : 0f });
     }
+
+    private static ToolInteractable Tool(Node3D main, string id) =>
+        main.GetTree().GetNodesInGroup("movable_tool")
+            .OfType<ToolInteractable>()
+            .Single(tool => tool.ToolId == id);
 
     private static void Require(bool condition, string message)
     {

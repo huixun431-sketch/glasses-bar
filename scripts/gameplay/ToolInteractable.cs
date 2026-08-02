@@ -10,9 +10,22 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
     private MeshInstance3D _visual = null!;
     private Node3D? _assetVisual;
     private Label3D _label = null!;
+    private CabinetInteractable? _storageFront;
+    private bool _isStored;
 
     public string ToolId { get; private set; } = string.Empty;
     public ToolSpec Spec { get; private set; } = null!;
+    public string StorageId { get; private set; } = string.Empty;
+    public bool IsStorageAccessible => !_isStored || _storageFront is null || _storageFront.IsOpen;
+
+    public void BindStorage(CabinetInteractable front)
+    {
+        _storageFront = front ?? throw new System.ArgumentNullException(nameof(front));
+        StorageId = front.Name.ToString();
+        _isStored = true;
+    }
+
+    public void ResetToStorage() => _isStored = true;
 
     public void Configure(
         DrinkWorkstation workstation,
@@ -83,6 +96,8 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
     {
         if (!GameSession.Instance.GameStarted)
             return string.Empty;
+        if (_storageFront is { IsOpen: false })
+            return $"先打开 {StorageId}，才能拿取{Spec.DisplayName}。";
         if (GameSession.Instance.WorldMode == WorldMode.Glasses)
             return $"[G] 摘下眼镜后拿取 · {Spec.DisplayName}";
         return Spec.ResolveCategory() == ToolCategory.Placement
@@ -92,6 +107,7 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
 
     public bool CanInteract(InteractionContext context) =>
         GameSession.Instance.CanCraft && GameSession.Instance.WorldMode == WorldMode.Reality &&
+        IsStorageAccessible &&
         context.Workstation.CanPickUpTool(ToolId);
 
     public void Interact(InteractionContext context)
@@ -101,6 +117,9 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
             GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage, GetUnavailablePrompt(context));
             return;
         }
+        if (_storageFront is not null && GetParent() != _storageFront.GetParent())
+            Reparent(_storageFront.GetParent(), true);
+        _isStored = false;
         context.Workstation.TryPickUpTool(ToolId);
     }
 

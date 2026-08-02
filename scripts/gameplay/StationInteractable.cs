@@ -9,11 +9,21 @@ namespace GlassesBar;
 /// </summary>
 public partial class StationInteractable : StaticBody3D, IInteractable
 {
+    private CabinetInteractable? _storageFront;
+
     [Export] public StationKind Kind { get; set; }
     [Export] public string EntityId { get; set; } = string.Empty;
     [Export] public StationDefinition? Definition { get; set; }
 
     public string DisplayName => ResolveDefinition().DisplayName;
+    public string StorageId { get; private set; } = string.Empty;
+    public bool IsStorageAccessible => _storageFront is null || _storageFront.IsOpen;
+
+    public void BindStorage(CabinetInteractable front)
+    {
+        _storageFront = front ?? throw new ArgumentNullException(nameof(front));
+        StorageId = front.Name.ToString();
+    }
 
     public string GetPrompt(InteractionContext context)
     {
@@ -31,8 +41,8 @@ public partial class StationInteractable : StaticBody3D, IInteractable
     {
         if (!GameSession.Instance.GameStarted)
             return string.Empty;
-        if (GetStorageParent() is { IsOpen: false })
-            return "先打开砧板右下方的上层抽屉，才能使用里面的冰桶。";
+        if (_storageFront is { IsOpen: false })
+            return $"先打开 {StorageId}，才能使用里面的{DisplayName}。";
 
         var actionContext = CreateActionContext(context);
         if (GameSession.Instance.WorldMode == WorldMode.Glasses)
@@ -49,7 +59,7 @@ public partial class StationInteractable : StaticBody3D, IInteractable
     {
         if (!GameSession.Instance.GameStarted ||
             GameSession.Instance.WorldMode == WorldMode.Glasses ||
-            GetStorageParent() is { IsOpen: false })
+            !IsStorageAccessible)
         {
             return false;
         }
@@ -89,6 +99,4 @@ public partial class StationInteractable : StaticBody3D, IInteractable
 
     private static IStationActionHandler ResolveHandler(StationActionContext context) =>
         StationActionHandlerRegistry.Resolve(context.Definition.HandlerId);
-
-    private CabinetInteractable? GetStorageParent() => GetParent() as CabinetInteractable;
 }
