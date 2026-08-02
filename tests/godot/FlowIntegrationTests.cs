@@ -143,7 +143,7 @@ public partial class FlowIntegrationTests : Node
             Require(GameSession.Instance.CurrentDay == 2 && !workstation.HandsWashedToday &&
                      Math.Abs(workstation.KettleWaterAmountMl - DrinkWorkstation.PrototypeKettleCapacityMl) < 0.001d &&
                      Math.Abs(workstation.TotalWaste) < 0.000001d && !iceDrawer.IsOpen &&
-                     Math.Abs(player.GlobalPosition.Z - (-1.2f)) < 0.01f,
+                     Math.Abs(player.GlobalPosition.Z - BarLayoutDefinition.PlayerStartZ) < 0.01f,
                 "next day resets hand washing, kettle, per-day waste, drawer state, tools and raised-camera player position");
 
             for (var expectedDay = 2; expectedDay <= GameSession.MaxCampaignDays; expectedDay++)
@@ -205,20 +205,23 @@ public partial class FlowIntegrationTests : Node
                     station.Definition.Id.ToString() == station.EntityId &&
                     station.Definition.Kind == station.Kind),
             "every runtime station adapter is bound to its matching validated resource definition");
-        Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.42f) < 0.001f &&
-                Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 2.31f) < 0.001f &&
-                GrayboxLevelBuilder.OperationAisleClearWidth >= 0.7f * 2f + 0.3f,
-            "low rear bar is removed and the taller internal operation aisle comfortably fits two player-width people");
+        Require(Math.Abs(GrayboxLevelBuilder.FrontBarTopHeight - 1.20f) < 0.001f &&
+                Math.Abs(GrayboxLevelBuilder.OperationAisleClearWidth - 1.40f) < 0.001f,
+            "runtime uses the approved split-height counter and single-bartender aisle");
         Require(Math.Abs(main.GetNode<Node3D>("Player/Head").GlobalPosition.Y - GrayboxLevelBuilder.PlayerEyeHeight) < 0.01f,
-            "player capsule and camera rise together to the doubled playtest increment");
-        Require(main.GetNode<Node3D>("RealityWorld").HasNode("MergedBottleRackBack") &&
-                main.GetNode<Node3D>("RealityWorld").HasNode("UpperBackCabinet") &&
-                main.GetNode<Node3D>("RealityWorld").HasNode("RearWallShelf") &&
-                !main.GetNode<Node3D>("NeutralGameplay").HasNode("MergedBackBarCollider") &&
-                main.GetNode<Node3D>("RealityWorld").HasNode("RearBooth"),
-            "the low rear bar becomes a shallow shelf plus an overhead cabinet above the bottle rack");
-        foreach (var toolId in new[] { "highball_glass", "mortar", "traditional_filter", "pestle", "bean_scoop", "ice_tongs", "jigger_small", "jigger_medium", "jigger_large" })
-            Require(Math.Abs(Tool(main, toolId).Position.Z - 0.2f) < 0.01f, $"{toolId} starts on the front bar");
+            "player capsule and camera use the approved eye height");
+        var realityWorld = main.GetNode<Node3D>("RealityWorld");
+        Require(realityWorld.HasNode("MergedBottleRackBack"), "rear bar keeps the bottle-rack back");
+        Require(realityWorld.HasNode("UpperBackCabinet"), "rear bar keeps the approved upper cabinet");
+        Require(realityWorld.HasNode("RearBarWorktop"), "rear bar uses the approved 0.96 metre worktop");
+        Require(!main.GetNode<Node3D>("NeutralGameplay").HasNode("MergedBackBarCollider"),
+            "obsolete low rear-bar collision stays removed");
+        Require(main.GetNode<Node3D>("RealityWorld/SouthWindows").GetChildCount() == 1,
+            "runtime shell has exactly one south-east landscape window");
+        Require(!realityWorld.HasNode("RearBooth"), "obsolete booths stay removed");
+        foreach (var toolLayout in layout.Tools)
+            Require(Tool(main, toolLayout.ToolId).Position.IsEqualApprox(toolLayout.Position),
+                $"{toolLayout.ToolId} starts in the approved central work cluster");
         Require(Tool(main, "ice_tongs").GetNode<CollisionShape3D>("CollisionShape3D").Shape is BoxShape3D &&
                 Tool(main, "jigger_small").GetNode<CollisionShape3D>("CollisionShape3D").Shape is CylinderShape3D,
             "tool collision shapes now match their visible graybox families");
@@ -235,33 +238,51 @@ public partial class FlowIntegrationTests : Node
             {
                 frontDrawerCount++;
                 Require(cabinet.OpenPosition.Z < cabinet.ClosedPosition.Z && cabinet.OutwardDirection.Z < 0f &&
-                        cabinet.OpenTravelDistance >= 0.6f,
-                    "front drawers pull substantially farther outward and keep deep trays");
-                // The rear wall shelf begins at z=-2.70 after the low rear bar is removed.
-                var openFrontDrawerBackEdge = cabinet.OpenPosition.Z - cabinet.PanelSize.Z * 0.5f;
-                narrowestWalkingLane = Math.Min(narrowestWalkingLane, openFrontDrawerBackEdge - (-2.70f));
+                        Math.Abs(cabinet.OpenTravelDistance - BarLayoutDefinition.DrawerOpenTravel) < 0.001f,
+                    "front drawers use the explicit approved 0.38 metre travel");
+                var openFrontDrawerNorthEdge = cabinet.OpenPosition.Z - cabinet.PanelSize.Z * 0.5f;
+                narrowestWalkingLane = Math.Min(narrowestWalkingLane,
+                    openFrontDrawerNorthEdge - BarLayoutDefinition.RearBarFrontZ);
             }
             if (name.StartsWith("back_cabinet_", StringComparison.Ordinal))
             {
                 backDoorCount++;
                 Require(cabinet.OutwardDirection.Z > 0f && Math.Abs(cabinet.OpenRotationY) > 1.4f &&
-                        cabinet.ClosedPosition.Y - cabinet.PanelSize.Y * 0.5f >= GrayboxLevelBuilder.BottleRackTopHeight + 0.2f &&
-                        cabinet.PanelSize.X >= 1.4f && cabinet.PanelSize.Y >= 0.9f,
-                    "larger back cabinet doors swing outward from above the bottle rack instead of occupying the walking lane");
+                        cabinet.ClosedPosition.Y - cabinet.PanelSize.Y * 0.5f >= 2.10f &&
+                        cabinet.PanelSize.X >= 0.85f && cabinet.PanelSize.Y >= 0.9f,
+                    "six upper cabinet doors swing south from the approved lower edge");
             }
         }
         Require(frontDrawerCount == 8 && backDoorCount == 6,
             "front bar keeps four double-drawer bays with a clear sink bay while three overhead cabinets use paired large doors");
-        Require(Math.Abs(sink.Position.Z - 0.2f) < 0.01f && sink.Position.X > 3.5f &&
+        Require(Math.Abs(sink.Position.Z - (-2.05f)) < 0.01f && sink.Position.X > -0.1f &&
                 !main.GetNode<Node3D>("NeutralGameplay").HasNode("sink_left_drawer_upper") &&
                 !main.GetNode<Node3D>("NeutralGameplay").HasNode("sink_left_drawer_lower"),
-            "the wash sink is back on the screen-left front bar with no drawer or cabinet underneath");
-        var manual = main.GetNode<Node3D>("GlassesWorld/OperationManual");
-        Require(manual.Position.X < -5f && manual.Position.Z < -0.6f &&
-                !main.GetNode<Node3D>("RealityWorld").HasNode("OperationManual"),
-            "the glasses-only manual sits on the side enclosure away from the kettle and front tools");
-        Require(narrowestWalkingLane >= 1.65f,
-            "a fully opened long front drawer still leaves a comfortably passable lane to the shallow rear shelf");
+            "the east wet-side wash sink keeps clear space beneath it");
+        var manual = main.GetNode<Node3D>("NeutralGameplay/OperationManual");
+        Require(manual.Position.X < -4.5f && manual.Position.Z < -2.3f &&
+                manual.HasNode("Grip") && manual.HasNode("Placement") &&
+                manual.HasNode("CoverPivot") && manual.HasNode("PagePivotLeft") &&
+                manual.HasNode("PagePivotRight") &&
+                !main.GetNode<Node3D>("RealityWorld").HasNode("OperationManual") &&
+                !main.GetNode<Node3D>("GlassesWorld").HasNode("OperationManual"),
+            "the shared manual owns its placement, grip, cover and page pivots without world duplicates");
+        Require(main.GetNode<Node3D>("NeutralGameplay").HasNode("EmployeeGate") &&
+                layout.EmployeeGate.Size.Y < BarLayoutDefinition.PlayerWorktopHeight,
+            "the east employee gate is a closed authoritative half-height part");
+        Require(realityWorld.GetNode<Node3D>("FrontStools").GetChildCount() == 6 &&
+                realityWorld.GetNode<Node3D>("LoungeTables").GetChildCount() == 3 &&
+                realityWorld.GetNode<Node3D>("LoungeChairs").GetChildCount() == 12,
+            "runtime graybox builds six stools, three tables and twelve independent chairs");
+        var lightRig = realityWorld.GetNode<Node3D>("BarLightRig");
+        Require(lightRig.GetNode<Node3D>("Pendants").GetChildCount() == 3 &&
+                lightRig.GetNode<Node3D>("RearLinears").GetChildCount() == 2 &&
+                lightRig.GetNode<Node3D>("CustomerSconces").GetChildCount() == 4 &&
+                lightRig.GetNode<Node3D>("CustomerFills").GetChildCount() == 2 &&
+                !main.HasNode("KeyLight") && !main.HasNode("WarmLight") && !main.HasNode("BackBarLight"),
+            "approved fixture groups replace the obsolete generic global lights");
+        Require(narrowestWalkingLane >= 1.0f,
+            "a fully opened short-travel drawer keeps approximately one metre of aisle clearance");
         var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
         Require(ice.GetParent() == iceDrawer && !ice.CanInteract(context),
             "ice bucket is physically stored in the cutting-board-right upper drawer and is inaccessible while closed");

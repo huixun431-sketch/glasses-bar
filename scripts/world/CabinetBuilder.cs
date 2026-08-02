@@ -35,7 +35,8 @@ public sealed class CabinetBuilder
                 layout.Size,
                 layout.HingeOnLeft,
                 layout.OutwardDirection,
-                layout.StorageDepth);
+                layout.StorageDepth,
+                layout.OpenTravelDistance);
             _neutral.AddChild(cabinet);
 
             if (layout.ContainsIceBucket)

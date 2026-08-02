@@ -75,15 +75,27 @@ public partial class InputIntegrationTests : Node
                 "starting the game enables movement and gameplay HUD");
             await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
 
-            Require(Math.Abs(player.GlobalPosition.Z - (-1.2f)) < 0.01f, "player starts centered inside the two-person bartender aisle");
+            var layout = BarLayoutDefinition.Prototype;
+            Require(Math.Abs(player.GlobalPosition.X - BarLayoutDefinition.BarCenterX) < 0.01f &&
+                    Math.Abs(player.GlobalPosition.Z - BarLayoutDefinition.PlayerStartZ) < 0.01f,
+                "player starts inside the approved U-bar aisle");
             Require(Math.Abs(player.GetNode<Node3D>("Head").GlobalPosition.Y - GrayboxLevelBuilder.PlayerEyeHeight) < 0.01f,
-                "player starts with the coordinated two-metre eye height");
-            player.GlobalPosition = new Vector3(4.8f, 1.045f, -1.2f);
+                "player starts at the approved 1.83 metre eye height");
+            var playerForward = player.GlobalBasis * Vector3.Forward;
+            Require(playerForward.Z > 0.99f,
+                "player faces south toward customers");
+            Require(player.GlobalPosition.Z > BarLayoutDefinition.RearBarFrontZ &&
+                    player.GlobalPosition.Z < BarLayoutDefinition.FrontBarInnerEdgeZ,
+                "player starts between the north rear bar and south front bar");
+            Require(main.GetNode<Node3D>("RealityWorld/SouthWindows").GetChildCount() == 1 &&
+                    !main.GetNode<Node3D>("RealityWorld").HasNode("RearBooth"),
+                "runtime shell has one south-east window and no obsolete booths");
+            player.GlobalPosition = new Vector3(-0.75f, 0.915f, BarLayoutDefinition.PlayerStartZ);
             Input.ActionPress("move_left");
             for (var frame = 0; frame < 30; frame++)
                 await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
             Input.ActionRelease("move_left");
-            Require(player.GlobalPosition.X < 4.95f,
+            Require(player.GlobalPosition.X < -0.30f,
                 "side return collision encloses the bartender work area and prevents walking out");
             player.ResetForNewDay();
             await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
@@ -148,7 +160,8 @@ public partial class InputIntegrationTests : Node
 
             ray.ForceRaycastUpdate();
             Require(ray.IsColliding(), "interaction ray reaches customer");
-            Require(ray.GetCollider() is StationInteractable { Kind: StationKind.Customer }, "ray targets customer");
+            Require(ray.GetCollider() is StationInteractable { Kind: StationKind.Customer },
+                $"ray targets customer instead of {(ray.GetCollider() as Node)?.Name}");
             Require(main.GetNode<PanelContainer>("HUD/PromptPanel").Visible, "nearby interactable shows a prompt panel");
 
             SendPlayerAction(player, "interact", true);

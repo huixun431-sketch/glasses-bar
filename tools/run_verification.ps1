@@ -42,6 +42,8 @@ if (-not $godotPath -and (Test-Path -LiteralPath $portableGodot)) { $godotPath =
 if ($godotPath) {
     & $godotPath --headless --path $root --editor --quit
     Assert-LastExitCode 'Godot editor import'
+    & $godotPath --headless --path $root --quit-after 300 res://tests/godot/BarProductionLayoutContractTests.tscn
+    Assert-LastExitCode 'Godot production bar layout contract'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/SmokeTests.tscn
     Assert-LastExitCode 'Godot smoke tests'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/Stage1AssetIntegrationTests.tscn

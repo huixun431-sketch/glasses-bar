@@ -29,9 +29,11 @@ public partial class PlayerController : CharacterBody3D
     {
         var head = GetNode<Node3D>("Head");
         _motor = new PlayerMotor(this, head);
-        var sensor = new InteractionSensor(
-            GetNode<RayCast3D>("Head/Camera3D/InteractionRay"),
-            GetNode<ShapeCast3D>("Head/Camera3D/InteractionProbe"));
+        var interactionRay = GetNode<RayCast3D>("Head/Camera3D/InteractionRay");
+        interactionRay.AddException(this);
+        var interactionProbe = GetNode<ShapeCast3D>("Head/Camera3D/InteractionProbe");
+        interactionProbe.AddException(this);
+        var sensor = new InteractionSensor(interactionRay, interactionProbe);
         _actionInput = new PlayerActionInput(this, _motor, sensor, _actions);
         var leftHandAnchor = GetNode<Node3D>("Head/Camera3D/LeftHandAnchor");
         var rightHandAnchor = GetNode<Node3D>("Head/Camera3D/RightHandAnchor");

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 
 namespace GlassesBar;
@@ -27,28 +28,50 @@ public sealed class GrayboxArchitectureBuilder
 
     public void Build()
     {
+        BuildCollisions();
+        BuildGrayboxVisuals();
+    }
+
+    public void BuildCollisions()
+    {
         AddStaticBox(_neutral, "FloorCollider", _layout.Floor.Position, _layout.Floor.Size);
+        foreach (var wall in BuildWallSegments())
+            AddStaticBox(_neutral, wall.Name + "Collider", wall.Position, wall.Size);
+        AddStaticBox(_neutral, "FrontBarCollider", _layout.FrontBarBody.Position, _layout.FrontBarBody.Size, 2);
+        AddStaticBox(_neutral, "RearWallShelfCollider", _layout.RearWallShelf.Position, _layout.RearWallShelf.Size, 2);
+        AddStaticBox(_neutral, "UpperBackCabinetCollider", _layout.UpperBackCabinet.Position, _layout.UpperBackCabinet.Size, 2);
+        for (var index = 0; index < _layout.CounterReturns.Count; index++)
+        {
+            var body = _layout.CounterReturns[index];
+            AddStaticBox(_neutral, body.Name.Replace("Counter", string.Empty) + "Collider", body.Position, body.Size, 2);
+        }
+        AddStaticBox(_neutral, "EastWasteModuleCollider", _layout.EastWasteModule.Position, _layout.EastWasteModule.Size, 2);
+
+        AddDoorLeafCollisions();
+        BuildAuthoritativeSharedParts();
+    }
+
+    public void BuildGrayboxVisuals()
+    {
         CreateBox(_reality, _layout.Floor, new Color("2d2424"));
         CreateBox(_glasses, _layout.Floor, new Color("071d29"), true);
-
-        foreach (var wall in _layout.Walls)
+        foreach (var wall in BuildWallSegments())
         {
-            AddStaticBox(_neutral, wall.Name + "Collider", wall.Position, wall.Size);
             CreateBox(_reality, wall, new Color("201d24"));
             CreateBox(_glasses, wall, new Color("052b3a"), true);
         }
+        BuildOpeningVisuals(_reality, false);
+        BuildOpeningVisuals(_glasses, true);
 
-        AddStaticBox(_neutral, "FrontBarCollider", _layout.FrontBarBody.Position, _layout.FrontBarBody.Size, 2);
         CreateBox(_reality, _layout.FrontBarBody, new Color("5b3524"));
         CreateBox(_glasses, _layout.FrontBarBody, new Color("075366"), true);
         CreateBox(_reality, _layout.FrontBarTop, new Color("8b5634"));
         CreateBox(_glasses, _layout.FrontBarTop, new Color("0f98a4"), true);
+        CreateBox(_reality, _layout.PlayerWorktop, new Color("76503a"));
+        CreateBox(_glasses, _layout.PlayerWorktop, new Color("0b8d9a"), true);
 
-        AddStaticBox(_neutral, "RearWallShelfCollider", _layout.RearWallShelf.Position, _layout.RearWallShelf.Size, 2);
         CreateBox(_reality, _layout.RearWallShelf, new Color("76503a"));
         CreateBox(_glasses, _layout.RearWallShelf, new Color("0b8d9a"), true);
-
-        AddStaticBox(_neutral, "UpperBackCabinetCollider", _layout.UpperBackCabinet.Position, _layout.UpperBackCabinet.Size, 2);
         CreateBox(_reality, _layout.UpperBackCabinet, new Color("3f2924"));
         CreateBox(_glasses, _layout.UpperBackCabinet, new Color("073f50"), true);
 
@@ -56,19 +79,153 @@ public sealed class GrayboxArchitectureBuilder
         {
             var body = _layout.CounterReturns[index];
             var top = _layout.CounterReturnTops[index];
-            AddStaticBox(_neutral, body.Name.Replace("Counter", string.Empty) + "Collider", body.Position, body.Size, 2);
             CreateBox(_reality, body, new Color("4b3027"));
             CreateBox(_glasses, body, new Color("075064"), true);
             CreateBox(_reality, top, new Color("76503a"));
             CreateBox(_glasses, top, new Color("0b8d9a"), true);
         }
+        CreateBox(_reality, _layout.EastWasteModule, new Color("4b3027"));
+        CreateBox(_glasses, _layout.EastWasteModule, new Color("075064"), true);
+        CreateBox(_reality, _layout.EastWasteModuleTop, new Color("76503a"));
+        CreateBox(_glasses, _layout.EastWasteModuleTop, new Color("0b8d9a"), true);
 
         BuildMergedBackRack(_reality, false);
         BuildMergedBackRack(_glasses, true);
         BuildFrontWorktop(_reality, false);
         BuildFrontWorktop(_glasses, true);
+        BuildCounterDetails(_reality, false);
+        BuildCounterDetails(_glasses, true);
         BuildExpandedLounge(_reality, false);
         BuildExpandedLounge(_glasses, true);
+        BuildLightRig(_reality, false);
+        BuildLightRig(_glasses, true);
+    }
+
+    private void BuildAuthoritativeSharedParts()
+    {
+        var gate = new StaticBody3D
+        {
+            Name = _layout.EmployeeGate.Name,
+            Position = _layout.EmployeeGate.Position,
+            CollisionLayer = 2
+        };
+        gate.AddChild(new MeshInstance3D
+        {
+            Name = "Panel",
+            Mesh = new BoxMesh { Size = _layout.EmployeeGate.Size },
+            MaterialOverride = MakeMaterial(new Color("60432f"))
+        });
+        gate.AddChild(new CollisionShape3D
+        {
+            Name = "CollisionShape3D",
+            Shape = new BoxShape3D { Size = _layout.EmployeeGate.Size }
+        });
+        gate.AddChild(new Marker3D
+        {
+            Name = "Hinge",
+            Position = new Vector3(0f, 0f, -_layout.EmployeeGate.Size.Z * 0.5f)
+        });
+        _neutral.AddChild(gate);
+
+        var manual = new StaticBody3D
+        {
+            Name = _layout.OperationManual.Name,
+            Position = _layout.OperationManual.Position,
+            RotationDegrees = new Vector3(0f, 0f, -20f),
+            CollisionLayer = 1
+        };
+        manual.AddChild(new MeshInstance3D
+        {
+            Name = "Cover",
+            Mesh = new BoxMesh { Size = _layout.OperationManual.Size },
+            MaterialOverride = MakeMaterial(new Color("8a4b34"))
+        });
+        manual.AddChild(new CollisionShape3D
+        {
+            Name = "CollisionShape3D",
+            Shape = new BoxShape3D { Size = _layout.OperationManual.Size }
+        });
+        manual.AddChild(new Marker3D { Name = "Grip", Position = new Vector3(0.12f, 0.05f, 0f) });
+        manual.AddChild(new Marker3D { Name = "Placement" });
+        manual.AddChild(new Marker3D { Name = "CoverPivot", Position = new Vector3(-0.23f, 0f, 0f) });
+        manual.AddChild(new Marker3D { Name = "PagePivotLeft", Position = new Vector3(-0.02f, 0.035f, 0f) });
+        manual.AddChild(new Marker3D { Name = "PagePivotRight", Position = new Vector3(0.02f, 0.035f, 0f) });
+        _neutral.AddChild(manual);
+    }
+
+    private IReadOnlyList<BarBoxLayout> BuildWallSegments()
+    {
+        var halfWidth = BarLayoutDefinition.RoomWidth * 0.5f;
+        var halfDepth = BarLayoutDefinition.RoomDepth * 0.5f;
+        var thickness = BarLayoutDefinition.WallThickness;
+        var height = BarLayoutDefinition.RoomHeight;
+        return new[]
+        {
+            new BarBoxLayout("WestWall", new Vector3(-halfWidth, height * 0.5f, 0f), new Vector3(thickness, height, BarLayoutDefinition.RoomDepth)),
+            new BarBoxLayout("EastWall", new Vector3(halfWidth, height * 0.5f, 0f), new Vector3(thickness, height, BarLayoutDefinition.RoomDepth)),
+
+            new BarBoxLayout("NorthWallWest", new Vector3(-0.675f, height * 0.5f, -halfDepth), new Vector3(10.65f, height, thickness)),
+            new BarBoxLayout("NorthWallEast", new Vector3(5.775f, height * 0.5f, -halfDepth), new Vector3(0.45f, height, thickness)),
+            new BarBoxLayout("NorthServiceHeader", new Vector3(5.10f, 2.80f, -halfDepth), new Vector3(0.90f, 1.40f, thickness)),
+
+            new BarBoxLayout("SouthWallWest", new Vector3(-3.85f, height * 0.5f, halfDepth), new Vector3(4.30f, height, thickness)),
+            new BarBoxLayout("SouthWallCenter", new Vector3(0.65f, height * 0.5f, halfDepth), new Vector3(1.90f, height, thickness)),
+            new BarBoxLayout("SouthWallEast", new Vector3(5.40f, height * 0.5f, halfDepth), new Vector3(1.20f, height, thickness)),
+            new BarBoxLayout("SouthEntryHeader", new Vector3(-1f, 2.80f, halfDepth), new Vector3(1.40f, 1.40f, thickness)),
+            new BarBoxLayout("SouthWindowSill", new Vector3(3.20f, 0.375f, halfDepth), new Vector3(3.20f, 0.75f, thickness)),
+            new BarBoxLayout("SouthWindowHeader", new Vector3(3.20f, 2.90f, halfDepth), new Vector3(3.20f, 1.20f, thickness))
+        };
+    }
+
+    private void AddDoorLeafCollisions()
+    {
+        var entry = _layout.SouthMainEntry;
+        var leafWidth = entry.Size.X * 0.5f;
+        AddStaticBox(_neutral, "SouthMainDoorLeftCollider",
+            entry.Position + new Vector3(-leafWidth * 0.5f, 0f, -0.06f),
+            new Vector3(leafWidth, entry.Size.Y, 0.08f));
+        AddStaticBox(_neutral, "SouthMainDoorRightCollider",
+            entry.Position + new Vector3(leafWidth * 0.5f, 0f, -0.06f),
+            new Vector3(leafWidth, entry.Size.Y, 0.08f));
+        var service = _layout.NorthEastServiceDoor;
+        AddStaticBox(_neutral, "NorthEastServiceDoorCollider",
+            service.Position + new Vector3(0f, 0f, 0.06f),
+            new Vector3(service.Size.X, service.Size.Y, 0.08f));
+    }
+
+    private void BuildOpeningVisuals(Node3D parent, bool glasses)
+    {
+        var windowGroup = new Node3D { Name = "SouthWindows" };
+        parent.AddChild(windowGroup);
+        foreach (var window in _layout.SouthWindows)
+            CreateBox(windowGroup,
+                new BarBoxLayout(window.Id, window.Position, window.Size),
+                glasses ? new Color("126078") : new Color("10233b"), true);
+
+        var doorGroup = new Node3D { Name = "Doors" };
+        parent.AddChild(doorGroup);
+        var entry = _layout.SouthMainEntry;
+        var leafWidth = entry.Size.X * 0.5f;
+        CreateBox(doorGroup,
+            new BarBoxLayout("SouthMainDoorLeft", entry.Position + new Vector3(-leafWidth * 0.5f, 0f, -0.06f), new Vector3(leafWidth, entry.Size.Y, 0.08f)),
+            glasses ? new Color("075064") : new Color("5a3829"), glasses);
+        CreateBox(doorGroup,
+            new BarBoxLayout("SouthMainDoorRight", entry.Position + new Vector3(leafWidth * 0.5f, 0f, -0.06f), new Vector3(leafWidth, entry.Size.Y, 0.08f)),
+            glasses ? new Color("075064") : new Color("5a3829"), glasses);
+        var handleColor = glasses ? new Color("3de1d4") : new Color("c79b58");
+        CreateBox(doorGroup,
+            new BarBoxLayout("SouthMainDoorLeftHandle", entry.Position + new Vector3(-0.10f, 0f, -0.12f), new Vector3(0.035f, 0.28f, 0.04f)),
+            handleColor, glasses);
+        CreateBox(doorGroup,
+            new BarBoxLayout("SouthMainDoorRightHandle", entry.Position + new Vector3(0.10f, 0f, -0.12f), new Vector3(0.035f, 0.28f, 0.04f)),
+            handleColor, glasses);
+        var service = _layout.NorthEastServiceDoor;
+        CreateBox(doorGroup,
+            new BarBoxLayout("NorthEastServiceDoor", service.Position + new Vector3(0f, 0f, 0.06f), new Vector3(service.Size.X, service.Size.Y, 0.08f)),
+            glasses ? new Color("075064") : new Color("4b3027"), glasses);
+        CreateBox(doorGroup,
+            new BarBoxLayout("NorthEastServiceDoorHandle", service.Position + new Vector3(-0.28f, 0f, 0.12f), new Vector3(0.035f, 0.24f, 0.04f)),
+            handleColor, glasses);
     }
 
     public void CreateStationVisual(BarStationLayout station, bool glasses)
@@ -155,7 +312,6 @@ public sealed class GrayboxArchitectureBuilder
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest = true
         });
-        CreateBox(parent, _layout.OperationManual, new Color("45f1d4"), true);
         parent.AddChild(new Label3D
         {
             Name = "OperationManualLabel",
@@ -170,56 +326,188 @@ public sealed class GrayboxArchitectureBuilder
         });
     }
 
+    private void BuildCounterDetails(Node3D parent, bool glasses)
+    {
+        var dark = glasses ? new Color("052c38") : new Color("211817");
+        var trim = glasses ? new Color("20aeb4") : new Color("9a6843");
+        var metal = glasses ? new Color("2bbac1") : new Color("72777b");
+
+        var facade = new Node3D { Name = "FrontFacadeDetails" };
+        parent.AddChild(facade);
+        CreateBox(facade, new BarBoxLayout("ToeRecess",
+            new Vector3(BarLayoutDefinition.BarCenterX, 0.06f, -1.185f),
+            new Vector3(BarLayoutDefinition.FrontOutlineWidth, 0.12f, 0.08f)), dark, glasses);
+        for (var divider = 1; divider < BarLayoutDefinition.FrontFacadeBayCount; divider++)
+        {
+            var x = BarLayoutDefinition.BarCenterX - BarLayoutDefinition.FrontOutlineWidth * 0.5f +
+                    divider * BarLayoutDefinition.FrontOutlineWidth / BarLayoutDefinition.FrontFacadeBayCount;
+            CreateBox(facade, new BarBoxLayout($"FacadeBayDivider{divider}",
+                new Vector3(x, 0.55f, -1.19f), new Vector3(0.035f, 0.82f, 0.04f)), trim, glasses);
+        }
+        CreateBox(facade, new BarBoxLayout("HandoffStrip",
+            new Vector3(BarLayoutDefinition.BarCenterX, BarLayoutDefinition.FrontBarTopHeight + 0.006f, -1.29f),
+            new Vector3(BarLayoutDefinition.HandoffStripWidth, 0.012f, 0.18f)), trim, glasses);
+
+        var workMarks = new Node3D { Name = "WorkboardParkingMarks" };
+        parent.AddChild(workMarks);
+        for (var index = 0; index < _layout.Workboard.Slots.Count; index++)
+            CreateBox(workMarks, new BarBoxLayout($"ParkingMark{index + 1}",
+                _layout.Workboard.Slots[index] + new Vector3(0f, -0.075f, 0f),
+                new Vector3(0.44f, 0.003f, 0.28f)), trim, glasses);
+
+        var wet = new Node3D { Name = "EastWetFixtures" };
+        parent.AddChild(wet);
+        CreateBox(wet, new BarBoxLayout("EastSinkOpening", new Vector3(0f, 0.965f, -2.05f),
+            new Vector3(0.40f, 0.025f, 0.50f)), dark, glasses);
+        CreateBox(wet, new BarBoxLayout("EastSinkBowl", new Vector3(0f, 0.84f, -2.05f),
+            new Vector3(0.36f, 0.22f, 0.46f)), metal, glasses);
+        CreateBox(wet, new BarBoxLayout("FaucetPost", new Vector3(0.28f, 1.13f, -2.05f),
+            new Vector3(0.055f, 0.34f, 0.055f)), metal, glasses);
+        CreateBox(wet, new BarBoxLayout("FaucetReach", new Vector3(0.17f, 1.29f, -2.05f),
+            new Vector3(0.22f, 0.045f, 0.055f)), metal, glasses);
+        CreateBox(wet, new BarBoxLayout("WasteOpening", new Vector3(-0.10f, 0.965f, -3.08f),
+            new Vector3(0.24f, 0.025f, 0.32f)), dark, glasses);
+        CreateBox(wet, new BarBoxLayout("InspectionDoor", new Vector3(-0.405f, 0.48f, -3.10f),
+            new Vector3(0.03f, 0.82f, 0.52f)), trim, glasses);
+
+        var dry = new Node3D { Name = "WestManualShelf" };
+        parent.AddChild(dry);
+        CreateRotatedBox(dry, _layout.ManualShelf, new Vector3(0f, 0f, -20f), trim, glasses);
+        CreateRotatedBox(dry, new BarBoxLayout("ManualNorthStop",
+            _layout.ManualShelf.Position + new Vector3(0f, 0.035f, -0.145f), new Vector3(0.07f, 0.025f, 0.07f)),
+            new Vector3(0f, 0f, -20f), trim, glasses);
+        CreateRotatedBox(dry, new BarBoxLayout("ManualSouthStop",
+            _layout.ManualShelf.Position + new Vector3(0f, 0.035f, 0.145f), new Vector3(0.07f, 0.025f, 0.07f)),
+            new Vector3(0f, 0f, -20f), trim, glasses);
+
+        var lower = new Node3D { Name = "RearLowerCabinetBays" };
+        parent.AddChild(lower);
+        for (var bay = 0; bay < 3; bay++)
+        {
+            var centerX = BarLayoutDefinition.BarCenterX - 1.87f + bay * 1.87f;
+            CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}",
+                new Vector3(centerX, 0.47f, -3.78f), new Vector3(1.82f, 0.90f, 0.24f)), dark, glasses);
+            CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}LeftPanel",
+                new Vector3(centerX - 0.22f, 0.47f, -3.645f), new Vector3(0.98f, 0.76f, 0.035f)), trim, glasses);
+            CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}RightPanel",
+                new Vector3(centerX + 0.22f, 0.47f, -3.62f), new Vector3(0.98f, 0.76f, 0.035f)), trim, glasses);
+        }
+    }
+
     private void BuildExpandedLounge(Node3D parent, bool glasses)
     {
-        for (var index = 0; index < 2; index++)
+        var tables = new Node3D { Name = "LoungeTables" };
+        var chairs = new Node3D { Name = "LoungeChairs" };
+        var stools = new Node3D { Name = "FrontStools" };
+        parent.AddChild(tables);
+        parent.AddChild(chairs);
+        parent.AddChild(stools);
+        foreach (var table in _layout.LoungeTables)
         {
-            var booth = _layout.Booths[index];
-            var table = _layout.LoungeTables[index];
-            CreateBox(
-                parent,
-                booth,
-                glasses ? new Color("093f58") : new Color("4f2630"),
-                glasses);
+            var root = new Node3D { Name = table.Name };
+            tables.AddChild(root);
             CreateCylinder(
-                parent,
-                table.Name,
-                table.Position,
+                root,
+                "Top",
+                Vector3.Zero,
                 table.Radius,
                 table.Height,
                 glasses ? new Color("087a83") : table.RealityColor,
                 glasses);
+            root.Position = table.Position;
+            CreateCylinder(root, "Pedestal", new Vector3(0f, -0.34f, 0f), 0.075f, 0.64f,
+                glasses ? new Color("1c8090") : new Color("4d5154"), glasses);
+            CreateCylinder(root, "Base", new Vector3(0f, -0.66f, 0f), 0.24f, 0.04f,
+                glasses ? new Color("1c8090") : new Color("4d5154"), glasses);
         }
-
-        CreateBox(
-            parent,
-            _layout.Booths[2],
-            glasses ? new Color("093f58") : new Color("4f2630"),
-            glasses);
-        var rearTable = _layout.LoungeTables[2];
-        CreateCylinder(
-            parent,
-            rearTable.Name,
-            rearTable.Position,
-            rearTable.Radius,
-            rearTable.Height,
-            glasses ? new Color("087a83") : rearTable.RealityColor,
-            glasses);
+        foreach (var chair in _layout.LoungeChairs)
+            BuildChair(chairs, chair, glasses);
         foreach (var stool in _layout.FrontStools)
+        {
+            var root = new Node3D { Name = stool.Name, Position = stool.Position };
+            stools.AddChild(root);
             CreateCylinder(
-                parent,
-                stool.Name,
-                stool.Position,
+                root,
+                "Seat",
+                Vector3.Zero,
                 stool.Radius,
                 stool.Height,
                 glasses ? new Color("087a83") : stool.RealityColor,
                 glasses);
-        foreach (var window in _layout.NightWindows)
-            CreateBox(
-                parent,
-                window,
-                glasses ? new Color("063a52") : new Color("07172c"),
-                true);
+            CreateCylinder(root, "Stem", new Vector3(0f, -0.36f, 0f), 0.035f, 0.66f,
+                glasses ? new Color("1c8090") : new Color("4d5154"), glasses);
+            CreateCylinder(root, "FootRing", new Vector3(0f, -0.49f, 0f), 0.15f, 0.025f,
+                glasses ? new Color("1c8090") : new Color("4d5154"), glasses);
+            CreateCylinder(root, "Base", new Vector3(0f, -0.75f, 0f), 0.18f, 0.035f,
+                glasses ? new Color("1c8090") : new Color("4d5154"), glasses);
+        }
+    }
+
+    private static void BuildChair(Node3D parent, BarChairLayout chair, bool glasses)
+    {
+        var root = new Node3D { Name = chair.Id, Position = chair.Position };
+        parent.AddChild(root);
+        var wood = glasses ? new Color("096174") : new Color("65412e");
+        var metal = glasses ? new Color("1c8090") : new Color("4d5154");
+        CreateBox(root, new BarBoxLayout("Seat", new Vector3(0f, 0.03f, 0f), new Vector3(0.46f, 0.06f, 0.50f)), wood, glasses);
+        CreateBox(root, new BarBoxLayout("Back", new Vector3(0f, 0.27f, -0.22f), new Vector3(0.46f, 0.34f, 0.06f)), wood, glasses);
+        foreach (var x in new[] { -0.18f, 0.18f })
+        foreach (var z in new[] { -0.18f, 0.18f })
+            CreateBox(root, new BarBoxLayout($"Leg{x}_{z}", new Vector3(x, -0.20f, z), new Vector3(0.035f, 0.40f, 0.035f)), metal, glasses);
+    }
+
+    private void BuildLightRig(Node3D parent, bool glasses)
+    {
+        var rig = new Node3D { Name = "BarLightRig" };
+        parent.AddChild(rig);
+        BuildFixtureGroup(rig, "Pendants", _layout.PendantFixtures, glasses, true);
+        BuildFixtureGroup(rig, "RearLinears", _layout.RearLinearFixtures, glasses, true);
+        BuildFixtureGroup(rig, "CustomerSconces", _layout.CustomerSconces, glasses, true);
+        BuildFixtureGroup(rig, "CustomerFills", _layout.CustomerFillLights, glasses, false);
+    }
+
+    private static void BuildFixtureGroup(Node3D rig, string name,
+        IReadOnlyList<BarLightFixtureLayout> fixtures, bool glasses, bool visibleGeometry)
+    {
+        var group = new Node3D { Name = name };
+        rig.AddChild(group);
+        foreach (var fixture in fixtures)
+        {
+            var root = new Node3D { Name = fixture.Id, Position = fixture.Position };
+            group.AddChild(root);
+            if (visibleGeometry && fixture.HasVisibleGeometry)
+                CreateCylinder(root, "Fixture", Vector3.Zero, 0.11f, 0.12f,
+                    glasses ? new Color("4ba9b8") : new Color("8b654a"), glasses);
+            var energy = fixture.Group switch
+            {
+                "front_pendant" => 3.4f,
+                "rear_linear" => 2.2f,
+                "customer_fill" => 1.35f,
+                _ => 1.6f
+            };
+            var range = fixture.Group == "customer_fill" ? 5.2f : 3.6f;
+            root.AddChild(new OmniLight3D
+            {
+                Name = "Light",
+                LightColor = glasses ? new Color("8cb8c4") : new Color("ffd0a0"),
+                LightEnergy = energy,
+                OmniRange = range,
+                ShadowEnabled = fixture.Group != "customer_fill"
+            });
+        }
+    }
+
+    private static void CreateRotatedBox(Node3D parent, BarBoxLayout layout, Vector3 rotationDegrees,
+        Color color, bool emissive)
+    {
+        parent.AddChild(new MeshInstance3D
+        {
+            Name = layout.Name,
+            Position = layout.Position,
+            RotationDegrees = rotationDegrees,
+            Mesh = new BoxMesh { Size = layout.Size },
+            MaterialOverride = MakeMaterial(color, emissive)
+        });
     }
 
     internal static void AddStaticBox(

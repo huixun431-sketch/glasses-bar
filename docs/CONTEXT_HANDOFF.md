@@ -4,7 +4,7 @@
 
 本文件是长任务与上下文压缩后的首读入口。只保留当前决策、验证状态、阻塞和下一动作；详细内容回到链接文档读取。
 
-## P0｜2026-08-02 完整酒吧重构设计已逐节批准
+## P0｜2026-08-02 完整酒吧灰盒已完成，等待用户批准尺度与方位
 
 - 当前活动任务是按蓝图和实机灰盒重构完整酒吧，在 Blender 制作模块化正式模型后替换 Godot 灰盒视觉。玩家必须位于 U 形吧台内部；北侧后吧、南侧前吧、东西侧台向北延伸，玩家主要向南面向客人。
 - 用户已批准建筑、U 形吧台、前吧、东西侧站点、后吧、客区、门窗、照明、美术材质、双视觉状态和 GLB/Godot 交付章节。权威规格为 `docs/superpowers/specs/2026-08-02-bar-layout-production-model-design.md`。
@@ -16,10 +16,30 @@
 - 两种视觉状态共用主模型、碰撞、锚点和玩法状态。摘镜状态温暖模糊；戴镜状态切换冷色老化材质，并显示少量无碰撞磨损叠加件。不得制作两套完整模型。
 - 正式资产采用模块化 GLB 和手工 Godot 包装场景；`NeutralGameplay`、`BarLayoutDefinition` 和既有稳定 ID 保持权威。灰盒必须保留到资产、交互、双世界、回归和实际截图验收全部通过。
 - 取消全部附着于前吧的连续脚踏杆、固定脚踏板和替代脚踏结构，但保留前吧客侧 0.08 m 深、0.12 m 净高踢脚槽以及每张吧椅自身的独立脚环。手册需拿取后翻开；当前只处理模型、`Grip`、`Placement` 和翻页枢轴，阅读/翻页/放回动画延期。
-- 设计规格已获用户批准，详细测试优先实施计划已写入 `docs/superpowers/plans/2026-08-02-bar-layout-production-model.md`，共 13 个任务。尚未开始 Blender/Godot 实施，也未运行本轮视觉验收。
+- 设计规格已获用户批准，详细测试优先实施计划已写入 `docs/superpowers/plans/2026-08-02-bar-layout-production-model.md`，共 13 个任务。Task 1–4 已完成；Task 5 的 Forward+ 截图、逐张检查和哈希已完成，当前只等待用户明确批准灰盒尺度与方位。
 - 实施顺序锁定为：布局契约测试 → 建筑/交互/客区/照明完整灰盒 → Forward+ 实机截图并由用户批准尺度方位 → GLB 合同与 Blender 模块化正式资产 → 材质/几何用户复核 → Godot 包装、双世界切换、灰盒回退和最终截图。未通过灰盒批准不得开始正式 Blender 几何。
 - 当前活动 Goal 已选择在本对话使用 `superpowers:executing-plans`：先验证并融合隔离工作树中的 Stage 1/2 建模成果与 `modeling-glasses-bar-assets` Skill，再从完整酒吧计划 Task 1 开始执行；两个用户验收关口保持不变。
 - 按本轮用户提供的仓库指令提交阶段性成果；不推送或发布。现有 `export_presets.cfg` 用户改动必须保留且不得纳入任何提交。
+
+### P1｜完整灰盒实现与验证证据
+
+- `BarLayoutDefinition` 已成为 12.00 m × 9.00 m × 3.50 m、1.20/0.96 m 错层台面、1.83 m 眼高、1.40 m 操作通道、0.38 m 抽屉行程的权威合同；锁定南侧 1.40 m 双门、东侧单窗、北东 0.90 m 门、八抽屉/六上柜门、六吧椅、三桌十二椅和 3/2/4/2 灯组。
+- 运行时已拆分权威碰撞与可替换灰盒视觉，重建分段墙体、门窗、U 形台、东湿/西干功能、半高员工门、手册架/唯一手册节点及锚点、三湾后吧、顾客家具和现实/眼镜专用灯组；旧 booth、三窗、泛用全局灯和旧尺度已移除。
+- 玩家起点固定为 U 内 `(-2.40, 0.915, -2.70)`，眼高 1.83 m，面向世界南 `+Z`；交互射线/探针显式排除玩家自身碰撞体。柜体 API 现按布局显式接收抽屉行程，不再由储物深度推导。
+- 一键回归 `powershell -ExecutionPolicy Bypass -File tools/run_verification.ps1` 退出码 0：资产 16 项/0 错误、领域测试 28/28、Debug/Release 0 警告/0 错误，`BAR_PRODUCTION_LAYOUT_CONTRACT_PASS`、冒烟、Stage 1、Stage 2、输入和流程测试全部 PASS。
+- 已用 Godot 4.7.1 Forward+ Movie Maker（RTX 5070 Laptop GPU，1280×720）生成并人工检查 `artifacts/visual_review_bar_graybox/` 的 11 张命名审批图；截图为 ignored 证据，不纳入 Git。最终 SHA-256：
+  - `01_overhead_orientation.png` `14ee6bd75c2225862d9fcc2367f6c3b4178270f925d5d5f02057ab58619b2c82`
+  - `02_player_eye_south.png` `4bc7dbaef26e30f9de831b9bf45cf060cac451740b08b4229df7313193bbc560`
+  - `03_west_north_u_interior.png` `301bcde0d0645549a9229b044c98095b142c5bcbe4cea32de60d8d7e09266f07`
+  - `04_east_wet_side.png` `31ffd2c2d1103467f2c44aae0b4a9542604f9232a3a83acb4be9d06b2b0fe618`
+  - `05_west_manual_shelf.png` `1af280293127b0d359ed3c0b98feb8dc8e324fce8adca4eaa42eaea22fe4c692`
+  - `06_rear_bar_open_door.png` `291e623d9b0af0b8ce93f32f98ec4612b9f3f1fe01da14559a910396b42389f5`
+  - `07_open_ice_drawer_reach.png` `9d4135c43e47e268c836420109bf83763dac026fe8a73dd1959cd06700a4ba14`
+  - `08_customer_chairs_pulled.png` `67d50568399b164a4e2d8074bac7e3621785a9a137b75dd3b1d2572165274598`
+  - `09_south_entry_window.png` `e019d9bb095deee9b4a2e9d56303503839321c4cc87ab6388c5ee070b0ab3862`
+  - `10_reality_lighting.png` `188d13d6302ac987fce404f361b38f8df793d308c76144228ebf5ee1351fd407`
+  - `11_glasses_lighting.png` `9593470fec7ff3eb2887ea8bc43001ad90c091541d0b1c87dae6c1f4a7fc1936`
+- 当前阻塞是计划规定的用户审批门：未收到明确“灰盒尺度与方位通过”前，不执行 Task 6，不建立六模块 GLB 合同，也不开始 Blender 正式几何。
 
 ## P1｜2026-08-02 资产批次建模 Skill 已验证并归档
 

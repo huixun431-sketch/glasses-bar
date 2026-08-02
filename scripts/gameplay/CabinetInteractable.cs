@@ -30,7 +30,7 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
     public float OpenTravelDistance => _closedPosition.DistanceTo(_openPosition);
 
     public void Configure(string id, CabinetPartKind kind, Vector3 center, Vector3 size, bool hingeOnLeft,
-        Vector3 outwardDirection, float storageDepth = 0.72f)
+        Vector3 outwardDirection, float storageDepth, float openTravelDistance)
     {
         Name = id;
         _kind = kind;
@@ -52,11 +52,11 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
         }
         else
         {
+            if (openTravelDistance <= 0f)
+                throw new System.ArgumentOutOfRangeException(nameof(openTravelDistance),
+                    "Drawer travel must be positive.");
             Position = center;
-            // The low rear bar no longer occupies the work aisle, so the deep front trays can
-            // expose most of their useful depth without pinching the two-person passage.
-            var openTravel = Mathf.Clamp(storageDepth * 0.82f, 0.56f, 0.68f);
-            _openPosition = center + _outwardDirection * openTravel;
+            _openPosition = center + _outwardDirection * openTravelDistance;
         }
         _closedPosition = Position;
 
@@ -126,8 +126,7 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
     {
         if (open)
         {
-            // Only one storage front may project into the work aisle at a time, matching a safe
-            // real-world bar workflow and preserving the extra clearance added for two people.
+            // Only one storage front may project into the work aisle at a time.
             foreach (var node in GetTree().GetNodesInGroup("cabinet_storage"))
                 if (node is CabinetInteractable other && other != this && other.IsOpen)
                     other.SetOpen(false, animate);

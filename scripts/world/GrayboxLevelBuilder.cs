@@ -31,7 +31,8 @@ public partial class GrayboxLevelBuilder : Node3D
             neutral,
             reality,
             glasses);
-        architecture.Build();
+        architecture.BuildCollisions();
+        architecture.BuildGrayboxVisuals();
 
         var gameplay = new GameplaySceneComposer(
             this,
