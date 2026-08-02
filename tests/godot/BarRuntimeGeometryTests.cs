@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Godot;
 
 namespace GlassesBar.Tests;
@@ -34,6 +35,31 @@ public partial class BarRuntimeGeometryTests : Node
 
             Require(body.GetAabb().Size.X > 7f && guestTop.GetAabb().Size.X > 9f,
                 "new front geometry visibly spans the approved length");
+
+            var forbiddenNames = new[]
+            {
+                "MergedBottleRackBack", "MergedShelf0", "MergedShelf1",
+                "BottleRackBackCompatibility", "EastWetFixtures",
+                "EastWetOuterSupport", "EastWetInnerSupport", "InspectionDoor",
+                "FrontBarWestChamfer", "FrontBarEastChamfer"
+            };
+            var realityDescendants = reality.FindChildren("*", string.Empty, true, false);
+            Require(forbiddenNames.All(name =>
+                    realityDescendants.All(node => node.Name.ToString() != name)),
+                "obsolete Z3 geometry is hard-deleted");
+            Require(Enumerable.Range(0, 14).All(index =>
+                    realityDescendants.All(node => node.Name.ToString() != $"BackLiquor{index}")),
+                "placeholder rack bottles are absent");
+            var rackNodes = realityDescendants.Count(node =>
+                node.Name.ToString().StartsWith("BottleRackBay", StringComparison.Ordinal));
+            Require(rackNodes == 15,
+                "five rack bays contain one back and two shelves each");
+            Require(reality.HasNode("FrontEastSinkFixtures") &&
+                    !reality.HasNode("EastWetFixtures"),
+                "front east sink replaces the obsolete side wet zone");
+            Require(neutral.GetNodeOrNull<Node3D>("sink_left_drawer_upper") is null &&
+                    neutral.GetNodeOrNull<Node3D>("sink_left_drawer_lower") is null,
+                "sink underbay has no legacy drawer nodes");
             GD.Print("BAR_RUNTIME_GEOMETRY_PASS");
             GetTree().Quit(0);
         }

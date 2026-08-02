@@ -47,7 +47,6 @@ public sealed class GrayboxArchitectureBuilder
         BarPolygonGeometry.CreateCollisionBody(
             _neutral, "GuestCounterTopCollider", _layout.FrontGuestTopFootprint, 2);
         AddStaticBox(_neutral, "RearWallShelfCollider", _layout.RearWallShelf.Position, _layout.RearWallShelf.Size, 2);
-        AddStaticBox(_neutral, "UpperBackCabinetCollider", _layout.UpperBackCabinet.Position, _layout.UpperBackCabinet.Size, 2);
         for (var index = 0; index < _layout.CounterReturns.Count; index++)
         {
             var body = _layout.CounterReturns[index];
@@ -94,8 +93,8 @@ public sealed class GrayboxArchitectureBuilder
 
         CreateBox(_reality, _layout.RearWallShelf, new Color("76503a"));
         CreateBox(_glasses, _layout.RearWallShelf, new Color("0b8d9a"), true);
-        CreateBox(_reality, _layout.UpperBackCabinet, new Color("3f2924"));
-        CreateBox(_glasses, _layout.UpperBackCabinet, new Color("073f50"), true);
+        BuildUpperCabinetShells(_reality, false);
+        BuildUpperCabinetShells(_glasses, true);
 
         foreach (var body in _layout.CounterReturns)
         {
@@ -359,19 +358,9 @@ public sealed class GrayboxArchitectureBuilder
 
         var facade = new Node3D { Name = "FrontFacadeDetails" };
         parent.AddChild(facade);
-        CreateBox(facade, new BarBoxLayout("ToeRecess",
-            new Vector3(BarLayoutDefinition.BarCenterX, 0.06f, -1.185f),
-            new Vector3(BarLayoutDefinition.FrontOutlineWidth, 0.12f, 0.08f)), dark, glasses);
-        for (var divider = 1; divider < BarLayoutDefinition.FrontFacadeBayCount; divider++)
-        {
-            var x = BarLayoutDefinition.BarCenterX - BarLayoutDefinition.FrontOutlineWidth * 0.5f +
-                    divider * BarLayoutDefinition.FrontOutlineWidth / BarLayoutDefinition.FrontFacadeBayCount;
-            CreateBox(facade, new BarBoxLayout($"FacadeBayDivider{divider}",
-                new Vector3(x, 0.55f, -1.19f), new Vector3(0.035f, 0.82f, 0.04f)), trim, glasses);
-        }
         CreateBox(facade, new BarBoxLayout("HandoffStrip",
-            new Vector3(BarLayoutDefinition.BarCenterX, BarLayoutDefinition.FrontBarTopHeight + 0.006f, -1.29f),
-            new Vector3(BarLayoutDefinition.HandoffStripWidth, 0.012f, 0.18f)), trim, glasses);
+            new Vector3(-0.60f, BarLayoutDefinition.FrontBarTopHeight + 0.006f, -1.00f),
+            new Vector3(BarLayoutDefinition.HandoffStripWidth, 0.012f, 0.20f)), trim, glasses);
 
         var workMarks = new Node3D { Name = "WorkboardParkingMarks" };
         parent.AddChild(workMarks);
@@ -380,20 +369,21 @@ public sealed class GrayboxArchitectureBuilder
                 _layout.Workboard.Slots[index] + new Vector3(0f, -0.075f, 0f),
                 new Vector3(0.44f, 0.003f, 0.28f)), trim, glasses);
 
-        var wet = new Node3D { Name = "EastWetFixtures" };
-        parent.AddChild(wet);
-        CreateBox(wet, new BarBoxLayout("EastSinkOpening", new Vector3(0f, 0.965f, -2.05f),
-            new Vector3(0.40f, 0.025f, 0.50f)), dark, glasses);
-        CreateBox(wet, new BarBoxLayout("EastSinkBowl", new Vector3(0f, 0.84f, -2.05f),
-            new Vector3(0.36f, 0.22f, 0.46f)), metal, glasses);
-        CreateBox(wet, new BarBoxLayout("FaucetPost", new Vector3(0.28f, 1.13f, -2.05f),
-            new Vector3(0.055f, 0.34f, 0.055f)), metal, glasses);
-        CreateBox(wet, new BarBoxLayout("FaucetReach", new Vector3(0.17f, 1.29f, -2.05f),
-            new Vector3(0.22f, 0.045f, 0.055f)), metal, glasses);
-        CreateBox(wet, new BarBoxLayout("WasteOpening", new Vector3(-0.10f, 0.965f, -3.08f),
-            new Vector3(0.24f, 0.025f, 0.32f)), dark, glasses);
-        CreateBox(wet, new BarBoxLayout("InspectionDoor", new Vector3(-0.405f, 0.48f, -3.10f),
-            new Vector3(0.03f, 0.82f, 0.52f)), trim, glasses);
+        var sink = _layout.Stations[2];
+        var sinkFixtures = new Node3D { Name = "FrontEastSinkFixtures" };
+        parent.AddChild(sinkFixtures);
+        CreateBox(sinkFixtures, new BarBoxLayout("SinkOpening",
+            new Vector3(sink.Position.X, BarLayoutDefinition.PlayerWorktopHeight + 0.002f, sink.Position.Z),
+            new Vector3(0.76f, 0.012f, 0.56f)), dark, glasses);
+        CreateBox(sinkFixtures, new BarBoxLayout("SinkBowl",
+            new Vector3(sink.Position.X, BarLayoutDefinition.PlayerWorktopHeight - 0.13f, sink.Position.Z),
+            new Vector3(0.70f, 0.24f, 0.50f)), metal, glasses);
+        CreateBox(sinkFixtures, new BarBoxLayout("FaucetPost",
+            new Vector3(sink.Position.X + 0.32f, BarLayoutDefinition.PlayerWorktopHeight + 0.18f, sink.Position.Z - 0.18f),
+            new Vector3(0.055f, 0.36f, 0.055f)), metal, glasses);
+        CreateBox(sinkFixtures, new BarBoxLayout("FaucetReach",
+            new Vector3(sink.Position.X + 0.20f, BarLayoutDefinition.PlayerWorktopHeight + 0.34f, sink.Position.Z - 0.07f),
+            new Vector3(0.24f, 0.045f, 0.22f)), metal, glasses);
 
         var dry = new Node3D { Name = "WestManualShelf" };
         parent.AddChild(dry);
@@ -407,15 +397,48 @@ public sealed class GrayboxArchitectureBuilder
 
         var lower = new Node3D { Name = "RearLowerCabinetBays" };
         parent.AddChild(lower);
-        for (var bay = 0; bay < 3; bay++)
+        for (var bay = 0; bay < _layout.BottleRackBays.Count; bay++)
         {
-            var centerX = BarLayoutDefinition.BarCenterX - 1.87f + bay * 1.87f;
-            CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}",
-                new Vector3(centerX, 0.47f, -3.78f), new Vector3(1.82f, 0.90f, 0.24f)), dark, glasses);
-            CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}LeftPanel",
-                new Vector3(centerX - 0.22f, 0.47f, -3.645f), new Vector3(0.98f, 0.76f, 0.035f)), trim, glasses);
-            CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}RightPanel",
-                new Vector3(centerX + 0.22f, 0.47f, -3.62f), new Vector3(0.98f, 0.76f, 0.035f)), trim, glasses);
+            var centerX = _layout.BottleRackBays[bay].Back.Position.X;
+            CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}Back",
+                new Vector3(centerX, 0.52f, -4.05f),
+                new Vector3(BarLayoutDefinition.RearBayWidth - 0.10f, 1.0f, 0.04f)), dark, glasses);
+            CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}Base",
+                new Vector3(centerX, 0.04f, -3.79f),
+                new Vector3(BarLayoutDefinition.RearBayWidth - 0.10f, 0.08f, 0.52f)), dark, glasses);
+            foreach (var side in new[] { -1f, 1f })
+                CreateBox(lower, new BarBoxLayout(
+                    $"RearLowerBay{bay + 1}{(side < 0f ? "Left" : "Right")}Side",
+                    new Vector3(centerX + side * (BarLayoutDefinition.RearBayWidth * 0.5f - 0.07f), 0.52f, -3.79f),
+                    new Vector3(0.04f, 1.0f, 0.52f)), trim, glasses);
+        }
+    }
+
+    private void BuildUpperCabinetShells(Node3D parent, bool glasses)
+    {
+        var root = new Node3D { Name = "UpperBackCabinet" };
+        parent.AddChild(root);
+        var body = glasses ? new Color("073f50") : new Color("3f2924");
+        var trim = glasses ? new Color("0b8290") : new Color("6e4935");
+        for (var bay = 0; bay < _layout.BottleRackBays.Count; bay++)
+        {
+            var centerX = _layout.BottleRackBays[bay].Back.Position.X;
+            var clearWidth = BarLayoutDefinition.RearBayWidth - 0.10f;
+            CreateBox(root, new BarBoxLayout($"UpperBay{bay + 1}Back",
+                new Vector3(centerX, BarLayoutDefinition.UpperCabinetCenterHeight, -3.99f),
+                new Vector3(clearWidth, 1.30f, 0.04f)), body, glasses);
+            CreateBox(root, new BarBoxLayout($"UpperBay{bay + 1}Bottom",
+                new Vector3(centerX, BarLayoutDefinition.UpperCabinetBottomHeight + 0.02f, -3.80f),
+                new Vector3(clearWidth, 0.04f, 0.38f)), body, glasses);
+            CreateBox(root, new BarBoxLayout($"UpperBay{bay + 1}Top",
+                new Vector3(centerX, BarLayoutDefinition.UpperCabinetTopHeight - 0.02f, -3.80f),
+                new Vector3(clearWidth, 0.04f, 0.38f)), body, glasses);
+            foreach (var side in new[] { -1f, 1f })
+                CreateBox(root, new BarBoxLayout(
+                    $"UpperBay{bay + 1}{(side < 0f ? "Left" : "Right")}Side",
+                    new Vector3(centerX + side * (BarLayoutDefinition.RearBayWidth * 0.5f - 0.07f),
+                        BarLayoutDefinition.UpperCabinetCenterHeight, -3.80f),
+                    new Vector3(0.04f, 1.30f, 0.38f)), trim, glasses);
         }
     }
 
