@@ -443,3 +443,41 @@
 
 - 等待用户复核最终关键帧。
 - 仅在用户明确批准后执行 Task 7：取消五项阶段 2 占位标记、更新正式状态并做最终收尾验证。
+
+## 2026-08-02 — Asset-modeling Skill Task 1 RED baseline
+
+### 已完成的事项
+
+- 新增三份可复用的资产批次压力场景和两份隔离的 fresh-context 基线记录；原始转录仅保存在被忽略的 `.superpowers/sdd/.../scratch/`。
+- 按用户要求缩减测试预算：完成轮廓检查点与 Forward+ 材质快捷场景；完成压力场景仅保留夹具，未派发。
+- 已确认 `.agents/skills/modeling-glasses-bar-assets` 不存在。
+
+### 关键决策
+
+- 两个已执行场景均未跳过必要门槛，因此不虚构 RED 纪律失败；现有证据仅将后续工作定位为技术/框架辅助，不能声称完成压力场景已验证。
+- 未创建目标 Skill 生产文件，也未进入 Stage 3。
+
+### 未完成的待办
+
+- 后续任务在用户许可的范围内继续 Skill 的设计、实现与验证；如需更完整的基线覆盖，可另行执行 `completion-pressure` 场景。
+
+## 2026-08-02 — Asset-modeling Skill static implementation
+
+### 已完成的事项
+
+- 已静态完成仓库本地 Skill `.agents/skills/modeling-glasses-bar-assets/`：精简 `SKILL.md`、匹配的 `agents/openai.yaml`、两个标准库脚本、三个按阶段路由的 reference，以及七个设计指定模板。
+- 框架明确生成合同、Blender 生成／审图、合同检查、Godot 行为集成／Forward+ 捕获和批次记录骨架；不注入未经批准的造型、材质、容量或玩法值。
+- 已删除被用户禁止保留的 `tests/tools/test_modeling_skill_framework.py` 与目录占位 `.gitkeep`；保留既有 RED 场景及基线记录，未新增任何运行。
+- 已更新 Skill 测试状态文档，并写入 `.superpowers/sdd/2026-08-02-modeling-glasses-bar-assets-skill/static-implementation-report.md`。
+
+### 关键决策
+
+- 用户明确覆盖原计划的测试与验证步骤；本轮未运行单元测试、`py_compile`、`quick_validate`、代理压力／前向测试、Blender、Godot 或完整项目验证，因此交付状态是“已实现但未测试／未验证”。
+- Skill 强制依赖 `develop-glasses-bar-godot`，保留两次用户硬检查点、ignored artifacts／正式路径／清单门禁、真实 Forward+ 图片人工审查、稳定 ID、手写包装、项目玩法状态所有权和灰盒回退。
+- Skill 与脚本不自动批准、推送、合并、发布、重写历史或启动下一资产阶段。
+- 未创建或修改任何 Stage 3 配置、合同、模型、包装、清单、截图或资产状态。
+
+### 未完成的待办
+
+- 仅在用户另行批准后，补做脚本单元测试、语法检查、Skill 静态校验与 fresh-context 前向场景，并根据真实失败做最小修正。
+- 任何新资产批次仍需新的范围／设计与显式用户授权；Stage 3 继续暂停。

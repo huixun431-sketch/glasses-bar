@@ -4,6 +4,18 @@
 
 本文件是长任务与上下文压缩后的首读入口。只保留当前决策、验证状态、阻塞和下一动作；详细内容回到链接文档读取。
 
+## P0｜2026-08-02 资产批次建模 Skill 已静态实现但未经测试
+
+- 仓库本地 `.agents/skills/modeling-glasses-bar-assets/` 已实现精简 Skill、UI 元数据、标准库批次初始化／阶段校验脚本、三个按阶段路由的 reference 和七个批次骨架模板；框架要求项目 Skill `develop-glasses-bar-godot`，并固化两次显式用户检查点、ignored artifacts／正式路径／清单门禁、真实 Godot Forward+ 截图人工审查、稳定 ID、手写包装与灰盒回退。
+- 用户明确禁止本轮继续运行任何测试或验证。未运行框架单测、Python 编译、Skill `quick_validate`、代理压力／前向测试、Blender、Godot 或完整项目验证；当前只能标记为“已实现但未测试／未验证”，不得声称脚本或 Skill 行为已通过。
+- 被中断的 `tests/tools/test_modeling_skill_framework.py` 已按要求从最终树删除；既有 RED 场景／基线证据保留但未新增运行。测试状态见 `docs/skills/MODELING_GLASSES_BAR_ASSETS_SKILL_TESTS.md`，静态实现报告见 `.superpowers/sdd/2026-08-02-modeling-glasses-bar-assets-skill/static-implementation-report.md`。
+- 未创建或修改 Stage 3 配置、合同、模型、包装、清单、截图或资产状态；Stage 3 继续暂停。Skill 不自动批准、推送、合并、发布或进入下一阶段。
+
+## P1｜Skill 后续安全动作
+
+1. 仅在用户另行授权后补做框架单测、语法／Skill 校验、fresh-context 前向场景以及必要的最小修正。
+2. 即使后续验证通过，也必须先取得新批次范围与设计批准；不得把阶段 1／2 或本次 Skill 实现视为 Stage 3 授权。
+
 ## P0｜2026-08-02 阶段 2 手持资产已完成并获用户批准
 
 - 用户已明确通过轮廓检查点与最终 Godot Forward+ 检查点；`traditional_filter`、`bean_scoop`、`ice_tongs`、`jigger_small`、`jigger_large` 已完成 GLB、手写包装、世界／手持表现和清单切换。

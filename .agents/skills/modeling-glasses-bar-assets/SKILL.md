@@ -1,85 +1,45 @@
 ---
 name: modeling-glasses-bar-assets
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Use when planning, generating, reviewing, integrating, or completing a Blender-to-GLB asset batch in the Glasses Bar Godot repository.
 ---
 
-# Modeling Glasses Bar Assets
+# Model Glasses Bar Assets
 
-## Overview
+Use this repository-local framework to keep an asset batch inside the project's approval, evidence, and fallback boundaries.
 
-[TODO: 1-2 sentences explaining what this skill enables]
+**REQUIRED SUB-SKILL:** Use `develop-glasses-bar-godot` for the project gameplay and asset-handoff contract.
 
-## Structuring This Skill
+## Establish context
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+Before changing a batch, read:
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" -> "Reading" -> "Creating" -> "Editing"
-- Structure: ## Overview -> ## Workflow Decision Tree -> ## Step 1 -> ## Step 2...
+1. `docs/CONTEXT_HANDOFF.md`.
+2. `docs/CORE_INTERACTION_ASSET_MODELING_PLAN.md` and the approved design for the current batch.
+3. The current batch JSON configuration.
+4. `.agents/skills/develop-glasses-bar-godot/references/asset-handoff.md`.
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" -> "Merge PDFs" -> "Split PDFs" -> "Extract Text"
-- Structure: ## Overview -> ## Quick Start -> ## Task Category 1 -> ## Task Category 2...
+Do not infer approval from an earlier batch. Do not invent silhouettes, materials, dimensions, capacities, recipes, balance, gameplay values, customer content, or final art.
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" -> "Colors" -> "Typography" -> "Features"
-- Structure: ## Overview -> ## Guidelines -> ## Specifications -> ## Usage...
+## Route the current phase
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" -> numbered capability list
-- Structure: ## Overview -> ## Core Capabilities -> ### 1. Feature -> ### 2. Feature...
+Read exactly the reference for the phase being performed:
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+| Current phase | Read this reference |
+|---|---|
+| `design` | [framework-contract.md](references/framework-contract.md) |
+| `silhouette-review` | [review-checkpoints.md](references/review-checkpoints.md) |
+| `formal-candidate` | [workflow.md](references/workflow.md) |
+| `forward-plus-review` | [review-checkpoints.md](references/review-checkpoints.md) |
+| `complete` | [workflow.md](references/workflow.md) |
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+Run `scripts/validate_asset_batch.py` before and after every phase. An error means the phase is incomplete; never reinterpret missing Blender, Godot, screenshot, approval, or project-verification evidence as success.
 
-## [TODO: Replace with the first main section based on chosen structure]
+## Non-negotiable gates
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+- Stop for explicit user approval after the neutral Blender silhouette review. Before that approval, candidates and screenshots stay under ignored `artifacts/`; do not create formal GLBs, hand-authored wrappers, or manifest switches.
+- After checkpoint 1, formal GLBs may be visual children of hand-authored wrapper scenes. Stable IDs, gameplay collision/state, hand ownership, reality interaction, glasses-world observation, and graybox fallback remain project-owned.
+- Keep every batch manifest entry `placeholder=true` until behavior integration succeeds and actual Godot Forward+ screenshots are captured and visually inspected.
+- Stop again for explicit user approval of the Forward+ evidence. Parameters, Blender renders, headless output, or claimed commands do not replace actual Forward+ images.
+- Only after checkpoint 2 may the batch manifest entries switch to `placeholder=false`. Run the complete project verification, record its real result, and update the batch record, project status documents, context handoff, and root `progress.md`.
 
-## Resources (optional)
-
-Create only the resource directories this skill actually needs. Delete this section if no resources are required.
-
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
-
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
-
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
-
-**Note:** Scripts may be executed without loading into context, but can still be read by Codex for patching or environment adjustments.
-
-### references/
-Documentation and reference material intended to be loaded into context to inform Codex's process and thinking.
-
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
-
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Codex should reference while working.
-
-### assets/
-Files not intended to be loaded into context, but rather used within the output Codex produces.
-
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
-
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
-
----
-
-**Not every skill requires all three types of resources.**
+Track source scripts, hand-authored wrappers, contracts, and records. Keep `.blend`, review PNGs, candidate outputs, `artifacts/`, and manually edited `.glb.import` files untracked. Never auto-approve, auto-push, auto-merge, publish, rewrite history, or begin another asset stage.

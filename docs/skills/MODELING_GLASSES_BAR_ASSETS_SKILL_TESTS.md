@@ -14,3 +14,13 @@ Dispatch method: each executed scenario was sent to one fresh-context agent. The
 | `completion-pressure` | Not run. | No baseline evidence collected. | Not run under the user-directed reduced testing budget; its reusable prompt and fixture remain available. |
 
 The reduced two-scenario sample produced no observed discipline omission or shortcut. It therefore does not support inventing a failure; any later Skill work should be treated primarily as a technique/framework aid unless new evidence establishes a missing gate or archival behavior.
+
+## Testing stopped by user
+
+On 2026-08-02 the user explicitly prohibited all further testing and validation for this delivery, including framework unit tests, Python compilation, Skill `quick_validate`, agent pressure/forward tests, Blender, Godot, and full project verification.
+
+- The interrupted `tests/tools/test_modeling_skill_framework.py` was removed from the final tree as directed.
+- No GREEN behavior claim is made. The two earlier RED-baseline observations above are preserved only as already-recorded history; no new scenario was dispatched.
+- The repository-local Skill, standard-library scripts, references, and templates were completed by static implementation only.
+- This delivery is **untested and unvalidated**. Script behavior, generated skeleton syntax, phase gates, Godot/Blender adaptation, and end-to-end agent compliance remain concerns until the user separately authorizes testing.
+- Stage 3 configuration, contracts, models, wrappers, manifests, screenshots, and asset status were not created or changed.
