@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Glasses Bar Assets"
+  short_description: "Run guarded Blender-to-Godot asset batches"
+  default_prompt: "Use $modeling-glasses-bar-assets to scaffold and execute a reviewed asset batch in the Glasses Bar repository."
