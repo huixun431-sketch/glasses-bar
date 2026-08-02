@@ -18,7 +18,7 @@
 
 ## 检查点 1 证据
 
-- 候选资产验证：`5/5 OK`；临时清单：`artifacts/stage2_checkpoint1/review_manifest.json`。
+- 候选资产验证：`5/5 OK`，`errors=0`；临时清单：`artifacts/stage2_checkpoint1/review_manifest.json`。
 - 中性轮廓审核图：
   - `artifacts/stage2_checkpoint1/stage2_lineup_front.png`
   - `artifacts/stage2_checkpoint1/stage2_lineup_three_quarter.png`
