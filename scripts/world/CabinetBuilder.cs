@@ -44,7 +44,8 @@ public sealed class CabinetBuilder
                 layout.HingeOnLeft,
                 layout.OutwardDirection,
                 layout.StorageDepth,
-                layout.OpenTravelDistance);
+                layout.OpenTravelDistance,
+                layout.DoorOpenAngleRadians);
             _neutral.AddChild(cabinet);
             _fronts.Add(storage.Id, cabinet);
 
@@ -101,6 +102,7 @@ public sealed class CabinetBuilder
             var host = RequireHost(assignment.StorageId);
             assignedNode.Reparent(host, false);
             assignedNode.Position = assignment.LocalPlacement;
+            assignedNode.RotationDegrees = assignment.LocalRotationDegrees;
             if (assignedNode is ToolInteractable tool)
                 tool.ResetToStorage();
         }

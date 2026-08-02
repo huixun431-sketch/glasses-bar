@@ -401,16 +401,16 @@ public sealed class GrayboxArchitectureBuilder
         {
             var centerX = _layout.BottleRackBays[bay].Back.Position.X;
             CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}Back",
-                new Vector3(centerX, 0.52f, -4.05f),
+                new Vector3(centerX, 0.52f, -4.20f),
                 new Vector3(BarLayoutDefinition.RearBayWidth - 0.10f, 1.0f, 0.04f)), dark, glasses);
             CreateBox(lower, new BarBoxLayout($"RearLowerBay{bay + 1}Base",
-                new Vector3(centerX, 0.04f, -3.79f),
-                new Vector3(BarLayoutDefinition.RearBayWidth - 0.10f, 0.08f, 0.52f)), dark, glasses);
+                new Vector3(centerX, 0.04f, -3.86f),
+                new Vector3(BarLayoutDefinition.RearBayWidth - 0.10f, 0.08f, 0.66f)), dark, glasses);
             foreach (var side in new[] { -1f, 1f })
                 CreateBox(lower, new BarBoxLayout(
                     $"RearLowerBay{bay + 1}{(side < 0f ? "Left" : "Right")}Side",
-                    new Vector3(centerX + side * (BarLayoutDefinition.RearBayWidth * 0.5f - 0.07f), 0.52f, -3.79f),
-                    new Vector3(0.04f, 1.0f, 0.52f)), trim, glasses);
+                    new Vector3(centerX + side * (BarLayoutDefinition.RearBayWidth * 0.5f - 0.07f), 0.52f, -3.86f),
+                    new Vector3(0.04f, 1.0f, 0.66f)), trim, glasses);
         }
     }
 

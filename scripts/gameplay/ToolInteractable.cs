@@ -119,6 +119,7 @@ public partial class ToolInteractable : StaticBody3D, IInteractable
         }
         if (_storageFront is not null && GetParent() != _storageFront.GetParent())
             Reparent(_storageFront.GetParent(), true);
+        RotationDegrees = Vector3.Zero;
         _isStored = false;
         context.Workstation.TryPickUpTool(ToolId);
     }

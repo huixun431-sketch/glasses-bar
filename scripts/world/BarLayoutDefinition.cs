@@ -73,7 +73,8 @@ public readonly record struct BarCabinetLayout(
     float StorageDepth,
     float OpenTravelDistance,
     BarBoxLayout? Cavity,
-    bool ContainsIceBucket);
+    bool ContainsIceBucket,
+    float DoorOpenAngleRadians = 1.48f);
 
 public readonly record struct BarStorageLayout(
     string Id,
@@ -85,7 +86,8 @@ public readonly record struct BarStorageLayout(
 public readonly record struct BarItemStorageLayout(
     string ItemId,
     string StorageId,
-    Vector3 LocalPlacement);
+    Vector3 LocalPlacement,
+    Vector3 LocalRotationDegrees = default);
 
 public sealed class BarBottleRackBayLayout
 {
@@ -406,7 +408,7 @@ public sealed class BarLayoutDefinition
             new BarItemStorageLayout("bean_scoop", "front_drawer_1_upper", Vector3.Zero),
             new BarItemStorageLayout("ice_tongs", "front_drawer_1_upper", new Vector3(0.38f, 0f, 0f)),
             new BarItemStorageLayout("mortar", "front_drawer_1_lower", new Vector3(-0.25f, 0f, 0f)),
-            new BarItemStorageLayout("pestle", "front_drawer_1_lower", new Vector3(0.30f, 0f, 0f)),
+            new BarItemStorageLayout("pestle", "front_drawer_1_lower", new Vector3(0.30f, 0f, 0f), new Vector3(0f, 0f, 90f)),
             new BarItemStorageLayout("ice_bucket", "front_drawer_2_upper", Vector3.Zero),
             new BarItemStorageLayout("jigger_small", "front_drawer_3_upper", new Vector3(-0.35f, 0f, 0f)),
             new BarItemStorageLayout("jigger_medium", "front_drawer_3_upper", Vector3.Zero),
@@ -578,11 +580,11 @@ public sealed class BarLayoutDefinition
         {
             new BarBoxLayout("WestWainscot", new Vector3(-innerHalfWidth, 0.525f, 0f), new Vector3(0.02f, 1.05f, RoomDepth)),
             new BarBoxLayout("EastWainscot", new Vector3(innerHalfWidth, 0.525f, 0f), new Vector3(0.02f, 1.05f, RoomDepth)),
-            new BarBoxLayout("NorthWestWainscot", new Vector3(-0.55f, 0.525f, -innerHalfDepth), new Vector3(13.7f, 1.05f, 0.02f)),
-            new BarBoxLayout("NorthEastWainscot", new Vector3(7.55f, 0.525f, -innerHalfDepth), new Vector3(0.70f, 1.05f, 0.02f)),
-            new BarBoxLayout("SouthWestWainscot", new Vector3(-4.33f, 0.525f, innerHalfDepth), new Vector3(7.95f, 1.05f, 0.02f)),
-            new BarBoxLayout("SouthCenterWainscot", new Vector3(1.75f, 0.525f, innerHalfDepth), new Vector3(2.90f, 1.05f, 0.02f)),
-            new BarBoxLayout("SouthEastWainscot", new Vector3(7.18f, 0.525f, innerHalfDepth), new Vector3(1.42f, 1.05f, 0.02f)),
+            new BarBoxLayout("NorthWestWainscot", new Vector3(-0.72f, 0.525f, -innerHalfDepth), new Vector3(14.34f, 1.05f, 0.02f)),
+            new BarBoxLayout("NorthEastWainscot", new Vector3(7.62f, 0.525f, -innerHalfDepth), new Vector3(0.54f, 1.05f, 0.02f)),
+            new BarBoxLayout("SouthWestWainscot", new Vector3(-4.62f, 0.525f, innerHalfDepth), new Vector3(6.54f, 1.05f, 0.02f)),
+            new BarBoxLayout("SouthCenterWainscot", new Vector3(1.40f, 0.525f, innerHalfDepth), new Vector3(2.70f, 1.05f, 0.02f)),
+            new BarBoxLayout("SouthEastWainscot", new Vector3(6.92f, 0.525f, innerHalfDepth), new Vector3(1.94f, 1.05f, 0.02f)),
             new BarBoxLayout("SouthWindowSillWainscot", new Vector3(4.35f, 0.375f, innerHalfDepth), new Vector3(3.20f, 0.75f, 0.02f))
         });
     }
@@ -654,10 +656,11 @@ public sealed class BarLayoutDefinition
                 new Vector3(RearBayWidth - 0.12f, 0.96f, 0.06f),
                 bay % 2 == 0,
                 Vector3.Back,
-                0.52f,
+                0.70f,
                 0f,
                 null,
-                false));
+                false,
+                1.0f));
             for (var leaf = 0; leaf < 2; leaf++)
             {
                 var left = leaf == 0;
@@ -685,7 +688,10 @@ public sealed class BarLayoutDefinition
             front.Id,
             front,
             hostPosition,
-            new Vector3(front.Size.X * 0.86f, Math.Max(0.20f, front.Size.Y * 0.72f), front.StorageDepth * 0.84f),
+            new Vector3(
+                front.Size.X * 0.86f,
+                Math.Max(0.20f, front.Size.Y * (front.Kind == CabinetPartKind.Drawer ? 1f : 0.72f)),
+                front.StorageDepth * 0.84f),
             front.Kind == CabinetPartKind.Drawer);
     }
 

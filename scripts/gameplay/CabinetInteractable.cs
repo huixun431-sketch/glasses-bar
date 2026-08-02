@@ -33,7 +33,8 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
     public float OpenTravelDistance => _closedPosition.DistanceTo(_openPosition);
 
     public void Configure(string id, CabinetPartKind kind, Vector3 center, Vector3 size, bool hingeOnLeft,
-        Vector3 outwardDirection, float storageDepth, float openTravelDistance)
+        Vector3 outwardDirection, float storageDepth, float openTravelDistance,
+        float doorOpenAngleRadians = 1.48f)
     {
         Name = id;
         _kind = kind;
@@ -49,9 +50,11 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
             Position = center + new Vector3(hingeOnLeft ? -size.X * 0.5f : size.X * 0.5f, 0f, 0f);
             localCenter = new Vector3(hingeOnLeft ? size.X * 0.5f : -size.X * 0.5f, 0f, 0f);
             var opensTowardPositiveZ = _outwardDirection.Z >= 0f;
+            if (doorOpenAngleRadians <= 0f || doorOpenAngleRadians >= Mathf.Pi)
+                throw new System.ArgumentOutOfRangeException(nameof(doorOpenAngleRadians));
             _openRotationY = opensTowardPositiveZ
-                ? hingeOnLeft ? -1.48f : 1.48f
-                : hingeOnLeft ? 1.48f : -1.48f;
+                ? hingeOnLeft ? -doorOpenAngleRadians : doorOpenAngleRadians
+                : hingeOnLeft ? doorOpenAngleRadians : -doorOpenAngleRadians;
         }
         else
         {

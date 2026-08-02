@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace GlassesBar.Tests;
@@ -37,7 +38,7 @@ public partial class Stage1AssetIntegrationTests : Node
 
         foreach (var (assetId, anchors) in ExpectedAnchors)
         {
-            var tool = main.GetNode<ToolInteractable>($"NeutralGameplay/{assetId}");
+            var tool = Tool(main, assetId);
             var visual = tool.GetNodeOrNull<Node3D>("AssetVisual");
             Require(visual is not null, $"{assetId} uses its hand-written asset wrapper");
             Require(visual!.GetMeta("asset_id").AsString() == assetId,
@@ -52,14 +53,18 @@ public partial class Stage1AssetIntegrationTests : Node
             var placement = (Node3D)visual.FindChild("Placement", true, false);
             var collision = (CylinderShape3D)tool.GetNode<CollisionShape3D>("CollisionShape3D").Shape;
             var expectedContactY = tool.GlobalPosition.Y - collision.Height * 0.5f;
-            Require(Mathf.Abs(placement.GlobalPosition.Y - expectedContactY) < 0.005f,
-                $"{assetId} placement anchor stays on the original graybox contact plane");
+            var storedRotation = BarLayoutDefinition.Prototype.ItemStorageAssignments
+                .Single(item => item.ItemId == assetId).LocalRotationDegrees;
+            Require(storedRotation.IsZeroApprox()
+                    ? Mathf.Abs(placement.GlobalPosition.Y - expectedContactY) < 0.005f
+                    : tool.RotationDegrees.IsEqualApprox(storedRotation),
+                $"{assetId} keeps either its contact-plane pose or its explicit cabinet storage pose");
         }
 
         GameSession.Instance.ToggleWorld();
         foreach (var assetId in ExpectedAnchors.Keys)
         {
-            var visual = main.GetNode<Node3D>($"NeutralGameplay/{assetId}/AssetVisual");
+            var visual = Tool(main, assetId).GetNode<Node3D>("AssetVisual");
             Require(EveryMeshMatchesOverrideState(visual, true),
                 $"{assetId} receives the glasses-world material override");
         }
@@ -67,7 +72,7 @@ public partial class Stage1AssetIntegrationTests : Node
         GameSession.Instance.ToggleWorld();
         foreach (var assetId in ExpectedAnchors.Keys)
         {
-            var visual = main.GetNode<Node3D>($"NeutralGameplay/{assetId}/AssetVisual");
+            var visual = Tool(main, assetId).GetNode<Node3D>("AssetVisual");
             Require(EveryMeshMatchesOverrideState(visual, false),
                 $"{assetId} restores imported reality-world materials");
         }
@@ -75,8 +80,9 @@ public partial class Stage1AssetIntegrationTests : Node
         var player = main.GetNode<PlayerController>("Player");
         var workstation = main.GetNode<DrinkWorkstation>("NeutralGameplay/DrinkWorkstation");
         var context = new InteractionContext { Player = player, Workstation = workstation };
-        main.GetNode<ToolInteractable>("NeutralGameplay/mortar").Interact(context);
-        main.GetNode<ToolInteractable>("NeutralGameplay/pestle").Interact(context);
+        main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_1_lower").SetOpen(true, false);
+        Tool(main, "mortar").Interact(context);
+        Tool(main, "pestle").Interact(context);
 
         var leftAnchor = player.GetNode<Node3D>("Head/Camera3D/LeftHandAnchor");
         var rightAnchor = player.GetNode<Node3D>("Head/Camera3D/RightHandAnchor");
@@ -109,6 +115,11 @@ public partial class Stage1AssetIntegrationTests : Node
         }
         return sawMesh;
     }
+
+    private static ToolInteractable Tool(Node3D main, string id) =>
+        main.GetTree().GetNodesInGroup("movable_tool")
+            .OfType<ToolInteractable>()
+            .Single(tool => tool.ToolId == id);
 
     private static void Require(bool condition, string message)
     {

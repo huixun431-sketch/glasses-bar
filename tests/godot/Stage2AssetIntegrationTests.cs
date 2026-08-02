@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace GlassesBar.Tests;
@@ -41,7 +42,7 @@ public partial class Stage2AssetIntegrationTests : Node
 
         foreach (var (assetId, anchors) in ExpectedAnchors)
         {
-            var tool = main.GetNode<ToolInteractable>($"NeutralGameplay/{assetId}");
+            var tool = Tool(main, assetId);
             var visual = tool.GetNodeOrNull<Node3D>("AssetVisual");
             Require(visual is not null, $"{assetId} uses its hand-written asset wrapper");
             Require(visual!.GetMeta("asset_id").AsString() == assetId,
@@ -62,7 +63,7 @@ public partial class Stage2AssetIntegrationTests : Node
         GameSession.Instance.ToggleWorld();
         foreach (var assetId in ExpectedAnchors.Keys)
         {
-            var tool = main.GetNode<ToolInteractable>($"NeutralGameplay/{assetId}");
+            var tool = Tool(main, assetId);
             var visual = tool.GetNode<Node3D>("AssetVisual");
             Require(EveryMeshMatchesOverrideState(visual, true),
                 $"{assetId} receives the glasses-world material override");
@@ -73,7 +74,7 @@ public partial class Stage2AssetIntegrationTests : Node
         GameSession.Instance.ToggleWorld();
         foreach (var assetId in ExpectedAnchors.Keys)
         {
-            var visual = main.GetNode<Node3D>($"NeutralGameplay/{assetId}/AssetVisual");
+            var visual = Tool(main, assetId).GetNode<Node3D>("AssetVisual");
             Require(EveryMeshMatchesOverrideState(visual, false),
                 $"{assetId} restores imported reality-world materials");
         }
@@ -83,7 +84,9 @@ public partial class Stage2AssetIntegrationTests : Node
         var leftGraybox = leftAnchor.GetNode<MeshInstance3D>("HeldTool");
         var rightGraybox = rightAnchor.GetNode<MeshInstance3D>("HeldTool");
 
-        main.GetNode<ToolInteractable>("NeutralGameplay/traditional_filter").Interact(context);
+        var filter = Tool(main, "traditional_filter");
+        main.GetNode<CabinetInteractable>($"NeutralGameplay/{filter.StorageId}").SetOpen(true, false);
+        filter.Interact(context);
         var leftHeld = leftAnchor.GetNode<Node3D>("HeldAssetVisual");
         Require(leftHeld.Visible && leftHeld.GetMeta("asset_id").AsString() == "traditional_filter",
             "left hand uses the traditional-filter wrapper");
@@ -95,7 +98,9 @@ public partial class Stage2AssetIntegrationTests : Node
 
         foreach (var assetId in RightHandAssetIds)
         {
-            main.GetNode<ToolInteractable>($"NeutralGameplay/{assetId}").Interact(context);
+            var tool = Tool(main, assetId);
+            main.GetNode<CabinetInteractable>($"NeutralGameplay/{tool.StorageId}").SetOpen(true, false);
+            tool.Interact(context);
             var rightHeld = rightAnchor.GetNode<Node3D>("HeldAssetVisual");
             Require(rightHeld.Visible && rightHeld.GetMeta("asset_id").AsString() == assetId,
                 $"right hand uses the {assetId} wrapper");
@@ -124,6 +129,11 @@ public partial class Stage2AssetIntegrationTests : Node
         }
         return sawMesh;
     }
+
+    private static ToolInteractable Tool(Node3D main, string id) =>
+        main.GetTree().GetNodesInGroup("movable_tool")
+            .OfType<ToolInteractable>()
+            .Single(tool => tool.ToolId == id);
 
     private static void Require(bool condition, string message)
     {

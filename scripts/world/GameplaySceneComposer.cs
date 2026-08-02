@@ -106,7 +106,11 @@ public sealed class GameplaySceneComposer
             var assignment = _layout.ItemStorageAssignments.Single(item => item.ItemId == layout.ToolId);
             var parent = cabinetry.RequireHost(assignment.StorageId);
             var spec = workstation.GetToolSpec(layout.ToolId);
-            var node = new ToolInteractable { Position = assignment.LocalPlacement };
+            var node = new ToolInteractable
+            {
+                Position = assignment.LocalPlacement,
+                RotationDegrees = assignment.LocalRotationDegrees
+            };
             node.Configure(
                 workstation,
                 spec,

@@ -60,6 +60,10 @@ public partial class BarRuntimeGeometryTests : Node
             Require(neutral.GetNodeOrNull<Node3D>("sink_left_drawer_upper") is null &&
                     neutral.GetNodeOrNull<Node3D>("sink_left_drawer_lower") is null,
                 "sink underbay has no legacy drawer nodes");
+
+            VerifyRoomContainment(main);
+            VerifyStoredItemContainment(main, neutral);
+            VerifyStorageMotion(main, neutral);
             GD.Print("BAR_RUNTIME_GEOMETRY_PASS");
             GetTree().Quit(0);
         }
@@ -74,5 +78,158 @@ public partial class BarRuntimeGeometryTests : Node
     {
         if (!condition)
             throw new InvalidOperationException(message);
+    }
+
+    private static void VerifyRoomContainment(Node3D main)
+    {
+        var outerRoom = FromCenterSize(
+            new Vector3(0f, (BarLayoutDefinition.RoomHeight - 0.10f) * 0.5f, 0f),
+            new Vector3(
+                BarLayoutDefinition.RoomWidth + BarLayoutDefinition.WallThickness * 1.1f,
+                BarLayoutDefinition.RoomHeight + 0.50f,
+                BarLayoutDefinition.RoomDepth + BarLayoutDefinition.WallThickness * 1.1f));
+        foreach (var mesh in DescendantMeshes(main))
+        {
+            if (mesh.Mesh is null || !mesh.IsVisibleInTree())
+                continue;
+            var bounds = TransformAabb(mesh.GetAabb(), mesh.GlobalTransform);
+            Require(Contains(outerRoom, bounds, 0.03f),
+                $"ItemId={mesh.Name}; StorageId=room; Intersects=outside_room; Sample=closed; Bounds={bounds}");
+        }
+    }
+
+    private static void VerifyStoredItemContainment(Node3D main, Node3D neutral)
+    {
+        var layout = BarLayoutDefinition.Prototype;
+        foreach (var assignment in layout.ItemStorageAssignments)
+        {
+            var storage = layout.Storages.Single(item => item.Id == assignment.StorageId);
+            var host = neutral.FindChild(assignment.StorageId + "_host", true, false) as Node3D ??
+                       throw new InvalidOperationException($"Storage host not found: {assignment.StorageId}");
+            var item = main.GetTree().GetNodesInGroup("interactable")
+                .OfType<Node3D>()
+                .Single(node => node.Name == assignment.ItemId);
+            var itemBounds = MergeBounds(DescendantMeshes(item));
+            var hostBounds = FromCenterSize(host.GlobalPosition, storage.HostSize);
+            Require(Contains(hostBounds, itemBounds, 0.015f),
+                $"ItemId={assignment.ItemId}; StorageId={assignment.StorageId}; " +
+                $"Intersects=host_envelope; Sample=closed; Item={itemBounds}; Host={hostBounds}");
+        }
+    }
+
+    private static void VerifyStorageMotion(Node3D main, Node3D neutral)
+    {
+        var cabinets = main.GetTree().GetNodesInGroup("cabinet_storage")
+            .OfType<CabinetInteractable>()
+            .ToArray();
+        foreach (var cabinet in cabinets)
+        {
+            foreach (var other in cabinets)
+                other.SetOpen(false, false);
+            var closedPosition = cabinet.Position;
+            var closedRotation = cabinet.Rotation.Y;
+            cabinet.SetOpen(true, false);
+            var openPosition = cabinet.Position;
+            var openRotation = cabinet.Rotation.Y;
+
+            foreach (var sample in new[] { 0f, 0.25f, 0.50f, 0.75f, 1f })
+            {
+                cabinet.Position = closedPosition.Lerp(openPosition, sample);
+                cabinet.Rotation = new Vector3(
+                    0f,
+                    Mathf.LerpAngle(closedRotation, openRotation, sample),
+                    0f);
+                var currentBounds = MergeBounds(DescendantMeshes(cabinet));
+                foreach (var other in cabinets.Where(other => other != cabinet))
+                {
+                    var otherBounds = MergeBounds(DescendantMeshes(other));
+                    Require(!Overlaps(currentBounds, otherBounds, 0.01f),
+                        $"ItemId={cabinet.Name}; StorageId={cabinet.Name}; " +
+                        $"Intersects={other.Name}; Sample={sample:0.##}");
+                }
+            }
+            cabinet.Position = closedPosition;
+            cabinet.Rotation = new Vector3(0f, closedRotation, 0f);
+        }
+
+        foreach (var cabinet in cabinets)
+            cabinet.SetOpen(false, false);
+    }
+
+    private static Aabb MergeBounds(System.Collections.Generic.IEnumerable<MeshInstance3D> meshes)
+    {
+        var hasBounds = false;
+        var merged = new Aabb();
+        foreach (var mesh in meshes)
+        {
+            if (mesh.Mesh is null)
+                continue;
+            var bounds = TransformAabb(mesh.GetAabb(), mesh.GlobalTransform);
+            merged = hasBounds ? merged.Merge(bounds) : bounds;
+            hasBounds = true;
+        }
+        if (!hasBounds)
+            throw new InvalidOperationException("Runtime node has no mesh bounds.");
+        return merged;
+    }
+
+    private static System.Collections.Generic.IEnumerable<MeshInstance3D> DescendantMeshes(Node root)
+    {
+        foreach (var child in root.GetChildren())
+        {
+            if (child is MeshInstance3D mesh)
+                yield return mesh;
+            foreach (var descendant in DescendantMeshes(child))
+                yield return descendant;
+        }
+    }
+
+    private static Aabb TransformAabb(Aabb local, Transform3D transform)
+    {
+        var min = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
+        var max = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
+        for (var x = 0; x <= 1; x++)
+        for (var y = 0; y <= 1; y++)
+        for (var z = 0; z <= 1; z++)
+        {
+            var corner = local.Position + new Vector3(
+                local.Size.X * x,
+                local.Size.Y * y,
+                local.Size.Z * z);
+            var world = transform * corner;
+            min = new Vector3(
+                Math.Min(min.X, world.X),
+                Math.Min(min.Y, world.Y),
+                Math.Min(min.Z, world.Z));
+            max = new Vector3(
+                Math.Max(max.X, world.X),
+                Math.Max(max.Y, world.Y),
+                Math.Max(max.Z, world.Z));
+        }
+        return new Aabb(min, max - min);
+    }
+
+    private static Aabb FromCenterSize(Vector3 center, Vector3 size) =>
+        new(center - size * 0.5f, size);
+
+    private static bool Contains(Aabb outer, Aabb inner, float epsilon)
+    {
+        var outerEnd = outer.Position + outer.Size;
+        var innerEnd = inner.Position + inner.Size;
+        return inner.Position.X >= outer.Position.X - epsilon &&
+               inner.Position.Y >= outer.Position.Y - epsilon &&
+               inner.Position.Z >= outer.Position.Z - epsilon &&
+               innerEnd.X <= outerEnd.X + epsilon &&
+               innerEnd.Y <= outerEnd.Y + epsilon &&
+               innerEnd.Z <= outerEnd.Z + epsilon;
+    }
+
+    private static bool Overlaps(Aabb first, Aabb second, float epsilon)
+    {
+        var firstEnd = first.Position + first.Size;
+        var secondEnd = second.Position + second.Size;
+        return first.Position.X < secondEnd.X - epsilon && firstEnd.X > second.Position.X + epsilon &&
+               first.Position.Y < secondEnd.Y - epsilon && firstEnd.Y > second.Position.Y + epsilon &&
+               first.Position.Z < secondEnd.Z - epsilon && firstEnd.Z > second.Position.Z + epsilon;
     }
 }
