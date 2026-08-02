@@ -51,6 +51,12 @@ public readonly record struct BarLightFixtureLayout(
     string Group,
     bool HasVisibleGeometry);
 
+public readonly record struct BarRotatedBoxLayout(
+    string Name,
+    Vector3 Position,
+    Vector3 Size,
+    Vector3 RotationDegrees);
+
 public sealed class BarWorkboardLayout
 {
     public required Vector3 Position { get; init; }
@@ -94,6 +100,8 @@ public sealed class BarLayoutDefinition
     public const float RearShelfTopHeight = PlayerWorktopHeight;
     public const float PlayerEyeHeight = 1.83f;
     public const float OperationAisleClearWidth = 1.40f;
+    public const float MainCustomerRouteClearWidth = 1.20f;
+    public const float SecondaryCustomerRouteClearWidth = 0.90f;
     public const float DrawerOpenTravel = 0.38f;
     public const float BottleRackTopHeight = 1.68f;
     public const float UpperCabinetCenterHeight = 2.60f;
@@ -119,6 +127,21 @@ public sealed class BarLayoutDefinition
             new BarBoxLayout("WestWall", new Vector3(-RoomWidth * 0.5f, RoomHeight * 0.5f, 0f), new Vector3(WallThickness, RoomHeight, RoomDepth)),
             new BarBoxLayout("EastWall", new Vector3(RoomWidth * 0.5f, RoomHeight * 0.5f, 0f), new Vector3(WallThickness, RoomHeight, RoomDepth)),
             new BarBoxLayout("SouthWall", new Vector3(0f, RoomHeight * 0.5f, RoomDepth * 0.5f), new Vector3(RoomWidth, RoomHeight, WallThickness))
+        });
+        Ceiling = new BarBoxLayout(
+            "Ceiling",
+            new Vector3(0f, RoomHeight + WallThickness * 0.5f, 0f),
+            new Vector3(RoomWidth, WallThickness, RoomDepth));
+        WainscotSections = Array.AsReadOnly(new[]
+        {
+            new BarBoxLayout("WestWainscot", new Vector3(-5.89f, 0.525f, 0f), new Vector3(0.02f, 1.05f, RoomDepth)),
+            new BarBoxLayout("EastWainscot", new Vector3(5.89f, 0.525f, 0f), new Vector3(0.02f, 1.05f, RoomDepth)),
+            new BarBoxLayout("NorthWestWainscot", new Vector3(-0.675f, 0.525f, -4.39f), new Vector3(10.65f, 1.05f, 0.02f)),
+            new BarBoxLayout("NorthEastWainscot", new Vector3(5.775f, 0.525f, -4.39f), new Vector3(0.45f, 1.05f, 0.02f)),
+            new BarBoxLayout("SouthWestWainscot", new Vector3(-3.85f, 0.525f, 4.39f), new Vector3(4.30f, 1.05f, 0.02f)),
+            new BarBoxLayout("SouthCenterWainscot", new Vector3(0.65f, 0.525f, 4.39f), new Vector3(1.90f, 1.05f, 0.02f)),
+            new BarBoxLayout("SouthEastWainscot", new Vector3(5.40f, 0.525f, 4.39f), new Vector3(1.20f, 1.05f, 0.02f)),
+            new BarBoxLayout("SouthWindowSillWainscot", new Vector3(3.20f, 0.375f, 4.39f), new Vector3(3.20f, 0.75f, 0.02f))
         });
 
         RoomClearSize = new Vector3(RoomWidth, RoomHeight, RoomDepth);
@@ -152,6 +175,18 @@ public sealed class BarLayoutDefinition
             "FrontBarBody",
             new Vector3(BarCenterX, frontBodySize.Y * 0.5f, FrontCounterZ),
             frontBodySize);
+        FrontBarBodySections = Array.AsReadOnly(new[]
+        {
+            new BarBoxLayout("FrontBarSouthBody", new Vector3(BarCenterX, frontBodySize.Y * 0.5f, -1.425f), new Vector3(FrontOutlineWidth, frontBodySize.Y, 0.45f)),
+            new BarBoxLayout("FrontBarCenterRearBody", new Vector3(-2.475f, frontBodySize.Y * 0.5f, -1.825f), new Vector3(3.45f, frontBodySize.Y, 0.35f)),
+            new BarBoxLayout("FrontBarWestRearBody", new Vector3(-4.875f, frontBodySize.Y * 0.5f, -1.825f), new Vector3(WestDrySideDepth, frontBodySize.Y, 0.35f)),
+            new BarBoxLayout("FrontBarEastRearBody", new Vector3(0f, frontBodySize.Y * 0.5f, -1.825f), new Vector3(EastWetSideDepth, frontBodySize.Y, 0.35f))
+        });
+        FrontBarInnerChamfers = Array.AsReadOnly(new[]
+        {
+            new BarRotatedBoxLayout("FrontBarWestChamfer", new Vector3(-4.375f, frontBodySize.Y * 0.5f, -1.825f), new Vector3(0.495f, frontBodySize.Y, 0.12f), new Vector3(0f, -45f, 0f)),
+            new BarRotatedBoxLayout("FrontBarEastChamfer", new Vector3(-0.575f, frontBodySize.Y * 0.5f, -1.825f), new Vector3(0.495f, frontBodySize.Y, 0.12f), new Vector3(0f, 45f, 0f))
+        });
         FrontBarTop = new BarBoxLayout(
             "GuestCounterTop",
             new Vector3(BarCenterX, FrontBarTopHeight - 0.03f, FrontCounterZ + 0.31f),
@@ -160,6 +195,20 @@ public sealed class BarLayoutDefinition
             "PlayerWorktop",
             new Vector3(BarCenterX, PlayerWorktopHeight - 0.02f, FrontCounterZ - 0.09f),
             new Vector3(FrontOutlineWidth, 0.04f, PlayerSurfaceDepth));
+        PlayerWorktopSections = Array.AsReadOnly(new[]
+        {
+            new BarBoxLayout("PlayerWorktopSouth", new Vector3(BarCenterX, PlayerWorktopHeight - 0.02f, -1.515f), new Vector3(FrontOutlineWidth, 0.04f, 0.27f)),
+            new BarBoxLayout("PlayerWorktopCenterRear", new Vector3(-2.475f, PlayerWorktopHeight - 0.02f, -1.825f), new Vector3(3.45f, 0.04f, 0.35f)),
+            new BarBoxLayout("PlayerWorktopWestRear", new Vector3(-4.875f, PlayerWorktopHeight - 0.02f, -1.825f), new Vector3(WestDrySideDepth, 0.04f, 0.35f)),
+            new BarBoxLayout("PlayerWorktopEastRear", new Vector3(0f, PlayerWorktopHeight - 0.02f, -1.825f), new Vector3(EastWetSideDepth, 0.04f, 0.35f))
+        });
+        PlayerWorktopChamfers = Array.AsReadOnly(FrontBarInnerChamfers
+            .Select(chamfer => new BarRotatedBoxLayout(
+                chamfer.Name.Replace("FrontBar", "PlayerWorktop"),
+                new Vector3(chamfer.Position.X, PlayerWorktopHeight - 0.02f, chamfer.Position.Z),
+                new Vector3(chamfer.Size.X, 0.04f, chamfer.Size.Z),
+                chamfer.RotationDegrees))
+            .ToArray());
 
         var rearShelfSize = new Vector3(FrontOutlineWidth, 0.04f, 0.50f);
         RearWallShelf = new BarBoxLayout(
@@ -171,10 +220,19 @@ public sealed class BarLayoutDefinition
             new Vector3(BarCenterX, UpperCabinetCenterHeight, -3.71f),
             new Vector3(FrontOutlineWidth, 1f, 0.38f));
 
+        WestDryReturnEnvelope = new BarBoxLayout(
+            "WestDryReturnEnvelope",
+            new Vector3(-4.875f, PlayerWorktopHeight * 0.5f, -2.50f),
+            new Vector3(WestDrySideDepth, PlayerWorktopHeight, 1.80f));
+        EastWetReturnEnvelope = new BarBoxLayout(
+            "EastWetReturnEnvelope",
+            new Vector3(0f, PlayerWorktopHeight * 0.5f, -1.90f),
+            new Vector3(EastWetSideDepth, PlayerWorktopHeight, 0.60f));
         CounterReturns = Array.AsReadOnly(new[]
         {
-            new BarBoxLayout("WestDryReturn", new Vector3(-4.875f, PlayerWorktopHeight * 0.5f, -2.50f), new Vector3(0.65f, PlayerWorktopHeight, 1.80f)),
-            new BarBoxLayout("EastWetReturn", new Vector3(0f, PlayerWorktopHeight * 0.5f, -1.90f), new Vector3(0.80f, PlayerWorktopHeight, 0.60f))
+            new BarBoxLayout("WestDryReturn", WestDryReturnEnvelope.Position, WestDryReturnEnvelope.Size),
+            new BarBoxLayout("EastWetOuterSupport", new Vector3(0.36f, PlayerWorktopHeight * 0.5f, -1.90f), new Vector3(0.08f, PlayerWorktopHeight, 0.60f)),
+            new BarBoxLayout("EastWetInnerSupport", new Vector3(-0.36f, PlayerWorktopHeight * 0.5f, -1.90f), new Vector3(0.08f, PlayerWorktopHeight, 0.60f))
         });
         CounterReturnTops = Array.AsReadOnly(new[]
         {
@@ -193,6 +251,18 @@ public sealed class BarLayoutDefinition
             "EmployeeGate",
             new Vector3(0f, 0.43f, -2.50f),
             new Vector3(0.08f, 0.86f, 0.60f));
+        SinkUnderClearVolume = new BarBoxLayout(
+            "SinkUnderClearVolume",
+            new Vector3(0f, 0.44f, -2.05f),
+            new Vector3(0.44f, 0.84f, 0.52f));
+        SouthEntrySwingEnvelope = new BarBoxLayout(
+            "SouthEntrySwingEnvelope",
+            new Vector3(-1f, 1.05f, 3.75f),
+            new Vector3(1.40f, 2.10f, 1.30f));
+        SouthWindowAccessEnvelope = new BarBoxLayout(
+            "SouthWindowAccessEnvelope",
+            new Vector3(3.20f, 1.0f, 3.95f),
+            new Vector3(3.20f, 2.0f, 0.90f));
 
         BottleRackBack = new BarBoxLayout(
             "MergedBottleRackBack",
@@ -233,9 +303,9 @@ public sealed class BarLayoutDefinition
         Booths = Array.AsReadOnly(Array.Empty<BarBoxLayout>());
         LoungeTables = Array.AsReadOnly(new[]
         {
-            new BarCylinderLayout("LoungeTable1", new Vector3(2.40f, 0.71f, -1.30f), 0.40f, 0.08f, new Color("8a5a38")),
-            new BarCylinderLayout("LoungeTable2", new Vector3(2.70f, 0.71f, 1.05f), 0.40f, 0.08f, new Color("8a5a38")),
-            new BarCylinderLayout("LoungeTable3", new Vector3(2.40f, 0.71f, 3.40f), 0.40f, 0.08f, new Color("8a5a38"))
+            new BarCylinderLayout("LoungeTable1", new Vector3(2.75f, 0.71f, -2.35f), 0.40f, 0.08f, new Color("8a5a38")),
+            new BarCylinderLayout("LoungeTable2", new Vector3(3.05f, 0.71f, 0f), 0.40f, 0.08f, new Color("8a5a38")),
+            new BarCylinderLayout("LoungeTable3", new Vector3(2.75f, 0.71f, 2.35f), 0.40f, 0.08f, new Color("8a5a38"))
         });
         FrontStools = Array.AsReadOnly(
             Enumerable.Range(0, 6)
@@ -372,19 +442,30 @@ public sealed class BarLayoutDefinition
     public Vector3 RoomClearSize { get; }
     public BarBoxLayout Floor { get; }
     public IReadOnlyList<BarBoxLayout> Walls { get; }
+    public BarBoxLayout Ceiling { get; }
+    public IReadOnlyList<BarBoxLayout> WainscotSections { get; }
     public BarOpeningLayout SouthMainEntry { get; }
     public BarOpeningLayout NorthEastServiceDoor { get; }
     public IReadOnlyList<BarOpeningLayout> SouthWindows { get; }
     public BarBoxLayout FrontBarBody { get; }
+    public IReadOnlyList<BarBoxLayout> FrontBarBodySections { get; }
+    public IReadOnlyList<BarRotatedBoxLayout> FrontBarInnerChamfers { get; }
     public BarBoxLayout FrontBarTop { get; }
     public BarBoxLayout PlayerWorktop { get; }
+    public IReadOnlyList<BarBoxLayout> PlayerWorktopSections { get; }
+    public IReadOnlyList<BarRotatedBoxLayout> PlayerWorktopChamfers { get; }
     public BarBoxLayout RearWallShelf { get; }
     public BarBoxLayout UpperBackCabinet { get; }
     public IReadOnlyList<BarBoxLayout> CounterReturns { get; }
     public IReadOnlyList<BarBoxLayout> CounterReturnTops { get; }
+    public BarBoxLayout WestDryReturnEnvelope { get; }
+    public BarBoxLayout EastWetReturnEnvelope { get; }
     public BarBoxLayout EastWasteModule { get; }
     public BarBoxLayout EastWasteModuleTop { get; }
     public BarBoxLayout EmployeeGate { get; }
+    public BarBoxLayout SinkUnderClearVolume { get; }
+    public BarBoxLayout SouthEntrySwingEnvelope { get; }
+    public BarBoxLayout SouthWindowAccessEnvelope { get; }
     public BarBoxLayout BottleRackBack { get; }
     public IReadOnlyList<BarBoxLayout> BottleRackShelves { get; }
     public IReadOnlyList<BarCylinderLayout> LiquorBottles { get; }
@@ -446,8 +527,8 @@ public sealed class BarLayoutDefinition
         if (PlayerFacingDirection.Z <= 0.99f || RearBarFrontZ >= FrontBarInnerEdgeZ ||
             !Mathf.IsEqualApprox(FrontBarInnerEdgeZ - RearBarFrontZ, OperationAisleClearWidth))
             throw new InvalidOperationException("Player must face south inside the 1.40 metre U-bar aisle.");
-        var westInnerEdge = CounterReturns[0].Position.X + CounterReturns[0].Size.X * 0.5f;
-        var eastInnerEdge = CounterReturns[1].Position.X - CounterReturns[1].Size.X * 0.5f;
+        var westInnerEdge = WestDryReturnEnvelope.Position.X + WestDryReturnEnvelope.Size.X * 0.5f;
+        var eastInnerEdge = EastWetReturnEnvelope.Position.X - EastWetReturnEnvelope.Size.X * 0.5f;
         if (!Mathf.IsEqualApprox(eastInnerEdge - westInnerEdge, InternalClearSpan))
             throw new InvalidOperationException("The asymmetric side counters must preserve the 4.15 metre clear span.");
         if (FrontStools.Count != 6 || LoungeTables.Count != 3 || LoungeChairs.Count != 12 || Booths.Count != 0)
@@ -457,6 +538,10 @@ public sealed class BarLayoutDefinition
             throw new InvalidOperationException("Prototype light fixture groups must match the approved lighting plan.");
         if (FrontFootrails.Count != 0)
             throw new InvalidOperationException("The approved front bar has no attached footrail or fixed footboard.");
+        if (FrontBarInnerChamfers.Count != 2 ||
+            FrontBarInnerChamfers.Any(chamfer =>
+                !Mathf.IsEqualApprox(Math.Abs(chamfer.RotationDegrees.Y), 45f)))
+            throw new InvalidOperationException("The front bar must retain both 45-degree inner chamfers.");
         if (!HasPositiveSize(EmployeeGate.Size) || EmployeeGate.Position.X < -0.01f ||
             EmployeeGate.Size.Y >= PlayerWorktopHeight)
             throw new InvalidOperationException("The east employee gate must remain closed and half height.");
@@ -471,17 +556,35 @@ public sealed class BarLayoutDefinition
                 Math.Abs(cabinet.Center.X - sink.Position.X) <
                 (cabinet.Size.X + sink.Size.X) * 0.5f))
             throw new InvalidOperationException("The wash-sink bay must remain clear of front drawers.");
+        if (CounterReturns.Any(body => BoxesOverlap(body, SinkUnderClearVolume)))
+            throw new InvalidOperationException("The wash-sink under-counter volume must remain unobstructed.");
 
-        var roomMin = new Vector2(-RoomWidth * 0.5f, -RoomDepth * 0.5f);
-        var roomMax = new Vector2(RoomWidth * 0.5f, RoomDepth * 0.5f);
-        if (LoungeChairs.Any(chair =>
-                chair.PulledOutPosition.X < roomMin.X || chair.PulledOutPosition.X > roomMax.X ||
-                chair.PulledOutPosition.Z < roomMin.Y || chair.PulledOutPosition.Z > roomMax.Y))
-            throw new InvalidOperationException("Pulled-out chair acceptance envelopes must remain inside the room.");
+        var roomInnerHalfWidth = RoomWidth * 0.5f - WallThickness * 0.5f;
+        var roomInnerHalfDepth = RoomDepth * 0.5f - WallThickness * 0.5f;
+        var barEastOuterEdge = EastWetReturnEnvelope.Position.X + EastWetReturnEnvelope.Size.X * 0.5f;
+        var pulledWestEdge = LoungeChairs.Min(chair => chair.PulledOutPosition.X - chair.Size.X * 0.5f);
+        var pulledEastEdge = LoungeChairs.Max(chair => chair.PulledOutPosition.X + chair.Size.X * 0.5f);
+        var pulledNorthEdge = LoungeChairs.Min(chair => chair.PulledOutPosition.Z - chair.Size.Z * 0.5f);
+        var pulledSouthEdge = LoungeChairs.Max(chair => chair.PulledOutPosition.Z + chair.Size.Z * 0.5f);
+        if (pulledWestEdge < barEastOuterEdge + MainCustomerRouteClearWidth ||
+            pulledEastEdge > roomInnerHalfWidth - SecondaryCustomerRouteClearWidth ||
+            pulledNorthEdge < -roomInnerHalfDepth + SecondaryCustomerRouteClearWidth ||
+            pulledSouthEdge > roomInnerHalfDepth - SecondaryCustomerRouteClearWidth ||
+            LoungeChairs.Any(chair => BoxesOverlap(
+                new BarBoxLayout(chair.Id, chair.PulledOutPosition, chair.Size), SouthEntrySwingEnvelope)) ||
+            LoungeChairs.Any(chair => BoxesOverlap(
+                new BarBoxLayout(chair.Id, chair.PulledOutPosition, chair.Size), SouthWindowAccessEnvelope)))
+            throw new InvalidOperationException(
+                "Pulled-out chairs must preserve the main and secondary routes, entry swing, and window access.");
     }
 
     private static bool HasPositiveSize(Vector3 size) =>
         size.X > 0f && size.Y > 0f && size.Z > 0f;
+
+    private static bool BoxesOverlap(BarBoxLayout first, BarBoxLayout second) =>
+        Math.Abs(first.Position.X - second.Position.X) * 2f < first.Size.X + second.Size.X &&
+        Math.Abs(first.Position.Y - second.Position.Y) * 2f < first.Size.Y + second.Size.Y &&
+        Math.Abs(first.Position.Z - second.Position.Z) * 2f < first.Size.Z + second.Size.Z;
 
     private static void EnsureUnique(IEnumerable<string> ids, string kind)
     {

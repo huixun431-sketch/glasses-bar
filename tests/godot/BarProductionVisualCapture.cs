@@ -88,6 +88,9 @@ public partial class BarProductionVisualCapture : Node
         _rearDoor.SetOpen(state.OpenRearDoor, false);
         SetChairPositions("RealityWorld/LoungeChairs", state.PullOutChairs);
         SetChairPositions("GlassesWorld/LoungeChairs", state.PullOutChairs);
+        var showCeiling = state.Name != "01_overhead_orientation";
+        _main.GetNode<MeshInstance3D>("RealityWorld/Ceiling").Visible = showCeiling;
+        _main.GetNode<MeshInstance3D>("GlassesWorld/Ceiling").Visible = showCeiling;
         _camera.LookAtFromPosition(state.CameraPosition, state.Target, state.Up ?? Vector3.Up);
     }
 

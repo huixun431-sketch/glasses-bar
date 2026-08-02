@@ -35,9 +35,14 @@ public sealed class GrayboxArchitectureBuilder
     public void BuildCollisions()
     {
         AddStaticBox(_neutral, "FloorCollider", _layout.Floor.Position, _layout.Floor.Size);
+        AddStaticBox(_neutral, "CeilingCollider", _layout.Ceiling.Position, _layout.Ceiling.Size);
         foreach (var wall in BuildWallSegments())
             AddStaticBox(_neutral, wall.Name + "Collider", wall.Position, wall.Size);
-        AddStaticBox(_neutral, "FrontBarCollider", _layout.FrontBarBody.Position, _layout.FrontBarBody.Size, 2);
+        foreach (var body in _layout.FrontBarBodySections)
+            AddStaticBox(_neutral, body.Name + "Collider", body.Position, body.Size, 2);
+        foreach (var chamfer in _layout.FrontBarInnerChamfers)
+            AddStaticRotatedBox(_neutral, chamfer.Name + "Collider", chamfer.Position,
+                chamfer.Size, chamfer.RotationDegrees, 2);
         AddStaticBox(_neutral, "RearWallShelfCollider", _layout.RearWallShelf.Position, _layout.RearWallShelf.Size, 2);
         AddStaticBox(_neutral, "UpperBackCabinetCollider", _layout.UpperBackCabinet.Position, _layout.UpperBackCabinet.Size, 2);
         for (var index = 0; index < _layout.CounterReturns.Count; index++)
@@ -55,6 +60,8 @@ public sealed class GrayboxArchitectureBuilder
     {
         CreateBox(_reality, _layout.Floor, new Color("2d2424"));
         CreateBox(_glasses, _layout.Floor, new Color("071d29"), true);
+        CreateBox(_reality, _layout.Ceiling, new Color("4b4640"));
+        CreateBox(_glasses, _layout.Ceiling, new Color("07303a"), true);
         foreach (var wall in BuildWallSegments())
         {
             CreateBox(_reality, wall, new Color("201d24"));
@@ -62,25 +69,52 @@ public sealed class GrayboxArchitectureBuilder
         }
         BuildOpeningVisuals(_reality, false);
         BuildOpeningVisuals(_glasses, true);
+        BuildWainscot(_reality, false);
+        BuildWainscot(_glasses, true);
 
-        CreateBox(_reality, _layout.FrontBarBody, new Color("5b3524"));
-        CreateBox(_glasses, _layout.FrontBarBody, new Color("075366"), true);
+        foreach (var body in _layout.FrontBarBodySections)
+        {
+            CreateBox(_reality, body, new Color("5b3524"));
+            CreateBox(_glasses, body, new Color("075366"), true);
+        }
+        foreach (var chamfer in _layout.FrontBarInnerChamfers)
+        {
+            CreateRotatedBox(_reality,
+                new BarBoxLayout(chamfer.Name, chamfer.Position, chamfer.Size),
+                chamfer.RotationDegrees, new Color("5b3524"), false);
+            CreateRotatedBox(_glasses,
+                new BarBoxLayout(chamfer.Name, chamfer.Position, chamfer.Size),
+                chamfer.RotationDegrees, new Color("075366"), true);
+        }
         CreateBox(_reality, _layout.FrontBarTop, new Color("8b5634"));
         CreateBox(_glasses, _layout.FrontBarTop, new Color("0f98a4"), true);
-        CreateBox(_reality, _layout.PlayerWorktop, new Color("76503a"));
-        CreateBox(_glasses, _layout.PlayerWorktop, new Color("0b8d9a"), true);
+        foreach (var worktop in _layout.PlayerWorktopSections)
+        {
+            CreateBox(_reality, worktop, new Color("76503a"));
+            CreateBox(_glasses, worktop, new Color("0b8d9a"), true);
+        }
+        foreach (var chamfer in _layout.PlayerWorktopChamfers)
+        {
+            CreateRotatedBox(_reality,
+                new BarBoxLayout(chamfer.Name, chamfer.Position, chamfer.Size),
+                chamfer.RotationDegrees, new Color("76503a"), false);
+            CreateRotatedBox(_glasses,
+                new BarBoxLayout(chamfer.Name, chamfer.Position, chamfer.Size),
+                chamfer.RotationDegrees, new Color("0b8d9a"), true);
+        }
 
         CreateBox(_reality, _layout.RearWallShelf, new Color("76503a"));
         CreateBox(_glasses, _layout.RearWallShelf, new Color("0b8d9a"), true);
         CreateBox(_reality, _layout.UpperBackCabinet, new Color("3f2924"));
         CreateBox(_glasses, _layout.UpperBackCabinet, new Color("073f50"), true);
 
-        for (var index = 0; index < _layout.CounterReturns.Count; index++)
+        foreach (var body in _layout.CounterReturns)
         {
-            var body = _layout.CounterReturns[index];
-            var top = _layout.CounterReturnTops[index];
             CreateBox(_reality, body, new Color("4b3027"));
             CreateBox(_glasses, body, new Color("075064"), true);
+        }
+        foreach (var top in _layout.CounterReturnTops)
+        {
             CreateBox(_reality, top, new Color("76503a"));
             CreateBox(_glasses, top, new Color("0b8d9a"), true);
         }
@@ -175,6 +209,15 @@ public sealed class GrayboxArchitectureBuilder
             new BarBoxLayout("SouthWindowSill", new Vector3(3.20f, 0.375f, halfDepth), new Vector3(3.20f, 0.75f, thickness)),
             new BarBoxLayout("SouthWindowHeader", new Vector3(3.20f, 2.90f, halfDepth), new Vector3(3.20f, 1.20f, thickness))
         };
+    }
+
+    private void BuildWainscot(Node3D parent, bool glasses)
+    {
+        var group = new Node3D { Name = "Wainscot" };
+        parent.AddChild(group);
+        foreach (var section in _layout.WainscotSections)
+            CreateBox(group, section,
+                glasses ? new Color("06465a") : new Color("4f2420"), glasses);
     }
 
     private void AddDoorLeafCollisions()
@@ -476,8 +519,24 @@ public sealed class GrayboxArchitectureBuilder
             var root = new Node3D { Name = fixture.Id, Position = fixture.Position };
             group.AddChild(root);
             if (visibleGeometry && fixture.HasVisibleGeometry)
-                CreateCylinder(root, "Fixture", Vector3.Zero, 0.11f, 0.12f,
-                    glasses ? new Color("4ba9b8") : new Color("8b654a"), glasses);
+            {
+                var fixtureColor = glasses ? new Color("4ba9b8") : new Color("8b654a");
+                if (fixture.Group == "rear_linear")
+                    CreateBox(root,
+                        new BarBoxLayout("Fixture", Vector3.Zero, new Vector3(2.40f, 0.035f, 0.06f)),
+                        fixtureColor, glasses);
+                else if (fixture.Group == "customer_sconce")
+                    CreateBox(root,
+                        new BarBoxLayout("Fixture", Vector3.Zero, new Vector3(0.18f, 0.12f, 0.08f)),
+                        fixtureColor, glasses);
+                else
+                {
+                    CreateCylinder(root, "Fixture", Vector3.Zero, 0.11f, 0.12f,
+                        fixtureColor, glasses);
+                    CreateCylinder(root, "Cord", new Vector3(0f, 0.30f, 0f), 0.012f, 0.50f,
+                        glasses ? new Color("357b86") : new Color("3d302b"), glasses);
+                }
+            }
             var energy = fixture.Group switch
             {
                 "front_pendant" => 3.4f,
@@ -518,6 +577,25 @@ public sealed class GrayboxArchitectureBuilder
         uint collisionLayer = 1)
     {
         var body = new StaticBody3D { Name = name, Position = position, CollisionLayer = collisionLayer };
+        body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size } });
+        parent.AddChild(body);
+    }
+
+    internal static void AddStaticRotatedBox(
+        Node3D parent,
+        string name,
+        Vector3 position,
+        Vector3 size,
+        Vector3 rotationDegrees,
+        uint collisionLayer = 1)
+    {
+        var body = new StaticBody3D
+        {
+            Name = name,
+            Position = position,
+            RotationDegrees = rotationDegrees,
+            CollisionLayer = collisionLayer
+        };
         body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size } });
         parent.AddChild(body);
     }

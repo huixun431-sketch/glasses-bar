@@ -24,21 +24,22 @@
 ### P1｜完整灰盒实现与验证证据
 
 - `BarLayoutDefinition` 已成为 12.00 m × 9.00 m × 3.50 m、1.20/0.96 m 错层台面、1.83 m 眼高、1.40 m 操作通道、0.38 m 抽屉行程的权威合同；锁定南侧 1.40 m 双门、东侧单窗、北东 0.90 m 门、八抽屉/六上柜门、六吧椅、三桌十二椅和 3/2/4/2 灯组。
-- 运行时已拆分权威碰撞与可替换灰盒视觉，重建分段墙体、门窗、U 形台、东湿/西干功能、半高员工门、手册架/唯一手册节点及锚点、三湾后吧、顾客家具和现实/眼镜专用灯组；旧 booth、三窗、泛用全局灯和旧尺度已移除。
+- 运行时已拆分权威碰撞与可替换灰盒视觉，重建分段墙体、门窗、吊顶、绕开开口的 1.05 m 墙裙、带两处 45° 内倒角的 U 形台、东湿/西干功能、半高员工门、手册架/唯一手册节点及锚点、三湾后吧、顾客家具和现实/眼镜专用灯组；旧 booth、三窗、泛用全局灯和旧尺度已移除。
+- Task 1–5 二次审计补齐了五个验收缺口：水槽下方由整块柜体改为两侧支撑并锁定净空体积；拉出客椅按 1.20/0.90 m 路线、入口门扇和南窗维护区校验；前吧碰撞/视觉加入两处 45° 内倒角；建筑加入吊顶和分段墙裙；后吧任务灯改为真正的东西向线性灯条。相应布局/流程测试均先观察到失败再修复为通过。
 - 玩家起点固定为 U 内 `(-2.40, 0.915, -2.70)`，眼高 1.83 m，面向世界南 `+Z`；交互射线/探针显式排除玩家自身碰撞体。柜体 API 现按布局显式接收抽屉行程，不再由储物深度推导。
 - 一键回归 `powershell -ExecutionPolicy Bypass -File tools/run_verification.ps1` 退出码 0：资产 16 项/0 错误、领域测试 28/28、Debug/Release 0 警告/0 错误，`BAR_PRODUCTION_LAYOUT_CONTRACT_PASS`、冒烟、Stage 1、Stage 2、输入和流程测试全部 PASS。
 - 已用 Godot 4.7.1 Forward+ Movie Maker（RTX 5070 Laptop GPU，1280×720）生成并人工检查 `artifacts/visual_review_bar_graybox/` 的 11 张命名审批图；截图为 ignored 证据，不纳入 Git。最终 SHA-256：
-  - `01_overhead_orientation.png` `14ee6bd75c2225862d9fcc2367f6c3b4178270f925d5d5f02057ab58619b2c82`
-  - `02_player_eye_south.png` `4bc7dbaef26e30f9de831b9bf45cf060cac451740b08b4229df7313193bbc560`
-  - `03_west_north_u_interior.png` `301bcde0d0645549a9229b044c98095b142c5bcbe4cea32de60d8d7e09266f07`
-  - `04_east_wet_side.png` `31ffd2c2d1103467f2c44aae0b4a9542604f9232a3a83acb4be9d06b2b0fe618`
-  - `05_west_manual_shelf.png` `1af280293127b0d359ed3c0b98feb8dc8e324fce8adca4eaa42eaea22fe4c692`
-  - `06_rear_bar_open_door.png` `291e623d9b0af0b8ce93f32f98ec4612b9f3f1fe01da14559a910396b42389f5`
-  - `07_open_ice_drawer_reach.png` `9d4135c43e47e268c836420109bf83763dac026fe8a73dd1959cd06700a4ba14`
-  - `08_customer_chairs_pulled.png` `67d50568399b164a4e2d8074bac7e3621785a9a137b75dd3b1d2572165274598`
-  - `09_south_entry_window.png` `e019d9bb095deee9b4a2e9d56303503839321c4cc87ab6388c5ee070b0ab3862`
-  - `10_reality_lighting.png` `188d13d6302ac987fce404f361b38f8df793d308c76144228ebf5ee1351fd407`
-  - `11_glasses_lighting.png` `9593470fec7ff3eb2887ea8bc43001ad90c091541d0b1c87dae6c1f4a7fc1936`
+  - `01_overhead_orientation.png` `db5a5bfc1592f438bf8e18384101401ff6bdf89e70febf55963b1a8525c8083c`
+  - `02_player_eye_south.png` `c3662ee7e681b7ebc7ff4ab168813c05f61820125db6ce21ab31e21ea9bf5819`
+  - `03_west_north_u_interior.png` `9227ac4c06b9edcc00b80da61e6bf0b6e7f40988a4ba99045bdfd7f7e16adbfb`
+  - `04_east_wet_side.png` `f957635d82640c7ee0e89ad727edfcc8846aefaeda5075b63ca00b168f6fb1cf`
+  - `05_west_manual_shelf.png` `681fe80131b21b13551f4756fc03b2a595adef4e031f3e8ef720943eeb1ac6f4`
+  - `06_rear_bar_open_door.png` `e328d0fe7d53fbdf1db5842acfcf0387eeb72458d7eb410c77e65ecb003b0b94`
+  - `07_open_ice_drawer_reach.png` `098ec17f62198f3d59a620a3fb93363de9381c0424bbc05202975cfcc1a3ea1c`
+  - `08_customer_chairs_pulled.png` `7c9f81736cca5a4459a254017f0d0e29135fb45e9970ec7a5b69285f31b87251`
+  - `09_south_entry_window.png` `4faaed0daf48061eac09dfef75500550f6b120f25d76f43d6c1d180aa8a2dbe1`
+  - `10_reality_lighting.png` `86846fe18238cd6f810e4eda40f3af2acfa792a8423531287b5b97403b8f6dc9`
+  - `11_glasses_lighting.png` `b0b853ddf6040cf6b0576001e9f4b23617ef7be5555637ed5d56d11890279ede`
 - 当前阻塞是计划规定的用户审批门：未收到明确“灰盒尺度与方位通过”前，不执行 Task 6，不建立六模块 GLB 合同，也不开始 Blender 正式几何。
 
 ## P1｜2026-08-02 资产批次建模 Skill 已验证并归档

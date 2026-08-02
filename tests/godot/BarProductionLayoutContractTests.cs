@@ -58,11 +58,11 @@ public partial class BarProductionLayoutContractTests : Node
                     BarLayoutDefinition.PlayerSurfaceDepth + BarLayoutDefinition.GuestSurfaceDepth,
                     BarLayoutDefinition.FrontSectionDepth),
             "front bar outline and 0.62 plus 0.18 metre depth split are locked");
-        Require(Mathf.IsEqualApprox(layout.CounterReturns[0].Size.X, 0.65f) &&
-                Mathf.IsEqualApprox(layout.CounterReturns[1].Size.X, 0.80f) &&
+        Require(Mathf.IsEqualApprox(layout.WestDryReturnEnvelope.Size.X, 0.65f) &&
+                Mathf.IsEqualApprox(layout.EastWetReturnEnvelope.Size.X, 0.80f) &&
                 Mathf.IsEqualApprox(
-                    layout.CounterReturns[1].Position.X - layout.CounterReturns[1].Size.X * 0.5f -
-                    (layout.CounterReturns[0].Position.X + layout.CounterReturns[0].Size.X * 0.5f),
+                    layout.EastWetReturnEnvelope.Position.X - layout.EastWetReturnEnvelope.Size.X * 0.5f -
+                    (layout.WestDryReturnEnvelope.Position.X + layout.WestDryReturnEnvelope.Size.X * 0.5f),
                     4.15f),
             "asymmetric dry and wet returns preserve the internal clear span");
         Require(BarLayoutDefinition.FrontFacadeBayCount == 3 &&
@@ -85,6 +85,28 @@ public partial class BarProductionLayoutContractTests : Node
                 layout.NorthEastServiceDoor.Position.X > 0f &&
                 layout.NorthEastServiceDoor.Position.Z < 0f,
             "south double entry and north-east service door are locked");
+        var sinkClearCenter = new Vector3(0f, 0.44f, -2.05f);
+        var sinkClearSize = new Vector3(0.44f, 0.84f, 0.52f);
+        Require(layout.CounterReturns.All(body =>
+                !BoxesOverlap(body.Position, body.Size, sinkClearCenter, sinkClearSize)),
+            "east sink keeps an unobstructed under-counter clear volume");
+        var pulledWestEdge = layout.LoungeChairs.Min(chair =>
+            chair.PulledOutPosition.X - chair.Size.X * 0.5f);
+        var pulledEastEdge = layout.LoungeChairs.Max(chair =>
+            chair.PulledOutPosition.X + chair.Size.X * 0.5f);
+        var pulledNorthEdge = layout.LoungeChairs.Min(chair =>
+            chair.PulledOutPosition.Z - chair.Size.Z * 0.5f);
+        var pulledSouthEdge = layout.LoungeChairs.Max(chair =>
+            chair.PulledOutPosition.Z + chair.Size.Z * 0.5f);
+        Require(pulledWestEdge >= 1.60f && pulledEastEdge <= 5.00f &&
+                pulledNorthEdge >= -3.50f && pulledSouthEdge <= 3.50f &&
+                layout.LoungeChairs.All(chair =>
+                    !BoxesOverlap(chair.PulledOutPosition, chair.Size,
+                        new Vector3(-1f, 1.05f, 3.75f), new Vector3(1.40f, 2.10f, 1.30f))) &&
+                layout.LoungeChairs.All(chair =>
+                    !BoxesOverlap(chair.PulledOutPosition, chair.Size,
+                        new Vector3(3.20f, 1.0f, 3.95f), new Vector3(3.20f, 2.0f, 0.90f))),
+            "pulled-out chairs preserve the 1.20 metre main route, 0.90 metre secondary routes, entry swing, and south-window access");
     }
 
     private static void Require(bool condition, string message)
@@ -92,4 +114,10 @@ public partial class BarProductionLayoutContractTests : Node
         if (!condition)
             throw new InvalidOperationException(message);
     }
+
+    private static bool BoxesOverlap(Vector3 firstCenter, Vector3 firstSize,
+        Vector3 secondCenter, Vector3 secondSize) =>
+        Math.Abs(firstCenter.X - secondCenter.X) * 2f < firstSize.X + secondSize.X &&
+        Math.Abs(firstCenter.Y - secondCenter.Y) * 2f < firstSize.Y + secondSize.Y &&
+        Math.Abs(firstCenter.Z - secondCenter.Z) * 2f < firstSize.Z + secondSize.Z;
 }

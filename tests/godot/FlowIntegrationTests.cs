@@ -216,8 +216,17 @@ public partial class FlowIntegrationTests : Node
         Require(realityWorld.HasNode("RearBarWorktop"), "rear bar uses the approved 0.96 metre worktop");
         Require(!main.GetNode<Node3D>("NeutralGameplay").HasNode("MergedBackBarCollider"),
             "obsolete low rear-bar collision stays removed");
+        Require(!main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarCollider") &&
+                main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarWestChamferCollider") &&
+                main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarEastChamferCollider") &&
+                realityWorld.HasNode("FrontBarWestChamfer") &&
+                realityWorld.HasNode("FrontBarEastChamfer"),
+            "front bar collision and graybox visuals expose both approved 45-degree inner chamfers");
         Require(main.GetNode<Node3D>("RealityWorld/SouthWindows").GetChildCount() == 1,
             "runtime shell has exactly one south-east landscape window");
+        Require(realityWorld.HasNode("Ceiling") &&
+                realityWorld.GetNode<Node3D>("Wainscot").GetChildCount() == 8,
+            "runtime shell includes the ceiling and segmented 1.05 metre wainscot break around openings");
         Require(!realityWorld.HasNode("RearBooth"), "obsolete booths stay removed");
         foreach (var toolLayout in layout.Tools)
             Require(Tool(main, toolLayout.ToolId).Position.IsEqualApprox(toolLayout.Position),
@@ -281,6 +290,11 @@ public partial class FlowIntegrationTests : Node
                 lightRig.GetNode<Node3D>("CustomerFills").GetChildCount() == 2 &&
                 !main.HasNode("KeyLight") && !main.HasNode("WarmLight") && !main.HasNode("BackBarLight"),
             "approved fixture groups replace the obsolete generic global lights");
+        Require(lightRig.GetNode<Node3D>("RearLinears").GetChildren()
+                .Cast<Node3D>()
+                .All(fixture => fixture.GetNode<MeshInstance3D>("Fixture").Mesh is BoxMesh box &&
+                    box.Size.X >= 2.40f && box.Size.Z <= 0.08f),
+            "rear task fixtures are concealed east-west linear strips rather than generic point-light housings");
         Require(narrowestWalkingLane >= 1.0f,
             "a fully opened short-travel drawer keeps approximately one metre of aisle clearance");
         var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");

@@ -97,7 +97,7 @@
 - Modify: `scripts/world/BarLayoutDefinition.cs`
 - Modify: `tools/run_verification.ps1`
 
-- [ ] **Step 1: Write the failing layout contract scene**
+- [x] **Step 1: Write the failing layout contract scene**
 
 Create a Godot test scene that calls `BarLayoutDefinition.Prototype.Validate()` and asserts all approved dimensions and counts without instantiating `Main.tscn`:
 
@@ -127,7 +127,7 @@ Require(layout.FrontFootrails.Count == 0,
 
 Also assert north/south orientation, 5.60 m front outline, 0.80 m front depth split into 0.62 + 0.18 m, east wet side 0.80 m, west dry side 0.65 m, internal clear span 4.15 m, three front facade bays, 0.90 m handoff strip, 0.38 m upper cabinet depth, bottle-rack levels 1.34/1.68 m, upper cabinet lower edge 2.10 m, one 1.40 m south double door, and one approximately 0.90 m north-east service door.
 
-- [ ] **Step 2: Run the new test and confirm it fails for the old layout**
+- [x] **Step 2: Run the new test and confirm it fails for the old layout**
 
 Run:
 
@@ -137,7 +137,7 @@ Run:
 
 Expected: non-zero exit because the current layout is 14 m × 13.3 m, uses a 1.42 m front top, 2.00 m eye height, 2.31 m aisle, four stools, booths, and three windows.
 
-- [ ] **Step 3: Replace the old layout data with explicit approved records**
+- [x] **Step 3: Replace the old layout data with explicit approved records**
 
 Extend `BarLayoutDefinition.cs` with immutable record types for openings, furniture, light fixtures, manual shelf geometry, and counter sections. Add explicit `OpenTravelDistance` to `BarCabinetLayout`:
 
@@ -159,15 +159,15 @@ Use a centered 12 m × 9 m room envelope (`X = -6..+6`, `Z = -4.5..+4.5`). Deriv
 
 Encode the approved sink, waste opening, manual shelf, workboard, drawer, lower sliding-panel, bottle-rack, upper-door, doorway, window, table, chair, stool, and light values from the spec. Retain existing runtime station/tool IDs even when their coordinates move.
 
-- [ ] **Step 4: Strengthen `Validate()` against orientation and regression errors**
+- [x] **Step 4: Strengthen `Validate()` against orientation and regression errors**
 
 Add validation for unique IDs, positive sizes, the single-window rule, a south-facing player vector, north rear-bar/south front-bar ordering, 4.15 m internal cross-span, exact furniture/light counts, exactly one ice drawer, no drawers below the wet-side sink, no bar-attached footrail, and minimum pulled-out-chair route clearances represented by the layout acceptance envelopes.
 
-- [ ] **Step 5: Add the contract scene to the one-command verifier**
+- [x] **Step 5: Add the contract scene to the one-command verifier**
 
 Append the test immediately after Godot import in `tools/run_verification.ps1` and require the token `BAR_PRODUCTION_LAYOUT_CONTRACT_PASS` before continuing.
 
-- [ ] **Step 6: Run the focused test and full non-visual regression**
+- [x] **Step 6: Run the focused test and full non-visual regression**
 
 Run the focused command from Step 2, then:
 
@@ -177,7 +177,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_verification.ps1
 
 Expected: layout contract and all existing test suites pass after old geometry assertions are updated in later tasks. If old scene assertions fail here, record the expected failures and do not weaken unrelated gameplay assertions.
 
-- [ ] **Step 7: Proposed commit boundary after explicit permission**
+- [x] **Step 7: Proposed commit boundary after explicit permission**
 
 ```powershell
 git add scripts/world/BarLayoutDefinition.cs tests/godot/BarProductionLayoutContractTests.cs tests/godot/BarProductionLayoutContractTests.tscn tools/run_verification.ps1
@@ -193,7 +193,7 @@ git commit -m "test: lock approved production bar layout"
 - Modify: `tests/godot/InputIntegrationTests.cs`
 - Modify: `tests/godot/FlowIntegrationTests.cs`
 
-- [ ] **Step 1: Write failing runtime assertions for shell, openings, and player pose**
+- [x] **Step 1: Write failing runtime assertions for shell, openings, and player pose**
 
 Update integration assertions to require one south-east window, the inward-opening 0.70 + 0.70 m main door, the north-east service door opening north, no old booths/windows, a 1.78–1.88 m eye-height target, and a player forward vector with positive Z:
 
@@ -207,7 +207,7 @@ Require(main.GetNode<Node3D>("RealityWorld").GetNode<Node3D>("SouthWindows").Get
     "only the approved south-east landscape window exists");
 ```
 
-- [ ] **Step 2: Run the input and flow scenes and confirm the old geometry fails**
+- [x] **Step 2: Run the input and flow scenes and confirm the old geometry fails**
 
 ```powershell
 & 'D:\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe' --headless --path 'D:\眼镜酒馆开发' --quit-after 300 res://tests/godot/InputIntegrationTests.tscn
@@ -216,7 +216,7 @@ Require(main.GetNode<Node3D>("RealityWorld").GetNode<Node3D>("SouthWindows").Get
 
 Expected: failures name the old player height/position and old wall/window nodes.
 
-- [ ] **Step 3: Separate authoritative collisions from replaceable graybox visuals**
+- [x] **Step 3: Separate authoritative collisions from replaceable graybox visuals**
 
 Refactor the builder surface to:
 
@@ -227,19 +227,19 @@ public void BuildGrayboxVisuals();
 
 `BuildCollisions()` creates the floor, segmented walls around actual openings, U-counter boundaries, rear-bar boundary, and door-leaf collision bodies under `NeutralGameplay`. `BuildGrayboxVisuals()` creates only replaceable meshes and labels under `RealityWorld`/`GlassesWorld`.
 
-- [ ] **Step 4: Build the approved shell and openings from the layout records**
+- [x] **Step 4: Build the approved shell and openings from the layout records**
 
 Remove the 14 m × 13.3 m floor, four 5 m-high walls, three south windows, and booths. Build the 12 m × 9 m × 3.5 m shell, 1.05 m wainscot break, one south-east 3.20 m × 1.55 m window with 0.75 m sill, the inward-opening south double door, and the north-east service door opening north. Do not create backstage rooms behind the service door.
 
-- [ ] **Step 5: Coordinate the player body, head, and camera with the new work scale**
+- [x] **Step 5: Coordinate the player body, head, and camera with the new work scale**
 
 Keep a normal gameplay eye target inside 1.78–1.88 m, update `Main.tscn` body/head offsets together, position the player in the 1.40 m operating aisle, and preserve the 180° Y rotation that converts Godot forward `-Z` into world south `+Z`.
 
-- [ ] **Step 6: Re-run the focused tests**
+- [x] **Step 6: Re-run the focused tests**
 
 Expected: the player starts inside the U, faces south, can move inside the aisle, cannot pass through the U boundary, and all opening counts and directions pass.
 
-- [ ] **Step 7: Proposed commit boundary after explicit permission**
+- [x] **Step 7: Proposed commit boundary after explicit permission**
 
 ```powershell
 git add scripts/world/GrayboxArchitectureBuilder.cs scripts/world/GrayboxLevelBuilder.cs scenes/Main.tscn tests/godot/InputIntegrationTests.cs tests/godot/FlowIntegrationTests.cs
@@ -255,15 +255,15 @@ git commit -m "feat: rebuild approved bar architectural graybox"
 - Modify: `scripts/gameplay/CabinetInteractable.cs`
 - Modify: `tests/godot/FlowIntegrationTests.cs`
 
-- [ ] **Step 1: Replace old storage assertions with exact interaction-scale tests**
+- [x] **Step 1: Replace old storage assertions with exact interaction-scale tests**
 
 Assert 8 drawers with 0.38 m travel, 6 upper doors at approximately 85°, one closed half-height employee gate on the east side, sink under-clearance, north-adjacent open waste bin, central three-slot workboard, 0.90 m handoff strip, west manual shelf, and no automatic snapping or waste behavior.
 
-- [ ] **Step 2: Run the flow scene and confirm it fails before implementation**
+- [x] **Step 2: Run the flow scene and confirm it fails before implementation**
 
 Expected: the current `CabinetInteractable` reports at least 0.56 m drawer travel and old station coordinates.
 
-- [ ] **Step 3: Make drawer travel an explicit layout value**
+- [x] **Step 3: Make drawer travel an explicit layout value**
 
 Change the configuration surface to:
 
@@ -281,7 +281,7 @@ public void Configure(
 
 For drawers, reject non-positive `openTravelDistance` and compute `_openPosition = center + _outwardDirection * openTravelDistance`. Keep 1.48 radians for approved approximately 85° doors. Update `CabinetBuilder` to pass each `BarCabinetLayout.OpenTravelDistance`.
 
-- [ ] **Step 4: Rebuild the U counter and stations**
+- [x] **Step 4: Rebuild the U counter and stations**
 
 Build the 5.60 m south front run with 0.80 m section depth, 0.62 m player surface, 0.18 m south overhang, 1.20 m guest top, 0.96 m player top, 0.06/0.04 m thicknesses, R8 guest outer edge approximation, 3 mm exposed chamfers, three approximately 1.87 m facade bays, 0.90 m center handoff, 0.08 m × 0.12 m toe recess, and no attached footrail.
 
@@ -289,21 +289,21 @@ Build the east 0.80 m wet side and west 0.65 m dry side, retain the 5.60 m exter
 
 Move the existing high-frequency tools as one cohesive cluster around the central workboard while preserving every stable tool ID and the wet-east/dry-west zoning. The shallow parking etches remain visual parking marks only: do not add snapping, auto-return, or delivery behavior.
 
-- [ ] **Step 5: Build the approved wet and manual-side fixtures**
+- [x] **Step 5: Build the approved wet and manual-side fixtures**
 
 East wet side: 0.50 m north-south × 0.40 m east-west undermount sink opening, 0.22 m bowl depth, 8 mm overlap, faucet on east rim with west-facing 0.22 m reach and outlet 0.34 m above top, clear volume below, then a north-adjacent 0.60 m waste module with 0.32 m × 0.24 m R30 opening and stable `waste_bin` station. The south-hinged 0.60 m inspection door opens west approximately 85° and is noninteractive.
 
 West dry side: move the manual shelf 0.30 m north of the chamfer; use a 0.36 m × 0.50 m shelf for a 0.32 m north-south × 0.46 m east-west book, slope the shelf 20° east/inward, set the east pickup edge to 1.02 m and west edge to 1.19 m, and use 70 mm north/south stops at 25 mm height with a 220 mm center pickup gap. Keep the manual as a separate pick-up item with `Grip`, `Placement`, cover, and page-pivot nodes.
 
-- [ ] **Step 6: Rebuild the rear bar graybox**
+- [x] **Step 6: Rebuild the rear bar graybox**
 
 Use a 5.60 m-wide, 0.50 m-deep, 0.96 m-high rear counter with wet east/dry west, three approximately 1.87 m lower modules with two overlapping inset noninteractive sliding panels each, two bottle-rack levels at 1.34 m and 1.68 m with 0.28 m depth, continuous back, thin uprights, and a 12 mm front lip. Add the 0.38 m-deep upper cabinet with 0.12 m setback, 2.10 m lower edge, approximately 3.10 m top, and three pairs/six independent 85° doors.
 
-- [ ] **Step 7: Run focused and full regression tests**
+- [x] **Step 7: Run focused and full regression tests**
 
 Expected: exact drawer travel, open-door direction, sink/waste/manual positions, stable IDs, old gameplay flow, reset semantics, and world-mode interaction gating all pass.
 
-- [ ] **Step 8: Proposed commit boundary after explicit permission**
+- [x] **Step 8: Proposed commit boundary after explicit permission**
 
 ```powershell
 git add scripts/world/GrayboxArchitectureBuilder.cs scripts/world/CabinetBuilder.cs scripts/world/GameplaySceneComposer.cs scripts/gameplay/CabinetInteractable.cs tests/godot/FlowIntegrationTests.cs
@@ -318,31 +318,31 @@ git commit -m "feat: implement approved U bar interaction graybox"
 - Modify: `tests/godot/BarProductionLayoutContractTests.cs`
 - Modify: `tests/godot/FlowIntegrationTests.cs`
 
-- [ ] **Step 1: Add failing runtime count and clearance assertions**
+- [x] **Step 1: Add failing runtime count and clearance assertions**
 
 Require six backless stools, three 0.80 m tables, twelve independent chairs, four wall sconces, two invisible customer fills, three front-bar pendants, and two rear linear lights. Assert that the three pulled-out chair envelopes preserve a 1.20 m main route and 0.90 m secondary routes without intersecting the entry swing or landscape window access envelope.
 
-- [ ] **Step 2: Run layout and flow tests and confirm the old furniture/light rig fails**
+- [x] **Step 2: Run layout and flow tests and confirm the old furniture/light rig fails**
 
 Expected: old booths, four stools, and generic `KeyLight`/`WarmLight` nodes violate the contract.
 
-- [ ] **Step 3: Build the loose customer furniture graybox**
+- [x] **Step 3: Build the loose customer furniture graybox**
 
 Place six 0.78 m-high, approximately 0.40 m-diameter backless stools at approximately 0.65 m centers, two per front facade bay, with the center pair flanking the 0.90 m handoff. Model each stool's independent foot ring; create no bar-attached rail.
 
 Place three 0.80 m-diameter, approximately 0.75 m-high central-pedestal tables in a loose north-south stagger in the east customer zone, with approximately 2.35 m center spacing and alternating 0.30 m east-west offset. Place four independent armless chairs per table using 0.46 m width, 0.50 m depth, 0.46 m seat height, and 0.86 m overall height. Use pulled-out positions for clearance validation.
 
-- [ ] **Step 4: Replace generic global lights with the approved fixture groups**
+- [x] **Step 4: Replace generic global lights with the approved fixture groups**
 
 Build three pendants on the east-west front-bar axis, center one over the 0.90 m handoff, space adjacent pendants approximately 1.40 m, and keep the lowest visible point within 2.35–2.45 m. Build two concealed rear linear task lights.
 
 Build two sconces on each east/west wall at center height approximately 2.15 m, entirely above the 1.05 m wainscot, with soft upward and downward spread. Build two low-energy invisible wide-angle ceiling fills for the customer zone, one south and one north. Do not place fixtures above the south window/main entry, on the floor, or at the bar foot zone. Reality light is warm; glasses light is cold/desaturated.
 
-- [ ] **Step 5: Run all focused tests**
+- [x] **Step 5: Run all focused tests**
 
 Expected: counts, stable node groups, route envelopes, fixture exclusions, and world-specific light settings pass.
 
-- [ ] **Step 6: Proposed commit boundary after explicit permission**
+- [x] **Step 6: Proposed commit boundary after explicit permission**
 
 ```powershell
 git add scripts/world/GrayboxArchitectureBuilder.cs scenes/Main.tscn tests/godot/BarProductionLayoutContractTests.cs tests/godot/FlowIntegrationTests.cs
@@ -358,22 +358,22 @@ git commit -m "feat: add customer seating and bar lighting graybox"
 - Create: `tests/godot/BarProductionVisualCapture.tscn`
 - Modify: `docs/CONTEXT_HANDOFF.md`
 
-- [ ] **Step 1: Create deterministic review cameras and states**
+- [x] **Step 1: Create deterministic review cameras and states**
 
 Capture at least: overhead orientation, player eye facing south, west/north view of the U interior, east wet-side close-up, west manual shelf close-up, rear-bar open-door view, customer tables/chairs pulled out, south entry/window elevation, reality lighting, and glasses lighting. Hide menus/HUD, set deterministic exposure, and write the selected camera/state name into each filename.
 
-- [ ] **Step 2: Render with Forward+ Movie Maker, not headless-only geometry inspection**
+- [x] **Step 2: Render with Forward+ Movie Maker, not headless-only geometry inspection**
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts/visual_review_bar_graybox | Out-Null
 & 'D:\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe' --path 'D:\眼镜酒馆开发' --write-movie 'artifacts/visual_review_bar_graybox/frame.png' --fixed-fps 1 --quit-after 12 res://tests/godot/BarProductionVisualCapture.tscn
 ```
 
-- [ ] **Step 3: Inspect every rendered frame**
+- [x] **Step 3: Inspect every rendered frame**
 
 Verify north rear bar, south front bar, player inside the U facing customers, entry/window placement, 1.40 m aisle, drawer reach, sink/waste/manual reach, pulled-out customer clearances, stool spacing, and all light groups. Record image hashes and any corrections in `docs/CONTEXT_HANDOFF.md`.
 
-- [ ] **Step 4: STOP — request explicit user approval of graybox scale and orientation**
+- [x] **Step 4: STOP — request explicit user approval of graybox scale and orientation**
 
 Do not run Task 6 until the user approves the in-game graybox screenshots. Apply requested corrections in Tasks 1–5, rerun the contract/full suite, recapture, and ask again.
 
