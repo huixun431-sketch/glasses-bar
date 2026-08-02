@@ -223,9 +223,9 @@ def build_traditional_filter(materials: dict[str, bpy.types.Material]) -> bpy.ty
     add_torus(root, "FunnelShoulderRing", 0.092, 0.005, 0.079, metal)
     add_torus(root, "FunnelDepthRing", 0.055, 0.004, 0.070, metal)
     add_torus(root, "OutletThroat", 0.016, 0.004, 0.031, metal)
-    add_oriented_cylinder(root, "HandleBridgeLower", 0.009, 0.060, (0.145, 0.0, 0.073),
+    add_oriented_cylinder(root, "HandleBridgeLower", 0.009, 0.080, (0.135, 0.0, 0.090),
                           (0.0, math.pi / 2, 0.0), metal)
-    add_oriented_cylinder(root, "HandleBridgeUpper", 0.009, 0.060, (0.145, 0.0, 0.126),
+    add_oriented_cylinder(root, "HandleBridgeUpper", 0.009, 0.080, (0.135, 0.0, 0.126),
                           (0.0, math.pi / 2, 0.0), metal)
     grip_handle = add_cylinder(root, "GripHandle", 0.012, 0.077, 0.100, metal, vertices=8)
     grip_handle.location.x = 0.170
