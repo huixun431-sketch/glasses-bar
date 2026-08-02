@@ -4,6 +4,20 @@
 
 本文件是长任务与上下文压缩后的首读入口。只保留当前决策、验证状态、阻塞和下一动作；详细内容回到链接文档读取。
 
+## P0｜2026-08-02 第二阶段手持资产设计已批准
+
+- 用户已批准第二阶段范围：`traditional_filter`、`bean_scoop`、`ice_tongs`、`jigger_small`、`jigger_large`；权威书面规格为 `docs/superpowers/specs/2026-08-02-stage2-handheld-assets-design.md`。
+- `traditional_filter` 采用紧凑金属滴滤杯轮廓：低矮滤杯、短侧握把、可读网面、明确底部过滤出口；不扩展成支架、布袋或长柄滤网。
+- 材质采用批准的 B×C“混合 C”：过滤器为低饱和暖金属细拉丝，豆铲／冰夹为深色旧钢缎面，小／大量酒器延续中号母版的亮银高光。
+- 生产采用“先轮廓成组，再统一精修”：检查点 1 为五件 Blender 队列与尺度／轮廓审核；通过后才做材质、GLB 与包装；检查点 2 为实际 Godot 世界／手持／组合截图审核；通过后才收尾。
+- GLB 仍只作为手写包装场景的视觉子场景；稳定 ID、必需锚点、灰盒回退、现实可交互／眼镜观察和唯一玩法状态合同不得改变。
+
+## P1｜2026-08-02 当前下一动作
+
+1. 等待用户复核书面规格 `docs/superpowers/specs/2026-08-02-stage2-handheld-assets-design.md`。
+2. 书面规格通过后编写详细实施计划；在实施计划通过前不开始建模。
+3. 实施时先完成五件低细节轮廓与锚点，并在检查点 1 停下等待用户批准。
+
 ## P0｜2026-08-02 第一轮资产建模完成
 
 - 权威计划为 `docs/CORE_INTERACTION_ASSET_MODELING_PLAN.md`；阶段 1 的 `highball_glass`、`jigger_medium`、`mortar`、`pestle` 已完成。其余 12 项仍是灰盒，未经用户新指令不得开始阶段 2。
