@@ -51,9 +51,19 @@ public partial class BarStorageIntegrationTests : Node
                 "coffee is placed by local coordinates in its assigned rear cabinet host");
             Require(!coffee.IsStorageAccessible,
                 "coffee is inaccessible while its cabinet is closed");
+            var coffeeDoorClosedPosition = coffeeDoor.Position;
+            var movingLeaf = coffeeDoor.GetNodeOrNull<Node3D>("MovingLeaf");
+            Require(movingLeaf is not null,
+                "rear lower cabinet exposes a dedicated moving sliding-door leaf");
+            var movingLeafClosedPosition = movingLeaf!.Position;
             coffeeDoor.SetOpen(true, false);
             Require(!toolDrawer.IsOpen && coffeeDoor.IsOpen && coffee.IsStorageAccessible,
                 "opening another storage front closes the first and exposes only its own contents");
+            Require(coffeeDoor.Position.IsEqualApprox(coffeeDoorClosedPosition) &&
+                    !Mathf.IsEqualApprox(movingLeaf.Position.X, movingLeafClosedPosition.X) &&
+                    Mathf.IsEqualApprox(movingLeaf.Position.Y, movingLeafClosedPosition.Y) &&
+                    Mathf.IsEqualApprox(movingLeaf.Position.Z, movingLeafClosedPosition.Z),
+                "sliding door keeps the storage root fixed and moves one leaf laterally");
 
             var iceDrawer = neutral.GetNode<CabinetInteractable>("front_drawer_2_upper");
             var ice = main.GetTree().GetNodesInGroup("interactable")
@@ -69,6 +79,8 @@ public partial class BarStorageIntegrationTests : Node
                 .EmitSignal(PauseMenuController.SignalName.RestartDayRequested);
             Require(storageFronts.All(front => !front.IsOpen),
                 "daily restart closes every storage front");
+            Require(movingLeaf.Position.IsEqualApprox(movingLeafClosedPosition),
+                "daily restart returns the sliding leaf to its closed position");
             Require(layout.ItemStorageAssignments.All(assignment =>
                     main.GetTree().GetNodesInGroup("interactable")
                         .OfType<Node>()

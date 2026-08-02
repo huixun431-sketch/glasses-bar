@@ -193,7 +193,9 @@ public partial class FlowIntegrationTests : Node
         Require(layout.Stations.Count == 5 &&
                 layout.Tools.Count == 9 &&
                 layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.Drawer) == 8 &&
-                layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.Door) == 15 &&
+                layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.Door) == 10 &&
+                layout.Cabinets.Count(cabinet => cabinet.Kind == CabinetPartKind.SlidingDoor) == 5 &&
+                layout.Cabinets.Count == 23 &&
                 layout.Cabinets.Single(cabinet => cabinet.ContainsIceBucket).Id == "front_drawer_2_upper" &&
                 layout.Workboard.Slots.Count == 3,
             "immutable bar layout definition retains every stable gameplay node and cabinet slot");

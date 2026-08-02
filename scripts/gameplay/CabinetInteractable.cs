@@ -6,7 +6,8 @@ namespace GlassesBar;
 public enum CabinetPartKind
 {
     Door,
-    Drawer
+    Drawer,
+    SlidingDoor
 }
 
 public partial class CabinetInteractable : StaticBody3D, IInteractable
@@ -21,16 +22,23 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
     private Vector3 _outwardDirection = Vector3.Back;
     private string _contentsDescription = "当前为空";
     private MeshInstance3D _panel = null!;
+    private MeshInstance3D? _movingLeaf;
+    private CollisionShape3D? _movingLeafCollision;
+    private Vector3 _movingLeafClosedPosition;
+    private Vector3 _movingLeafOpenPosition;
     private StandardMaterial3D _material = null!;
     private Tween? _tween;
 
     public bool IsOpen { get; private set; }
+    public CabinetPartKind Kind => _kind;
     public Vector3 ClosedPosition => _closedPosition;
     public Vector3 OpenPosition => _openPosition;
     public float OpenRotationY => _openRotationY;
     public Vector3 OutwardDirection => _outwardDirection;
     public Vector3 PanelSize { get; private set; }
-    public float OpenTravelDistance => _closedPosition.DistanceTo(_openPosition);
+    public float OpenTravelDistance => _kind == CabinetPartKind.SlidingDoor
+        ? _movingLeafClosedPosition.DistanceTo(_movingLeafOpenPosition)
+        : _closedPosition.DistanceTo(_openPosition);
 
     public void Configure(string id, CabinetPartKind kind, Vector3 center, Vector3 size, bool hingeOnLeft,
         Vector3 outwardDirection, float storageDepth, float openTravelDistance,
@@ -56,13 +64,21 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
                 ? hingeOnLeft ? -doorOpenAngleRadians : doorOpenAngleRadians
                 : hingeOnLeft ? doorOpenAngleRadians : -doorOpenAngleRadians;
         }
-        else
+        else if (kind == CabinetPartKind.Drawer)
         {
             if (openTravelDistance <= 0f)
                 throw new System.ArgumentOutOfRangeException(nameof(openTravelDistance),
                     "Drawer travel must be positive.");
             Position = center;
             _openPosition = center + _outwardDirection * openTravelDistance;
+        }
+        else
+        {
+            if (openTravelDistance <= 0f || openTravelDistance > size.X * 0.55f)
+                throw new System.ArgumentOutOfRangeException(nameof(openTravelDistance),
+                    "Sliding-door travel must move one half-width leaf inside its own bay.");
+            Position = center;
+            _openPosition = center;
         }
         _closedPosition = Position;
 
@@ -72,6 +88,13 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
             Roughness = 0.78f,
             Metallic = 0.03f
         };
+        if (kind == CabinetPartKind.SlidingDoor)
+        {
+            AddSlidingDoorLeaves(size, openTravelDistance);
+            GameSession.Instance.WorldModeChanged += OnWorldModeChanged;
+            return;
+        }
+
         _panel = new MeshInstance3D
         {
             Name = "Panel",
@@ -104,7 +127,7 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
     }
 
     public string GetPrompt(InteractionContext context) =>
-        $"[E] {(IsOpen ? "关闭" : "打开")}{(_kind == CabinetPartKind.Drawer ? "抽屉" : "柜门")}（{_contentsDescription}）";
+        $"[E] {(IsOpen ? "关闭" : "打开")}{PartLabel()}（{_contentsDescription}）";
 
     public GameplayActionDefinition GetActionDefinition(InteractionContext context) =>
         GameplayActionDefinitions.ToggleStorage;
@@ -146,16 +169,25 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
             Rotation = _kind == CabinetPartKind.Door && open
                 ? new Vector3(0f, _openRotationY, 0f)
                 : Vector3.Zero;
+            if (_kind == CabinetPartKind.SlidingDoor)
+                SetSlidingLeafPosition(open ? _movingLeafOpenPosition : _movingLeafClosedPosition);
             return;
         }
 
         _tween = CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
         if (_kind == CabinetPartKind.Drawer)
             _tween.TweenProperty(this, "position", open ? _openPosition : _closedPosition, 0.28d);
-        else
+        else if (_kind == CabinetPartKind.Door)
             _tween.TweenProperty(this, "rotation:y", open ? _openRotationY : 0f, 0.28d);
+        else
+        {
+            var target = open ? _movingLeafOpenPosition : _movingLeafClosedPosition;
+            _tween.SetParallel();
+            _tween.TweenProperty(_movingLeaf, "position", target, 0.28d);
+            _tween.TweenProperty(_movingLeafCollision, "position", target, 0.28d);
+        }
         GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage,
-            $"已{(open ? "打开" : "关闭")}{(_kind == CabinetPartKind.Drawer ? "抽屉" : "柜门")}；{_contentsDescription}。 ");
+            $"已{(open ? "打开" : "关闭")}{PartLabel()}；{_contentsDescription}。 ");
     }
 
     private void OnWorldModeChanged(int mode)
@@ -199,4 +231,68 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
             MaterialOverride = trayMaterial
         });
     }
+
+    private void AddSlidingDoorLeaves(Vector3 size, float openTravelDistance)
+    {
+        var leafSize = new Vector3(size.X * 0.5f, size.Y, size.Z);
+        var fixedPosition = new Vector3(-size.X * 0.25f, 0f, 0f);
+        var behindOffset = -_outwardDirection * 0.022f;
+        _movingLeafClosedPosition = new Vector3(size.X * 0.25f, 0f, 0f) + behindOffset;
+        _movingLeafOpenPosition = _movingLeafClosedPosition + Vector3.Left * openTravelDistance;
+
+        _panel = CreateSlidingLeaf("FixedLeaf", fixedPosition, leafSize, false);
+        _movingLeaf = CreateSlidingLeaf("MovingLeaf", _movingLeafClosedPosition, leafSize, true);
+        AddChild(new CollisionShape3D
+        {
+            Name = "FixedLeafCollision",
+            Position = fixedPosition,
+            Shape = new BoxShape3D { Size = leafSize }
+        });
+        _movingLeafCollision = new CollisionShape3D
+        {
+            Name = "MovingLeafCollision",
+            Position = _movingLeafClosedPosition,
+            Shape = new BoxShape3D { Size = leafSize }
+        };
+        AddChild(_movingLeafCollision);
+    }
+
+    private MeshInstance3D CreateSlidingLeaf(string name, Vector3 position, Vector3 size, bool handleOnRight)
+    {
+        var leaf = new MeshInstance3D
+        {
+            Name = name,
+            Position = position,
+            Mesh = new BoxMesh { Size = size },
+            MaterialOverride = _material
+        };
+        leaf.AddChild(new MeshInstance3D
+        {
+            Name = "Handle",
+            Position = new Vector3(handleOnRight ? -size.X * 0.32f : size.X * 0.32f,
+                size.Y * 0.25f, _outwardDirection.Z * size.Z * 0.62f),
+            Mesh = new BoxMesh { Size = new Vector3(0.06f, 0.20f, 0.06f) },
+            MaterialOverride = new StandardMaterial3D
+            {
+                AlbedoColor = new Color("c79b58"), Metallic = 0.65f, Roughness = 0.28f
+            }
+        });
+        AddChild(leaf);
+        return leaf;
+    }
+
+    private void SetSlidingLeafPosition(Vector3 position)
+    {
+        if (_movingLeaf is not null)
+            _movingLeaf.Position = position;
+        if (_movingLeafCollision is not null)
+            _movingLeafCollision.Position = position;
+    }
+
+    private string PartLabel() => _kind switch
+    {
+        CabinetPartKind.Drawer => "抽屉",
+        CabinetPartKind.SlidingDoor => "推拉门",
+        _ => "柜门"
+    };
 }

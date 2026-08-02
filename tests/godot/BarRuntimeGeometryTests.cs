@@ -57,12 +57,19 @@ public partial class BarRuntimeGeometryTests : Node
             Require(reality.HasNode("FrontEastSinkFixtures") &&
                     !reality.HasNode("EastWetFixtures"),
                 "front east sink replaces the obsolete side wet zone");
+            Require(reality.HasNode("ExposedSinkPlumbing") &&
+                    reality.GetNode<Node3D>("ExposedSinkPlumbing").GetChildCount() >= 4,
+                "open sink underbay contains exposed drain and supply plumbing");
             Require(neutral.GetNodeOrNull<Node3D>("sink_left_drawer_upper") is null &&
                     neutral.GetNodeOrNull<Node3D>("sink_left_drawer_lower") is null,
                 "sink underbay has no legacy drawer nodes");
+            Require(neutral.FindChildren("*", string.Empty, true, false)
+                    .All(node => !node.Name.ToString().StartsWith("sink_under_", StringComparison.Ordinal)),
+                "sink underbay contains no storage or cabinet remnants");
 
             VerifyRoomContainment(main);
             VerifyStoredItemContainment(main, neutral);
+            VerifyFrontDrawerStaticClearance(reality, neutral);
             VerifyStorageMotion(main, neutral);
             GD.Print("BAR_RUNTIME_GEOMETRY_PASS");
             GetTree().Quit(0);
@@ -128,9 +135,12 @@ public partial class BarRuntimeGeometryTests : Node
                 other.SetOpen(false, false);
             var closedPosition = cabinet.Position;
             var closedRotation = cabinet.Rotation.Y;
+            var movingLeaf = cabinet.GetNodeOrNull<Node3D>("MovingLeaf");
+            var closedLeafPosition = movingLeaf?.Position ?? Vector3.Zero;
             cabinet.SetOpen(true, false);
             var openPosition = cabinet.Position;
             var openRotation = cabinet.Rotation.Y;
+            var openLeafPosition = movingLeaf?.Position ?? Vector3.Zero;
 
             foreach (var sample in new[] { 0f, 0.25f, 0.50f, 0.75f, 1f })
             {
@@ -139,6 +149,8 @@ public partial class BarRuntimeGeometryTests : Node
                     0f,
                     Mathf.LerpAngle(closedRotation, openRotation, sample),
                     0f);
+                if (movingLeaf is not null)
+                    movingLeaf.Position = closedLeafPosition.Lerp(openLeafPosition, sample);
                 var currentBounds = MergeBounds(DescendantMeshes(cabinet));
                 foreach (var other in cabinets.Where(other => other != cabinet))
                 {
@@ -150,10 +162,46 @@ public partial class BarRuntimeGeometryTests : Node
             }
             cabinet.Position = closedPosition;
             cabinet.Rotation = new Vector3(0f, closedRotation, 0f);
+            if (movingLeaf is not null)
+                movingLeaf.Position = closedLeafPosition;
         }
 
         foreach (var cabinet in cabinets)
             cabinet.SetOpen(false, false);
+    }
+
+    private static void VerifyFrontDrawerStaticClearance(Node3D reality, Node3D neutral)
+    {
+        var staticMeshes = new System.Collections.Generic.List<MeshInstance3D>
+        {
+            reality.GetNode<MeshInstance3D>("FrontBarBody")
+        };
+        var carcass = reality.GetNodeOrNull<Node3D>("FrontStaticCarcass");
+        if (carcass is not null)
+            staticMeshes.AddRange(DescendantMeshes(carcass));
+
+        var drawers = neutral.GetChildren().OfType<CabinetInteractable>()
+            .Where(cabinet => cabinet.Name.ToString().StartsWith("front_drawer_", StringComparison.Ordinal))
+            .ToArray();
+        foreach (var drawer in drawers)
+        {
+            drawer.SetOpen(false, false);
+            var closed = drawer.Position;
+            drawer.SetOpen(true, false);
+            var open = drawer.Position;
+            foreach (var sample in new[] { 0f, 0.25f, 0.50f, 0.75f, 1f })
+            {
+                drawer.Position = closed.Lerp(open, sample);
+                var drawerBounds = MergeBounds(DescendantMeshes(drawer));
+                foreach (var mesh in staticMeshes)
+                {
+                    var staticBounds = TransformAabb(mesh.GetAabb(), mesh.GlobalTransform);
+                    Require(!Overlaps(drawerBounds, staticBounds, 0.005f),
+                        $"ItemId={drawer.Name}; StorageId={drawer.Name}; Intersects={mesh.Name}; Sample={sample:0.##}");
+                }
+            }
+            drawer.Position = closed;
+        }
     }
 
     private static Aabb MergeBounds(System.Collections.Generic.IEnumerable<MeshInstance3D> meshes)

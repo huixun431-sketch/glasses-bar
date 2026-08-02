@@ -53,7 +53,7 @@ public partial class BarProductionVisualCapture : Node
             _main.AddChild(_technicalFillLights);
 
             var outputDirectory = ProjectSettings.GlobalizePath(
-                "res://artifacts/visual_review_bar_graybox_z3_h3");
+                "res://artifacts/visual_review_bar_graybox_z3_h3_detail_fix");
             DirAccess.MakeDirRecursiveAbsolute(outputDirectory);
             var states = new List<CaptureState>
             {
@@ -72,7 +72,11 @@ public partial class BarProductionVisualCapture : Node
                 new("13_customer_chairs_pulled", new Vector3(7.15f, 4.35f, 4.25f), new Vector3(4.35f, 0.72f, 0.40f), PullOutChairs: true),
                 new("14_reality_lighting", new Vector3(6.80f, 3.35f, 3.40f), new Vector3(-2.40f, 1.45f, -2.25f)),
                 new("15_glasses_lighting", new Vector3(6.80f, 3.35f, 3.40f), new Vector3(-2.40f, 1.45f, -2.25f), Glasses: true),
-                new("16_runtime_aabb_overview", new Vector3(3.75f, 8.40f, 5.65f), new Vector3(-2.25f, 1.25f, -2.15f), ShowDiagnostics: true)
+                new("16_runtime_aabb_overview", new Vector3(3.75f, 8.40f, 5.65f), new Vector3(-2.25f, 1.25f, -2.15f), ShowDiagnostics: true),
+                new("17_guest_counter_extension_close", new Vector3(-2.80f, 1.75f, 0.25f), new Vector3(-2.80f, 1.28f, -0.86f)),
+                new("18_front_drawer_carcass_clearance", new Vector3(-0.65f, 1.45f, -3.20f), new Vector3(-1.86f, 0.58f, -1.70f), OpenStorageId: "front_drawer_4_lower"),
+                new("19_rear_sliding_door_open", new Vector3(-5.05f, 1.45f, -1.90f), new Vector3(-6.20f, 0.52f, -3.58f), OpenStorageId: "rear_lower_cabinet_1"),
+                new("20_sink_exposed_plumbing_close", new Vector3(0.65f, 1.20f, -2.85f), new Vector3(0.65f, 0.56f, -1.42f))
             };
 
             foreach (var state in states)

@@ -40,6 +40,8 @@ public sealed class GrayboxArchitectureBuilder
             AddStaticBox(_neutral, wall.Name + "Collider", wall.Position, wall.Size);
         BarPolygonGeometry.CreateCollisionBody(
             _neutral, "FrontBarBodyCollider", _layout.FrontBodyFootprint, 2);
+        foreach (var part in _layout.FrontCarcassParts)
+            AddStaticBox(_neutral, part.Name + "Collider", part.Position, part.Size, 2);
         BarPolygonGeometry.CreateCollisionBody(
             _neutral, "PlayerWorktopCollider", _layout.FrontPlayerTopFootprint, 2);
         BarPolygonGeometry.CreateCollisionBody(
@@ -78,6 +80,8 @@ public sealed class GrayboxArchitectureBuilder
             _reality, _layout.FrontBodyFootprint, MakeMaterial(new Color("5b3524")));
         BarPolygonGeometry.CreateVisual(
             _glasses, _layout.FrontBodyFootprint, MakeMaterial(new Color("075366"), true));
+        BuildFrontCarcass(_reality, false);
+        BuildFrontCarcass(_glasses, true);
         BarPolygonGeometry.CreateVisual(
             _reality, _layout.FrontPlayerTopFootprint, MakeMaterial(new Color("76503a")));
         BarPolygonGeometry.CreateVisual(
@@ -385,6 +389,15 @@ public sealed class GrayboxArchitectureBuilder
             new Vector3(sink.Position.X + 0.20f, BarLayoutDefinition.PlayerWorktopHeight + 0.34f, sink.Position.Z - 0.07f),
             new Vector3(0.24f, 0.045f, 0.22f)), metal, glasses);
 
+        var plumbing = new Node3D { Name = "ExposedSinkPlumbing" };
+        parent.AddChild(plumbing);
+        foreach (var part in _layout.SinkPlumbingParts)
+            CreateBox(plumbing, part,
+                part.Name.Contains("Supply", System.StringComparison.Ordinal)
+                    ? glasses ? new Color("1f9aaa") : new Color("8f694b")
+                    : metal,
+                glasses);
+
         var dry = new Node3D { Name = "WestManualShelf" };
         parent.AddChild(dry);
         CreateRotatedBox(dry, _layout.ManualShelf, new Vector3(0f, 0f, -20f), trim, glasses);
@@ -440,6 +453,16 @@ public sealed class GrayboxArchitectureBuilder
                         BarLayoutDefinition.UpperCabinetCenterHeight, -3.80f),
                     new Vector3(0.04f, 1.30f, 0.38f)), trim, glasses);
         }
+    }
+
+    private void BuildFrontCarcass(Node3D parent, bool glasses)
+    {
+        var root = new Node3D { Name = "FrontStaticCarcass" };
+        parent.AddChild(root);
+        foreach (var part in _layout.FrontCarcassParts)
+            CreateBox(root, part,
+                glasses ? new Color("075366") : new Color("5b3524"),
+                glasses);
     }
 
     private void BuildExpandedLounge(Node3D parent, bool glasses)

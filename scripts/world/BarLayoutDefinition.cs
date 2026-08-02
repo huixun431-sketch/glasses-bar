@@ -121,6 +121,7 @@ public sealed class BarLayoutDefinition
     public const int FrontFacadeBayCount = 4;
     public const float FrontSectionDepth = 1.10f;
     public const float GuestSurfaceDepth = 0.24f;
+    public const float GuestCounterOutwardExtension = 0.30f;
     public const float PlayerSurfaceDepth = 0.86f;
     public const float FrontBarTopHeight = 1.38f;
     public const float PlayerWorktopHeight = 1.12f;
@@ -209,10 +210,17 @@ public sealed class BarLayoutDefinition
             new Vector2(westEdge + FrontChamferRun, FrontBarInnerEdgeZ),
             new Vector2(westEdge, -1.60f)
         });
-        var guestTopFootprint = Array.AsReadOnly(new[]
+        var guestRiserFootprint = Array.AsReadOnly(new[]
         {
             new Vector2(westEdge, -0.85f),
             new Vector2(eastEdge, -0.85f),
+            new Vector2(eastEdge, -1.15f),
+            new Vector2(westEdge, -1.15f)
+        });
+        var guestTopFootprint = Array.AsReadOnly(new[]
+        {
+            new Vector2(westEdge, -0.85f + GuestCounterOutwardExtension),
+            new Vector2(eastEdge, -0.85f + GuestCounterOutwardExtension),
             new Vector2(eastEdge, -1.15f),
             new Vector2(westEdge, -1.15f)
         });
@@ -227,11 +235,11 @@ public sealed class BarLayoutDefinition
             new Vector2(westEdge, -1.20f)
         });
         FrontBodyFootprint = new BarPolygonPrismLayout(
-            "FrontBarBody", bodyFootprint, 0f, PlayerWorktopHeight - 0.04f);
+            "FrontBarBody", bodyFootprint, 0f, 0.08f);
         FrontPlayerTopFootprint = new BarPolygonPrismLayout(
             "PlayerWorktop", playerTopFootprint, PlayerWorktopHeight - 0.04f, PlayerWorktopHeight);
         FrontGuestRiserFootprint = new BarPolygonPrismLayout(
-            "GuestCounterRiser", guestTopFootprint, PlayerWorktopHeight, FrontBarTopHeight - 0.06f);
+            "GuestCounterRiser", guestRiserFootprint, PlayerWorktopHeight, FrontBarTopHeight - 0.06f);
         FrontGuestTopFootprint = new BarPolygonPrismLayout(
             "GuestCounterTop", guestTopFootprint, FrontBarTopHeight - 0.06f, FrontBarTopHeight);
 
@@ -401,6 +409,8 @@ public sealed class BarLayoutDefinition
         };
 
         Cabinets = BuildCabinets();
+        FrontCarcassParts = BuildFrontCarcassParts();
+        SinkPlumbingParts = BuildSinkPlumbingParts();
         Storages = Array.AsReadOnly(Cabinets.Select(BuildStorage).ToArray());
         ItemStorageAssignments = Array.AsReadOnly(new[]
         {
@@ -414,8 +424,8 @@ public sealed class BarLayoutDefinition
             new BarItemStorageLayout("jigger_medium", "front_drawer_3_upper", Vector3.Zero),
             new BarItemStorageLayout("jigger_large", "front_drawer_3_upper", new Vector3(0.35f, 0f, 0f)),
             new BarItemStorageLayout("highball_glass", "front_drawer_3_lower", Vector3.Zero),
-            new BarItemStorageLayout("coffee_beans", "rear_lower_cabinet_1", Vector3.Zero),
-            new BarItemStorageLayout("kettle", "rear_lower_cabinet_2", Vector3.Zero)
+            new BarItemStorageLayout("coffee_beans", "rear_lower_cabinet_1", new Vector3(0.30f, 0f, 0f)),
+            new BarItemStorageLayout("kettle", "rear_lower_cabinet_2", new Vector3(0.30f, 0f, 0f))
         });
 
         IceBucket = new BarStationLayout(
@@ -439,6 +449,8 @@ public sealed class BarLayoutDefinition
     public BarPolygonPrismLayout FrontPlayerTopFootprint { get; }
     public BarPolygonPrismLayout FrontGuestRiserFootprint { get; }
     public BarPolygonPrismLayout FrontGuestTopFootprint { get; }
+    public IReadOnlyList<BarBoxLayout> FrontCarcassParts { get; }
+    public IReadOnlyList<BarBoxLayout> SinkPlumbingParts { get; }
     public BarBoxLayout FrontBarBody { get; }
     public IReadOnlyList<BarBoxLayout> FrontBarBodySections { get; }
     public IReadOnlyList<BarRotatedBoxLayout> FrontBarInnerChamfers { get; }
@@ -518,6 +530,23 @@ public sealed class BarLayoutDefinition
             FrontGuestRiserFootprint.Footprint.Count < 3 ||
             FrontGuestTopFootprint.Footprint.Count < 3)
             throw new InvalidOperationException("Every front-bar polygon must have at least three points.");
+        if (!Mathf.IsEqualApprox(FrontGuestRiserFootprint.Footprint.Max(point => point.Y), -0.85f) ||
+            !Mathf.IsEqualApprox(FrontGuestTopFootprint.Footprint.Max(point => point.Y),
+                -0.85f + GuestCounterOutwardExtension))
+            throw new InvalidOperationException("Guest counter must extend 0.30 metres beyond its unchanged riser.");
+        if (FrontBodyFootprint.TopY > 0.09f || FrontCarcassParts.Count == 0 ||
+            Cabinets.Where(cabinet => cabinet.Kind == CabinetPartKind.Drawer)
+                .Any(drawer => FrontCarcassParts.Any(part => BoxesOverlap(
+                    new BarBoxLayout(drawer.Id, drawer.Center, drawer.Size), part))))
+            throw new InvalidOperationException("The front carcass must stay hollow and clear of every drawer front.");
+        if (SinkPlumbingParts.Count < 4 ||
+            SinkPlumbingParts.Any(part => !Contains(SinkUnderClearVolume, part)))
+            throw new InvalidOperationException("Exposed sink plumbing must remain inside the open underbay.");
+        if (Cabinets.Where(cabinet => cabinet.Id.StartsWith("rear_lower_cabinet_", StringComparison.Ordinal))
+                .Any(cabinet => cabinet.Kind != CabinetPartKind.SlidingDoor) ||
+            Cabinets.Where(cabinet => cabinet.Id.StartsWith("back_cabinet_", StringComparison.Ordinal))
+                .Any(cabinet => cabinet.Kind != CabinetPartKind.Door))
+            throw new InvalidOperationException("Rear lower fronts must slide while upper fronts remain hinged.");
         if (FrontBarInnerChamfers.Count != 0 || PlayerWorktopChamfers.Count != 0 || LiquorBottles.Count != 0)
             throw new InvalidOperationException("Obsolete overlay chamfers and placeholder bottles must remain absent.");
         if (BottleRackBays.Count != 5 || BottleRackBays.Any(bay => bay.Shelves.Count != 2))
@@ -651,13 +680,13 @@ public sealed class BarLayoutDefinition
             var centerX = rearWest + RearBayWidth * (bay + 0.5f);
             cabinets.Add(new BarCabinetLayout(
                 $"rear_lower_cabinet_{bay + 1}",
-                CabinetPartKind.Door,
+                CabinetPartKind.SlidingDoor,
                 new Vector3(centerX, 0.52f, RearBarFrontZ),
                 new Vector3(RearBayWidth - 0.12f, 0.96f, 0.06f),
                 bay % 2 == 0,
                 Vector3.Back,
                 0.70f,
-                0f,
+                (RearBayWidth - 0.12f) * 0.5f,
                 null,
                 false,
                 1.0f));
@@ -678,6 +707,53 @@ public sealed class BarLayoutDefinition
             }
         }
         return cabinets.AsReadOnly();
+    }
+
+    private static IReadOnlyList<BarBoxLayout> BuildFrontCarcassParts()
+    {
+        var parts = new List<BarBoxLayout>();
+        var westEdge = BarCenterX - FrontOutlineWidth * 0.5f;
+        var bodyEastEdge = BarCenterX + FrontOutlineWidth * 0.5f - FrontChamferRun - FrontSinkBayWidth;
+        parts.Add(new BarBoxLayout(
+            "FrontGuestApron",
+            new Vector3((westEdge + bodyEastEdge) * 0.5f, 0.58f, -0.88f),
+            new Vector3(bodyEastEdge - westEdge, 1.0f, 0.06f)));
+
+        var firstDrawerCenter = westEdge + FrontChamferRun + FrontDividerWidth + FrontBayClearWidth * 0.5f;
+        var dividerXs = new[]
+        {
+            firstDrawerCenter - FrontBayClearWidth * 0.5f - 0.07f,
+            firstDrawerCenter + 0.73f,
+            firstDrawerCenter + 2.19f,
+            firstDrawerCenter + 3.65f,
+            firstDrawerCenter + 5.11f
+        };
+        for (var index = 0; index < dividerXs.Length; index++)
+            parts.Add(new BarBoxLayout(
+                $"FrontCarcassDivider{index + 1}",
+                new Vector3(dividerXs[index], 0.56f, -1.52f),
+                new Vector3(0.06f, 0.96f, 0.78f)));
+
+        parts.Add(new BarBoxLayout(
+            "FrontCarcassTopRail",
+            new Vector3((dividerXs[0] + bodyEastEdge - 0.03f) * 0.5f, 1.045f, -1.52f),
+            new Vector3(bodyEastEdge - 0.03f - dividerXs[0], 0.05f, 0.78f)));
+        return parts.AsReadOnly();
+    }
+
+    private static IReadOnlyList<BarBoxLayout> BuildSinkPlumbingParts()
+    {
+        var sinkX = BarCenterX + FrontOutlineWidth * 0.5f - FrontChamferRun - FrontSinkBayWidth * 0.5f;
+        return Array.AsReadOnly(new[]
+        {
+            new BarBoxLayout("SinkDrainVertical", new Vector3(sinkX, 0.78f, -1.40f), new Vector3(0.09f, 0.38f, 0.09f)),
+            new BarBoxLayout("SinkTrapDown", new Vector3(sinkX, 0.51f, -1.40f), new Vector3(0.09f, 0.20f, 0.09f)),
+            new BarBoxLayout("SinkTrapBottom", new Vector3(sinkX - 0.10f, 0.39f, -1.40f), new Vector3(0.28f, 0.09f, 0.09f)),
+            new BarBoxLayout("SinkTrapReturn", new Vector3(sinkX - 0.24f, 0.53f, -1.40f), new Vector3(0.09f, 0.28f, 0.09f)),
+            new BarBoxLayout("SinkWallDrain", new Vector3(sinkX - 0.24f, 0.65f, -1.58f), new Vector3(0.09f, 0.09f, 0.38f)),
+            new BarBoxLayout("SinkHotSupply", new Vector3(sinkX + 0.22f, 0.55f, -1.60f), new Vector3(0.035f, 0.78f, 0.035f)),
+            new BarBoxLayout("SinkColdSupply", new Vector3(sinkX + 0.34f, 0.55f, -1.60f), new Vector3(0.035f, 0.78f, 0.035f))
+        });
     }
 
     private static BarStorageLayout BuildStorage(BarCabinetLayout front)
@@ -717,6 +793,16 @@ public sealed class BarLayoutDefinition
         Math.Abs(first.Position.X - second.Position.X) * 2f < first.Size.X + second.Size.X &&
         Math.Abs(first.Position.Y - second.Position.Y) * 2f < first.Size.Y + second.Size.Y &&
         Math.Abs(first.Position.Z - second.Position.Z) * 2f < first.Size.Z + second.Size.Z;
+
+    private static bool Contains(BarBoxLayout outer, BarBoxLayout inner)
+    {
+        var outerMin = outer.Position - outer.Size * 0.5f;
+        var outerMax = outer.Position + outer.Size * 0.5f;
+        var innerMin = inner.Position - inner.Size * 0.5f;
+        var innerMax = inner.Position + inner.Size * 0.5f;
+        return innerMin.X >= outerMin.X && innerMin.Y >= outerMin.Y && innerMin.Z >= outerMin.Z &&
+               innerMax.X <= outerMax.X && innerMax.Y <= outerMax.Y && innerMax.Z <= outerMax.Z;
+    }
 
     private static void EnsureUnique(IEnumerable<string> ids, string kind)
     {

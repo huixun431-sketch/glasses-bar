@@ -52,6 +52,13 @@ public partial class BarProductionLayoutContractTests : Node
             "front bar keeps eight drawers and the stable ice drawer ID");
         Require(layout.Cabinets.Count(cabinet => cabinet.Id.StartsWith("rear_lower_cabinet_", StringComparison.Ordinal)) == 5,
             "rear bar has five lower storage fronts");
+        Require(layout.Cabinets.Where(cabinet =>
+                    cabinet.Id.StartsWith("rear_lower_cabinet_", StringComparison.Ordinal))
+                .All(cabinet => cabinet.Kind.ToString() == "SlidingDoor") &&
+                layout.Cabinets.Where(cabinet =>
+                    cabinet.Id.StartsWith("back_cabinet_", StringComparison.Ordinal))
+                .All(cabinet => cabinet.Kind == CabinetPartKind.Door),
+            "rear lower cabinets use sliding doors while upper cabinets remain hinged");
         Require(layout.Cabinets.Count(cabinet => cabinet.Id.StartsWith("back_cabinet_", StringComparison.Ordinal)) == 10,
             "rear bar has five paired upper cabinet groups");
         Require(layout.FrontStools.Count == 6 && layout.LoungeTables.Count == 3 &&
@@ -78,6 +85,19 @@ public partial class BarProductionLayoutContractTests : Node
                 layout.FrontGuestRiserFootprint.Footprint.Count >= 4 &&
                 layout.FrontGuestTopFootprint.Footprint.Count >= 4,
             "front body and both worktops use authoritative polygon outlines");
+        Require(Mathf.IsEqualApprox(layout.FrontGuestRiserFootprint.Footprint.Max(point => point.Y), -0.85f) &&
+                Mathf.IsEqualApprox(layout.FrontGuestTopFootprint.Footprint.Max(point => point.Y), -0.55f),
+            "guest countertop extends 0.30 metres toward customers without moving its riser");
+        Require(layout.FrontBodyFootprint.TopY <= 0.09f,
+            "front body polygon is only a thin base instead of a solid drawer-blocking prism");
+        Require(layout.FrontCarcassParts.Count > 0 &&
+                layout.Cabinets.Where(cabinet => cabinet.Kind == CabinetPartKind.Drawer)
+                    .All(drawer => layout.FrontCarcassParts.All(part =>
+                        !BoxesOverlap(drawer.Center, drawer.Size, part.Position, part.Size))),
+            "authoritative hollow front carcass leaves every closed drawer panel clear");
+        Require(layout.SinkPlumbingParts.Count >= 4 &&
+                layout.SinkPlumbingParts.All(part => Contains(layout.SinkUnderClearVolume, part)),
+            "exposed sink drain and supply pieces stay inside the open sink underbay");
         Require(layout.BottleRackBays.Count == 5 &&
                 layout.BottleRackBays.All(bay => bay.Shelves.Count == 2),
             "five aligned two-level empty bottle rack bays are locked");
@@ -152,4 +172,14 @@ public partial class BarProductionLayoutContractTests : Node
         Math.Abs(firstCenter.X - secondCenter.X) * 2f < firstSize.X + secondSize.X &&
         Math.Abs(firstCenter.Y - secondCenter.Y) * 2f < firstSize.Y + secondSize.Y &&
         Math.Abs(firstCenter.Z - secondCenter.Z) * 2f < firstSize.Z + secondSize.Z;
+
+    private static bool Contains(BarBoxLayout outer, BarBoxLayout inner)
+    {
+        var outerMin = outer.Position - outer.Size * 0.5f;
+        var outerMax = outer.Position + outer.Size * 0.5f;
+        var innerMin = inner.Position - inner.Size * 0.5f;
+        var innerMax = inner.Position + inner.Size * 0.5f;
+        return innerMin.X >= outerMin.X && innerMin.Y >= outerMin.Y && innerMin.Z >= outerMin.Z &&
+               innerMax.X <= outerMax.X && innerMax.Y <= outerMax.Y && innerMax.Z <= outerMax.Z;
+    }
 }

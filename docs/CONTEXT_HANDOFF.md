@@ -4,7 +4,19 @@
 
 本文件是长任务与上下文压缩后的首读入口。只保留当前决策、验证状态、阻塞和下一动作；详细内容回到链接文档读取。
 
-## P0｜2026-08-03 Z3/H3 完整酒吧灰盒已重建并交付用户检查
+## P0｜2026-08-03 Z3/H3 细节修订已完成，开始生产建模下一阶段
+
+- 用户确认大部分问题已解决，并要求：后吧台下柜改为推拉门；前吧客侧台面向客区延长 `0.30 m`；修复抽屉与前吧主体重合造成的实机错误；水槽下方补足可见内容。用户明确要求无需再次复核，修好后自行执行下一步计划。
+- 权威补充规格与执行计划分别为 `docs/superpowers/specs/2026-08-03-bar-graybox-detail-corrections-design.md` 和 `docs/superpowers/plans/2026-08-03-bar-graybox-detail-corrections.md`。
+- 五个 `rear_lower_cabinet_*` 现为双片推拉门；活动门片只沿本地 X 横移，权威交互根、柜内宿主和稳定 ID 不动。十个 `back_cabinet_*` 上柜门继续保持铰链门。咖啡豆和水壶位于推拉门开放半侧。
+- 客侧台面只向世界 `+Z` 外挑 `0.30 m`，立板、玩家台面、9.10 m 总长和 1.55 m 通道不移动。前吧实心主体已替换为 8 cm 薄底座、客侧背板、顶横梁和避开抽屉的竖向分隔；抽屉与静态结构在 0/25/50/75/100% 行程均不相交。
+- 水槽下继续无柜门、抽屉、封闭背板、储物和玩法碰撞；新增七段仅表现用排水/P 弯/墙向回水及冷热供水灰盒。
+- 完整回归通过：资产 16/0、领域 28/28、Debug/Release 0 警告/0 错误，Godot 导入及布局、储物、运行时几何、冒烟、Stage 1/2、输入、流程全部 PASS。
+- 已在 RTX 5070 上用 Godot 4.7.1 Vulkan Forward+ 生成并逐张人工检查 `artifacts/visual_review_bar_graybox_z3_h3_detail_fix/` 的 20 张 `1920×1080` PNG；哈希与检查结论见 `docs/assets/BAR_GRAYBOX_Z3_H3_DETAIL_FIX_CAPTURE_20260803.md`。
+- 下一动作不再等待灰盒复核：执行 `docs/superpowers/plans/2026-08-02-bar-layout-production-model.md` Task 6；随后依 `.agents/skills/modeling-glasses-bar-assets/references/workflow.md` 执行 Task 7，在中性建筑轮廓强制用户审阅点暂停。
+- 用户现有 `export_presets.cfg` 修改继续保留且不得纳入任何提交；不推送、不发布。
+
+## P1｜2026-08-03 Z3/H3 完整酒吧灰盒重建基线
 
 - 2026-08-02 的 12 m × 9 m × 3.5 m 灰盒、5.60 m 前吧和 Task 1–5 验收结论已被用户明确打回，不再代表当前批准基线。拒绝原因包括多类灰盒重叠、吧台明显过矮、瓶架混乱、原料／冰柜等对象越出场景或宿主、拐角堆砌和侧面承载功能过多。
 - 当前权威返工规格为 `docs/superpowers/specs/2026-08-03-bar-graybox-rework-design.md`。用户已批准视觉章节与书面规格，并授权直接制作样式后再检查实际截图；本轮仍只重做灰盒，不开始正式 Blender 环境几何。
@@ -16,7 +28,7 @@
 - 已建立 23 个默认关闭且互锁的储物正面及柜内宿主。所有工具、杯具、咖啡豆、水壶和冰桶每日复位到所属柜内；关闭时不可交互，打开后才可手动取用。水槽下方没有柜体、门板、背板、碰撞或过时节点。
 - 最终一键回归通过：资产 16/0、领域测试 28/28、Debug/Release 0 警告/0 错误，Godot 导入及布局、储物、运行时几何、冒烟、Stage 1/2、输入、流程测试全部 PASS。运行时几何测试还采样全部柜门/抽屉 0/25/50/75/100% 行程并验证互不相交、所有可见网格在房间内。
 - 已用 Godot 4.7.1 Vulkan Forward+（RTX 5070 Laptop GPU）生成并逐张人工检查 `artifacts/visual_review_bar_graybox_z3_h3/` 下 16 张 1920×1080 审批图。结构图使用仅限捕获场景的中性补光；`14_reality_lighting.png` 与 `15_glasses_lighting.png` 保持真实游戏灯光。截图脚本输出 `BAR_PRODUCTION_VISUAL_CAPTURE_PASS`；逐图 SHA-256 与检查结论见 `docs/assets/BAR_GRAYBOX_Z3_H3_CAPTURE_20260803.md`。
-- 当前唯一下一动作是等待用户检查本轮截图。若批准，再进入正式环境 GLB 合同／Blender 阶段；若指出问题，只回到本灰盒修正、回归和重拍，不偏离完整酒吧最终目标。
+- 该轮 16 图审批门已由后续用户反馈与直接执行授权取代；当前以本文件顶部的细节修订和生产建模下一动作为准。
 - 用户现有 `export_presets.cfg` 修改继续保留且不得纳入任何提交；不推送、不发布。
 
 ## P3｜2026-08-02 已被打回的完整酒吧灰盒历史记录
