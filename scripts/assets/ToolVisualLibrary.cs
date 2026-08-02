@@ -39,6 +39,25 @@ internal static class ToolVisualLibrary
     public static Node3D? FindAnchor(Node3D visual, string anchorName) =>
         visual.FindChild(anchorName, true, false) as Node3D;
 
+    public static void ApplyHeldPose(Node3D visual, string toolId)
+    {
+        var scale = toolId switch
+        {
+            "mortar" => 0.68f,
+            "pestle" => 0.72f,
+            "highball_glass" => 0.84f,
+            "jigger_medium" => 0.90f,
+            _ => 1f
+        };
+        visual.Scale = Vector3.One * scale;
+        visual.RotationDegrees = toolId switch
+        {
+            "pestle" => new Vector3(0f, 0f, 12f),
+            "jigger_medium" => new Vector3(0f, 0f, 7f),
+            _ => Vector3.Zero
+        };
+    }
+
     public static void ApplyWorldStyle(Node3D visual, WorldMode mode)
     {
         var material = mode == WorldMode.Glasses ? GlassesMaterial : null;

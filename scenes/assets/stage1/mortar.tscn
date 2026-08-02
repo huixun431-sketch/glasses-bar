@@ -6,3 +6,4 @@
 metadata/asset_id = "mortar"
 
 [node name="Model" parent="." instance=ExtResource("1_model")]
+position = Vector3(0, -0.12, 0)

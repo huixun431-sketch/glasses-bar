@@ -50,6 +50,8 @@ def make_material(
     roughness: float = 0.55,
     transmission: float = 0.0,
     ior: float = 1.45,
+    coat_weight: float = 0.0,
+    coat_roughness: float = 0.2,
 ) -> bpy.types.Material:
     material = bpy.data.materials.new(name)
     material.use_nodes = True
@@ -65,6 +67,8 @@ def make_material(
     set_socket(shader, ("Alpha",), color[3])
     set_socket(shader, ("Transmission Weight", "Transmission"), transmission)
     set_socket(shader, ("IOR",), ior)
+    set_socket(shader, ("Coat Weight", "Clearcoat"), coat_weight)
+    set_socket(shader, ("Coat Roughness", "Clearcoat Roughness"), coat_roughness)
     if color[3] < 1.0:
         if hasattr(material, "surface_render_method"):
             material.surface_render_method = "DITHERED"
@@ -214,12 +218,20 @@ def add_revolved_profile(
 
 def build_highball_glass() -> bpy.types.Object:
     root = add_root("highball_glass")
-    glass = make_material("Glass_Warm_Candidate", (0.52, 0.78, 0.82, 0.34), roughness=0.16, transmission=0.82)
-    base = make_material("Glass_Base_Candidate", (0.42, 0.68, 0.72, 0.46), roughness=0.2, transmission=0.68)
-    add_frustum_shell(root, "GlassBody", 0.018, 0.245, 0.060, 0.075, 0.052, 0.067, glass,
+    glass = make_material(
+        "Glass_Warm_Candidate", (0.48, 0.78, 0.86, 0.22), roughness=0.06,
+        transmission=0.98, ior=1.47, coat_weight=0.34, coat_roughness=0.06)
+    edge = make_material(
+        "Glass_Edge_Candidate", (0.70, 0.92, 0.98, 0.86), roughness=0.07,
+        transmission=0.30, ior=1.47, coat_weight=0.48, coat_roughness=0.04)
+    base = make_material(
+        "Glass_Base_Candidate", (0.44, 0.76, 0.86, 0.70), roughness=0.09,
+        transmission=0.42, ior=1.47, coat_weight=0.44, coat_roughness=0.05)
+    add_frustum_shell(root, "GlassBody", 0.018, 0.245, 0.060, 0.075, 0.050, 0.065, glass,
                       close_bottom=True, close_top=True)
     add_cylinder(root, "WeightedBase", 0.060, 0.024, 0.012, base)
-    add_torus(root, "GlassRim", 0.071, 0.004, 0.246, glass)
+    add_torus(root, "GlassRim", 0.070, 0.005, 0.246, edge)
+    add_torus(root, "GlassBaseEdge", 0.057, 0.003, 0.025, edge)
     add_anchor(root, "Grip", (0, 0.13, 0.07))
     add_anchor(root, "Placement", (0, 0, 0))
     add_anchor(root, "FillOrigin", (0, 0.035, 0))
@@ -228,8 +240,12 @@ def build_highball_glass() -> bpy.types.Object:
 
 def build_jigger_medium() -> bpy.types.Object:
     root = add_root("jigger_medium")
-    metal = make_material("Dark_Silver_Candidate", (0.22, 0.27, 0.30, 1.0), metallic=0.82, roughness=0.28)
-    edge = make_material("Worn_Silver_Edge", (0.43, 0.47, 0.48, 1.0), metallic=0.74, roughness=0.34)
+    metal = make_material(
+        "Dark_Silver_Candidate", (0.64, 0.70, 0.76, 1.0), metallic=0.72,
+        roughness=0.18, coat_weight=0.24, coat_roughness=0.07)
+    edge = make_material(
+        "Worn_Silver_Edge", (0.92, 0.95, 0.98, 1.0), metallic=0.82,
+        roughness=0.10, coat_weight=0.32, coat_roughness=0.05)
     add_frustum_shell(root, "LowerCup", 0.0, 0.078, 0.055, 0.023, 0.049, 0.018, metal,
                       close_bottom=True, close_top=False)
     add_cylinder(root, "Waist", 0.023, 0.032, 0.094, metal)
@@ -247,9 +263,9 @@ def build_jigger_medium() -> bpy.types.Object:
 
 def build_mortar() -> bpy.types.Object:
     root = add_root("mortar")
-    body = make_material("Mortar_Composite_Candidate", (0.25, 0.17, 0.115, 1.0), metallic=0.04, roughness=0.72)
-    inner = make_material("Mortar_Interior", (0.12, 0.085, 0.06, 1.0), metallic=0.02, roughness=0.84)
-    brass = make_material("Mortar_Worn_Band", (0.38, 0.24, 0.11, 1.0), metallic=0.48, roughness=0.48)
+    body = make_material("Mortar_Composite_Candidate", (0.42, 0.25, 0.14, 1.0), metallic=0.04, roughness=0.72)
+    inner = make_material("Mortar_Interior", (0.18, 0.10, 0.055, 1.0), metallic=0.02, roughness=0.84)
+    brass = make_material("Mortar_Worn_Band", (0.50, 0.28, 0.09, 1.0), metallic=0.48, roughness=0.48)
     add_cylinder(root, "MortarFoot", 0.18, 0.05, 0.025, body)
     add_frustum_shell(root, "MortarBody", 0.045, 0.235, 0.18, 0.24, 0.115, 0.18, body,
                       close_bottom=True, close_top=True)

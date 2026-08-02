@@ -1,8 +1,15 @@
 # 项目状态
 
-更新日期：2026-07-29
+更新日期：2026-08-02
 
 ## 已完成
+
+- 完成第一轮核心交互资产建模：`highball_glass`、`jigger_medium`、`mortar`、`pestle` 四项米制低多边形 GLB 已通过稳定根 ID、必需锚点、网格、材质、变换和包络校验，并由手写 Godot 包装接入世界摆放与第一人称双手。
+- 新增 `ToolVisualLibrary` 集中稳定 ID 到包装场景映射、现实/眼镜材质切换与手持姿态；`ToolInteractable`/`HeldToolPresenter` 在包装可用时隐藏旧灰盒，资源缺失时仍保留可恢复回退，不把玩法直接挂在导入 GLB 节点上。
+- 根据实际 Forward+ 截图修正四项底部接触面、研钵手持遮挡和暖光可读性；根据用户反馈强化量酒器拉丝银高光、杯沿/腰环，以及高球杯透明杯壁、亮杯沿、厚底和底部折射边。用户已于 2026-08-02 通过最终材质审核。
+- 四项在 `assets/asset_manifest.json` 与 `data/assets/asset_manifest.tres` 已标记为非占位；其余 12 项继续保持灰盒，阶段 2 尚未开始。
+- 最终视觉证据位于 `artifacts/visual_review_20260802_stage1_material_round4/` 与 `artifacts/visual_review_20260802_stage1_godot_round4/`，已人工检查现实陈列、眼镜世界、研钵/研杵手持和高球杯/量酒器手持。
+- 2026-08-02 第一轮资产完整回归：资产 16 项 0 错误、领域测试 28/28、Debug/Release 0 警告/0 错误，Godot 导入、`SMOKE_TESTS_PASS`、`STAGE1_ASSET_INTEGRATION_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS` 全部通过。
 
 - 完成共用设置第七批职责迁移：新增纯领域 `SettingsState`、场景级 `SettingsService` 与表现侧 `SettingsPanelBinding`；Master bus 与玩家灵敏度只有一个运行时 owner，主菜单/暂停菜单只处理导航并共享控件同步。
 - 保持音量 `0–100%`、线性下限 `0.001`、灵敏度滑杆 `1.0–6.0`/实际值 `0.001–0.006`、标签格式、默认运行时值、控件路径、焦点和暂停时可调语义不变；未新增磁盘设置持久化。

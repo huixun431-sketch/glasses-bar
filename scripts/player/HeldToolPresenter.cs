@@ -122,6 +122,7 @@ internal sealed class HeldToolPresenter
 
         visual.Name = "HeldAssetVisual";
         handAnchor.AddChild(visual);
+        ToolVisualLibrary.ApplyHeldPose(visual, toolId);
         AlignGripToHand(visual);
         ToolVisualLibrary.ApplyWorldStyle(visual, GameSession.Instance.WorldMode);
         current = visual;

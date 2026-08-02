@@ -49,6 +49,11 @@ public partial class Stage1AssetIntegrationTests : Node
             foreach (var anchor in anchors)
                 Require(visual.FindChild(anchor, true, false) is Node3D,
                     $"{assetId} wrapper exposes {anchor}");
+            var placement = (Node3D)visual.FindChild("Placement", true, false);
+            var collision = (CylinderShape3D)tool.GetNode<CollisionShape3D>("CollisionShape3D").Shape;
+            var expectedContactY = tool.GlobalPosition.Y - collision.Height * 0.5f;
+            Require(Mathf.Abs(placement.GlobalPosition.Y - expectedContactY) < 0.005f,
+                $"{assetId} placement anchor stays on the original graybox contact plane");
         }
 
         GameSession.Instance.ToggleWorld();

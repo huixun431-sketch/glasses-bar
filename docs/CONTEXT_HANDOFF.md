@@ -4,25 +4,21 @@
 
 本文件是长任务与上下文压缩后的首读入口。只保留当前决策、验证状态、阻塞和下一动作；详细内容回到链接文档读取。
 
-## P0｜2026-08-02 第一轮资产模型审图
+## P0｜2026-08-02 第一轮资产建模完成
 
-- 用户已批准覆盖现有 16 项稳定资产 ID 的核心交互物品建模计划，采用单人、风险优先混合排期，预计 28–39 个工作日；提高精度的重点是握持、摆放、倾倒、液面、碰撞和交互焦点，并增加独立美术评审。
-- 权威计划为 `docs/CORE_INTERACTION_ASSET_MODELING_PLAN.md`。阶段 1 先制作 `highball_glass`、`jigger_medium`、`mortar`、`pestle` 样件；未通过两轮 Godot 校准和两轮美术评审前，不批量生产后续资产。
-- 视觉方向沿用《美术设计案》的低多边形复古 3D、远距识别、明确轮廓、手绘基础色、AO 和简单 PBR；不得借计划或建模自行批准最终造型、正式配方、平衡值、人物或环境扩展。
-- `bar_sink` 资产 ID 对应运行时站点 `hand_wash_sink`，`water_kettle` 对应 `kettle`；不得为了接入统一命名而改动任一侧稳定 ID。
-- 已按阶段 0 尺寸卡生成首轮 4 项 GLB 技术样件：`highball_glass`、`jigger_medium`、`mortar`、`pestle`。四项均保持米制、稳定根 ID、必需锚点、网格与内嵌材质；其余 12 项未开始。
-- 用户最新明确要求“生成建模后先审核，再进行下一步”。当前必须停在首轮模型审图：不得在用户反馈前开始 Godot 手写包装、世界/手持接入、灰盒替换、交互校准或后续资产建模。
-- 用户已于审图后明确回复“通过”，解除上述暂停门；现可继续阶段 1 的手写包装、世界/手持接入、两轮 Godot 校准与 Forward+ 视觉复核，但阶段 2 仍不得提前开始。
-- 首轮审图位于 `artifacts/visual_review_20260802_stage1/`，含实际比例合照、四项单体三分之四视角和研钵/研杵组合图；这些是 Blender 中性棚拍，不是 Godot 运行截图。详细尺寸与当前状态见 `docs/assets/STAGE1_ASSET_BATCH_20260802.md`。
-- 四项在 `assets/asset_manifest.json` 与 `data/assets/asset_manifest.tres` 中继续标记 `placeholder=true`；模型只是等待批准的候选，灰盒回退未移除。
-- 已验证（2026-08-02 建模计划文档回归）：计划覆盖资产清单全部 16 个稳定 ID，锚点组合与 `asset_manifest.json` 一致；资产 16 项 0 错误、领域测试 28/28、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、输入和完整流程全部 PASS。本轮无视觉改动，未新增截图。
-- 用户已授权本轮创建仅含计划与进展交接文档的本地 Git 提交；现有 `export_presets.cfg` 用户改动必须保留且不纳入提交，不推送。
+- 权威计划为 `docs/CORE_INTERACTION_ASSET_MODELING_PLAN.md`；阶段 1 的 `highball_glass`、`jigger_medium`、`mortar`、`pestle` 已完成。其余 12 项仍是灰盒，未经用户新指令不得开始阶段 2。
+- 四项 GLB 保持米制、稳定根 ID、必需锚点、网格与内嵌 PBR 材质；手写包装场景持有视觉子场景和坐标补偿，现有玩法碰撞/状态不直接挂在导入节点上。
+- `ToolVisualLibrary` 集中稳定 ID → 包装路径、现实/眼镜材质与手持姿态；`ToolInteractable`/`HeldToolPresenter` 优先使用批准包装，缺失时仍恢复通用灰盒回退。
+- 用户先通过造型审图，后反馈量酒器金属与玻璃质感不足；最终版已强化量酒器拉丝银高光、杯沿/腰环，以及高球杯透明杯壁、亮杯沿、厚底和底部折射边。用户已再次明确回复“通过”。
+- Godot Forward+ 多轮复核已修正世界悬空、研钵手持遮挡和暗场材质；最终棚拍在 `artifacts/visual_review_20260802_stage1_material_round4/`，最终游戏画面在 `artifacts/visual_review_20260802_stage1_godot_round4/`。
+- 四项已在 `assets/asset_manifest.json` 与 `data/assets/asset_manifest.tres` 标记为非占位；其余 12 项保持 `placeholder=true`。
+- 已验证（2026-08-02）：资产 16 项 0 错误（本批四项 GLB `OK`）、领域测试 28/28、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、阶段 1 资产、输入和完整流程全部 PASS。
+- 详细尺寸、返修、视觉哈希与验收证据见 `docs/assets/STAGE1_ASSET_BATCH_20260802.md`。这四项仍是已批准的 M1 技术/材质样件，不代表最终美术资产。
 
 ## P1｜2026-08-02 下一项安全动作
 
-1. 先以失败的 Godot 资产集成测试锁定四项手写包装、稳定 ID、锚点、灰盒回退和世界切换合同。
-2. 接入世界摆放与第一人称双手，运行两轮 Godot 校准及现实/眼镜 Forward+ 截图，按实际画面返修包装变换或材质覆盖。
-3. 全量验证通过后再将四项清单状态改为非占位并完成本批文档；阶段 2 仍需等待阶段 1 全部门通过。
+1. 保持阶段 1 完成状态，不提前制作阶段 2 的其余资产。
+2. 等待用户指定下一批资产或提出阶段 1 返修；若开始下一批，继续沿用稳定 ID、手写包装、灰盒回退、TDD 和实际 Forward+ 审核门。
 
 ## P0｜2026-07-29 当前审查任务
 
