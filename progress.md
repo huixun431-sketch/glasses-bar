@@ -4,6 +4,28 @@
 
 用途：新对话先读本文件，再读 `docs/CONTEXT_HANDOFF.md`。正式配方、平衡值、顾客内容和最终美术仍未批准；下述数值与灰盒均为开发占位。
 
+## 2026-08-02｜建模工作流与 Skill 融合归档
+
+### 已完成的事项
+
+- 已定位并融合隔离分支 `codex/stage1-asset-modeling`，来源归档点为 `bbc4011`。该分支包含 Stage 1/2 共九项已批准 M1 技术／材质候选、确定性 Blender 生成器、手写 Godot 包装、双世界／双手表现、集成测试和批次记录。
+- 已融合仓库本地 `.agents/skills/modeling-glasses-bar-assets/`：含 Skill、UI 元数据、批次初始化／阶段校验脚本、三个阶段 reference、七个骨架模板和三类压力场景。
+- 已恢复此前暂停的 Skill 验证：官方静态校验通过、两个 Python 脚本编译通过、框架测试 7/7、工具测试合计 9/9，四个 fresh-context GREEN 场景均守住配置、轮廓、Forward+、完成归档与无关改动门禁。
+- 已在完整融合结果上运行回归：资产 16 项 0 错误、领域测试 28/28、Debug/Release 0 警告/0 错误，Godot 导入、冒烟、Stage 1、Stage 2、输入与流程测试全部 PASS。
+- 融合时修复 Skill 校验器与既有仓库实践的冲突：Godot 自动生成且已跟踪的正式 `.glb.import` 不再使任何新批次永久失败；候选 `artifacts/`、PNG 和 `.blend` 仍由校验器拒绝，手工 `.glb.import` 改动由 Git diff 审查。
+
+### 关键决策
+
+- Stage 1/2 的九项 GLB 是用户批准进入原型的 M1 候选，不是最终美术定稿；稳定 ID、碰撞、玩法状态、现实可交互／眼镜只观察和灰盒回退保持权威。
+- `modeling-glasses-bar-assets` 负责可复用的批次流程门禁，不替代项目 Skill `develop-glasses-bar-godot`，也不从旧批次推断新批次批准。
+- 独立 Stage 3 固定站点批次继续暂停。当前 Goal 只执行已批准的完整酒吧环境计划；环境计划中的 `bar_counter` 模块不自动授权五个固定站点独立正式资产。
+- 原隔离分支作为 Git 历史来源保留到融合后回归完成；用户的 `export_presets.cfg` 修改始终排除在提交之外。
+
+### 未完成的待办
+
+1. 按 `docs/superpowers/plans/2026-08-02-bar-layout-production-model.md` 执行 Task 1–5，生成完整新版灰盒和 Forward+ 审核截图。
+2. 在用户明确批准灰盒尺度与方位前，不开始 Task 6 或任何正式环境 GLB。
+
 ## 2026-08-02｜完整酒吧生产模型实施计划
 
 ### 已完成的事项
@@ -33,7 +55,77 @@
 4. 灰盒批准后再建立 GLB 合同、Blender 主文件和六个正式模块；每个重要几何/材质阶段等待用户复核。
 5. 完成 Godot 包装、双世界材质/照明切换、可动件绑定、完整灰盒回退、严格资产验证、自动回归和最终视觉验收。
 6. 阶段性提交继续排除 `export_presets.cfg`；不得推送或发布。
+## 2026-08-02｜第二阶段手持资产完成
 
+### 已完成的事项
+
+- 用户已明确通过 Blender 轮廓检查点与最终 Godot Forward+ 检查点；阶段 2 的 `traditional_filter`、`bean_scoop`、`ice_tongs`、`jigger_small`、`jigger_large` 已完成可复现 GLB、手写包装、世界／双手接入与视觉复核。
+- 轮廓返修已落实：滤器握把与主体相连且内部漏斗路径清楚；豆铲缩小为宽口、浅腹、低前缘；冰夹为轻薄张开的双金属片、凹形小勺夹头和可见 U 形弹性连接。
+- 材质返修已落实：滤器为暖金属，豆铲／冰夹为深色缎面旧钢，小／大量酒器为冷银主体与亮银杯沿／腰环；现实材质与眼镜世界观察覆盖均已实机检查。
+- 两份正式资产清单只将上述五项改为非占位。阶段 1 与阶段 2 共 9 项为批准进入原型的 M1 技术／材质候选；阶段 3／4 的其余 7 项继续保持灰盒。
+- 已运行 `powershell -ExecutionPolicy Bypass -File tools/run_verification.ps1`，退出码 `0`：资产 `16` 项／`0` 错误，领域测试 `28/28`，Debug／Release `0` 警告／`0` 错误；Godot 导入、`SMOKE_TESTS_PASS`、`STAGE1_ASSET_INTEGRATION_PASS`、`STAGE2_ASSET_INTEGRATION_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS` 全部通过。
+- 两次批准、最终关键帧、返修过程和验证细节已归档到 `docs/assets/STAGE2_ASSET_BATCH_20260802.md`。
+
+### 关键决策
+
+- 本批批准的是 M1 技术／材质候选，不是最终美术定稿；后续仍可在稳定 ID 和手写包装合同下替换视觉子场景。
+- 稳定 ID、碰撞、权威玩法状态、现实可交互／眼镜只观察、左右手与每日复位行为保持不变；保持行为测试，不用精确美术常量断言冻结模型。
+- 正式容量、配方、平衡、顾客内容均未修改。眼镜世界相邻量酒器标签略有重叠，但不遮挡模型，作为非阻塞原型问题保留。
+- 阶段 3 未开始；阶段 2 的通过不自动授权固定站点建模、推送或合并。
+
+### 未完成的待办
+
+1. 等待用户明确指定是否开始阶段 3 的固定交互站点；在此之前不制作 `water_kettle`、`ice_bucket`、`bar_sink`、`coffee_beans`、`waste_bin`。
+2. `cutting_board` 与 `bar_counter` 仍属于更后的阶段 4；以上 7 项全部继续保持灰盒回退。
+3. 等待正式容量／冰美式配方／容差／评价经济、顾客内容和最终美术；真实键鼠手感仍需用户在可玩包中持续验收。
+
+## 2026-08-02｜第二阶段手持资产设计批准
+
+### 已完成的事项
+
+- 用户已批准第二阶段五项资产：`traditional_filter`、`bean_scoop`、`ice_tongs`、`jigger_small`、`jigger_large`。
+- 已完成三轮关键设计选择：传统过滤器采用紧凑金属滴滤杯轮廓；材质采用 B×C“混合 C”；生产审核采用先轮廓成组、再统一精修的方案 B。
+- 已建立书面规格 `docs/superpowers/specs/2026-08-02-stage2-handheld-assets-design.md`，整理资产轮廓、材质映射、锚点、包装合同、两个用户审核门、技术边界与完成条件。
+- 用户已复核通过书面规格；已建立详细实施计划 `docs/superpowers/plans/2026-08-02-stage2-handheld-assets.md`，把正式清单切换严格放在 Godot 检查点 2 通过之后。
+- 当前尚未开始第二阶段建模、GLB 导出、清单切换或 Godot 集成；现有灰盒状态保持不变。
+
+### 关键决策
+
+- `traditional_filter` 为低矮暖金属滴滤杯，带短侧握把、可读网面与底部出口；不采用布袋支架或长柄滤篮。
+- `bean_scoop`／`ice_tongs` 使用深色旧钢缎面，`jigger_small`／`jigger_large` 继承已批准中号母版的亮银家族。
+- 检查点 1：五件低细节模型在 Blender 中同屏审核轮廓、尺度、操作方向和锚点；用户通过前不做材质精修。
+- 检查点 2：实际 Godot Forward+ 世界、手持和组合截图审核；用户通过前不报告阶段完成。
+- 稳定 ID、手写包装、灰盒回退、左右手、液体、配方和双世界玩法合同保持不变。
+
+### 未完成的待办
+
+1. 用户选择逐任务代理执行或当前对话内联执行。
+2. 按检查点 1 完成五件轮廓阻塞与 Blender 队列，等待用户批准后再进入材质、GLB 和 Godot 集成。
+3. Godot 检查点 2 通过前不得切换正式清单为非占位，也不得报告第二阶段完成。
+
+## 2026-08-02｜第一轮资产建模完成
+
+### 已完成的事项
+
+- 已完成高球杯、中号量酒器、研钵和研杵四项米制低多边形 GLB、确定性 Blender 生成器、中性棚拍脚本与手写 Godot 包装；稳定根 ID、必需锚点、网格、PBR 材质、变换和包络均通过校验。
+- 已新增 `ToolVisualLibrary`，集中四项稳定 ID 到包装场景映射、现实/眼镜材质切换和手持姿态；世界工具与左右手会优先使用包装，缺失时恢复原灰盒。
+- 已用失败→通过的阶段 1 资产集成测试锁定包装、锚点、接触面、双手替换、世界切换和回退合同；输入测试同步验证批准包装。
+- 已完成多轮 Godot Forward+ 校准：修正世界模型悬空、研钵手持遮挡、研钵暗场可读性，并根据用户反馈强化量酒器拉丝银与高球杯透明杯壁/亮杯沿/厚底。
+- 用户已通过最终材质审核；四项清单状态已改为非占位，其余 12 项继续保持灰盒。
+- 完整验证已通过：资产 16 项 0 错误、领域测试 28/28、Debug/Release 0 警告/0 错误，Godot 导入、`SMOKE_TESTS_PASS`、`STAGE1_ASSET_INTEGRATION_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS`。
+- 最终棚拍位于 `artifacts/visual_review_20260802_stage1_material_round4/`，最终游戏画面位于 `artifacts/visual_review_20260802_stage1_godot_round4/`；详细哈希与返修记录见 `docs/assets/STAGE1_ASSET_BATCH_20260802.md`。
+
+### 关键决策
+
+- 四项是用户批准进入原型的 M1 技术/材质样件，不等于最终美术定稿；后续仍可通过稳定包装替换 GLB，而不改玩法状态和碰撞合同。
+- 导入 GLB 只作包装的视觉子场景；稳定 ID、Gameplay 状态、碰撞和眼镜世界切换仍由手写代码/场景持有。
+- 量酒器采用暗场可读的游戏化拉丝银，不追求缺少环境反射时的纯金属物理结果；高球杯以透明杯壁、亮杯沿和厚底优先保证第一人称辨识。
+
+### 未完成的待办
+
+1. 第一轮无遗留实现待办；保持阶段 1 已验收状态。
+2. 等待用户决定是否开始阶段 2 或继续返修本批；在收到新指令前不制作其余 12 项资产。
+3. 正式配方、平衡、顾客内容和最终美术仍未批准，不得把本批技术样件误报为最终资产。
 ## 2026-08-02｜核心交互物品建模计划
 
 ### 已完成的事项
@@ -381,3 +473,61 @@
 建议新对话首句：
 
 > 请先阅读 `progress.md` 和 `docs/CONTEXT_HANDOFF.md`，使用项目 Skill `develop-glasses-bar-godot` 接手。先实玩新版 Release 两天，重点检查拆分主菜单、`1.42 m` 前台/`2.00 m` 眼高、`2.31 m` 通道、`0.62 m` 长抽屉、前台水槽净空、酒架上方吊柜、侧围挡手册、冰桶抽屉和量酒器流程，再按实际手感继续迭代。
+
+## 2026-08-02｜阶段 2 手持资产检查点 2 视觉返修
+
+### 已完成的事项
+
+- 已根据审核反馈重做阶段 2 金属表现：小／大量酒器改为可读冷银主体与明亮杯沿／腰环；豆铲和冰夹统一为深色粗糙缎面旧钢。
+- 豆铲手持缩放已缩小，并以斜视角稳定呈现宽口、浅腹、低前缘和连接握柄。
+- 冰夹夹头已改为更大的闭合双面凹形小勺，握点移到双臂中段；最终手持画面可同时读出两片细长臂、张开状态、夹头和 U 形弹簧连接。
+- 已用非 headless Godot 4.7.1 Forward+ 在 RTX 5070 Laptop 上重新捕获 156 帧；关键帧位于 `artifacts/visual_review_20260802_stage2_godot/`。
+
+### 关键决策
+
+- 只修改可复现生成器几何／PBR 和 `ToolVisualLibrary.ApplyHeldPose()`，不改变稳定 ID、玩法状态、碰撞、现实可交互／眼镜观察语义。
+- 公共眼镜标签在密集量酒器处的文字重叠是非阻塞原型问题，本轮不扩展修复范围。
+- 五项阶段 2 资产继续保持 `placeholder=true`；通过本轮视觉返修不等于授权进入 Task 7。
+
+### 未完成的待办
+
+- 等待用户复核最终关键帧。
+- 仅在用户明确批准后执行 Task 7：取消五项阶段 2 占位标记、更新正式状态并做最终收尾验证。
+
+## 2026-08-02 — Asset-modeling Skill Task 1 RED baseline
+
+### 已完成的事项
+
+- 新增三份可复用的资产批次压力场景和两份隔离的 fresh-context 基线记录；原始转录仅保存在被忽略的 `.superpowers/sdd/.../scratch/`。
+- 按用户要求缩减测试预算：完成轮廓检查点与 Forward+ 材质快捷场景；完成压力场景仅保留夹具，未派发。
+- 已确认 `.agents/skills/modeling-glasses-bar-assets` 不存在。
+
+### 关键决策
+
+- 两个已执行场景均未跳过必要门槛，因此不虚构 RED 纪律失败；现有证据仅将后续工作定位为技术/框架辅助，不能声称完成压力场景已验证。
+- 未创建目标 Skill 生产文件，也未进入 Stage 3。
+
+### 未完成的待办
+
+- 后续任务在用户许可的范围内继续 Skill 的设计、实现与验证；如需更完整的基线覆盖，可另行执行 `completion-pressure` 场景。
+
+## 2026-08-02 — Asset-modeling Skill static implementation
+
+### 已完成的事项
+
+- 已静态完成仓库本地 Skill `.agents/skills/modeling-glasses-bar-assets/`：精简 `SKILL.md`、匹配的 `agents/openai.yaml`、两个标准库脚本、三个按阶段路由的 reference，以及七个设计指定模板。
+- 框架明确生成合同、Blender 生成／审图、合同检查、Godot 行为集成／Forward+ 捕获和批次记录骨架；不注入未经批准的造型、材质、容量或玩法值。
+- 已删除被用户禁止保留的 `tests/tools/test_modeling_skill_framework.py` 与目录占位 `.gitkeep`；保留既有 RED 场景及基线记录，未新增任何运行。
+- 已更新 Skill 测试状态文档，并写入 `.superpowers/sdd/2026-08-02-modeling-glasses-bar-assets-skill/static-implementation-report.md`。
+
+### 关键决策
+
+- 用户明确覆盖原计划的测试与验证步骤；本轮未运行单元测试、`py_compile`、`quick_validate`、代理压力／前向测试、Blender、Godot 或完整项目验证，因此交付状态是“已实现但未测试／未验证”。
+- Skill 强制依赖 `develop-glasses-bar-godot`，保留两次用户硬检查点、ignored artifacts／正式路径／清单门禁、真实 Forward+ 图片人工审查、稳定 ID、手写包装、项目玩法状态所有权和灰盒回退。
+- Skill 与脚本不自动批准、推送、合并、发布、重写历史或启动下一资产阶段。
+- 未创建或修改任何 Stage 3 配置、合同、模型、包装、清单、截图或资产状态。
+
+### 未完成的待办
+
+- 仅在用户另行批准后，补做脚本单元测试、语法检查、Skill 静态校验与 fresh-context 前向场景，并根据真实失败做最小修正。
+- 任何新资产批次仍需新的范围／设计与显式用户授权；Stage 3 继续暂停。

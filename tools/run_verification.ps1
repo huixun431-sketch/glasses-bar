@@ -44,6 +44,10 @@ if ($godotPath) {
     Assert-LastExitCode 'Godot editor import'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/SmokeTests.tscn
     Assert-LastExitCode 'Godot smoke tests'
+    & $godotPath --headless --path $root --quit-after 300 res://tests/godot/Stage1AssetIntegrationTests.tscn
+    Assert-LastExitCode 'Godot stage 1 asset integration tests'
+    & $godotPath --headless --path $root --quit-after 300 res://tests/godot/Stage2AssetIntegrationTests.tscn
+    Assert-LastExitCode 'Godot stage 2 asset integration tests'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/InputIntegrationTests.tscn
     Assert-LastExitCode 'Godot input integration tests'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/FlowIntegrationTests.tscn

@@ -1,0 +1,24 @@
+"""Generated contract skeleton for ${BATCH_ID}.
+
+Replace the stop marker only after the batch design and per-asset contracts are
+approved. Do not invent envelopes, capacities, materials, poses, or gameplay data.
+"""
+
+BATCH_ID = ${BATCH_ID_REPR}
+STAGE = ${STAGE_REPR}
+ASSETS = ${ASSET_DEFINITIONS_REPR}
+
+
+def approved_contracts():
+    """Return approved per-asset contract data after the design is recorded."""
+
+    raise RuntimeError(
+        "RAISE_UNTIL_DESIGN_APPROVED: add only values copied from the approved batch design"
+    )
+
+
+def asset_by_id(asset_id):
+    for asset in ASSETS:
+        if asset["asset_id"] == asset_id:
+            return asset
+    raise KeyError(asset_id)

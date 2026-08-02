@@ -11,7 +11,7 @@ IsPlaceholder = true
 [sub_resource type="Resource" id="Asset_glass"]
 script = ExtResource("2_entry")
 Id = &"highball_glass"
-IsPlaceholder = true
+IsPlaceholder = false
 
 [sub_resource type="Resource" id="Asset_ice"]
 script = ExtResource("2_entry")
@@ -31,27 +31,27 @@ IsPlaceholder = true
 [sub_resource type="Resource" id="Asset_mortar"]
 script = ExtResource("2_entry")
 Id = &"mortar"
-IsPlaceholder = true
+IsPlaceholder = false
 
 [sub_resource type="Resource" id="Asset_pestle"]
 script = ExtResource("2_entry")
 Id = &"pestle"
-IsPlaceholder = true
+IsPlaceholder = false
 
 [sub_resource type="Resource" id="Asset_filter"]
 script = ExtResource("2_entry")
 Id = &"traditional_filter"
-IsPlaceholder = true
+IsPlaceholder = false
 
 [sub_resource type="Resource" id="Asset_scoop"]
 script = ExtResource("2_entry")
 Id = &"bean_scoop"
-IsPlaceholder = true
+IsPlaceholder = false
 
 [sub_resource type="Resource" id="Asset_tongs"]
 script = ExtResource("2_entry")
 Id = &"ice_tongs"
-IsPlaceholder = true
+IsPlaceholder = false
 
 [sub_resource type="Resource" id="Asset_kettle"]
 script = ExtResource("2_entry")
@@ -61,17 +61,17 @@ IsPlaceholder = true
 [sub_resource type="Resource" id="Asset_jigger_small"]
 script = ExtResource("2_entry")
 Id = &"jigger_small"
-IsPlaceholder = true
+IsPlaceholder = false
 
 [sub_resource type="Resource" id="Asset_jigger_medium"]
 script = ExtResource("2_entry")
 Id = &"jigger_medium"
-IsPlaceholder = true
+IsPlaceholder = false
 
 [sub_resource type="Resource" id="Asset_jigger_large"]
 script = ExtResource("2_entry")
 Id = &"jigger_large"
-IsPlaceholder = true
+IsPlaceholder = false
 
 [sub_resource type="Resource" id="Asset_bean"]
 script = ExtResource("2_entry")

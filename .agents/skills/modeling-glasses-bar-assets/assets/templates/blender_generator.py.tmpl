@@ -1,0 +1,43 @@
+"""Generated Blender entry point for ${BATCH_ID}.
+
+The scaffold contains no geometry or material decisions. Implement each builder
+from the approved contract, preserving the stable asset ID and required anchors.
+"""
+
+import argparse
+from pathlib import Path
+
+from ${BATCH_SLUG}_asset_contract import ASSETS, BATCH_ID, approved_contracts
+
+
+SILHOUETTE_CHECKPOINT_STATUS = ${SILHOUETTE_STATUS_REPR}
+BUILDERS = {}
+
+${ASSET_BUILDERS}
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Generate approved ${BATCH_ID} Blender assets")
+    parser.add_argument("--mode", required=True, choices=("silhouette", "final"))
+    parser.add_argument("--output", required=True, type=Path)
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    if args.mode == "final" and SILHOUETTE_CHECKPOINT_STATUS != "approved":
+        raise SystemExit("final mode is locked until checkpoint 1 has explicit user approval")
+
+    contracts = approved_contracts()
+    args.output.mkdir(parents=True, exist_ok=True)
+    for asset in ASSETS:
+        asset_id = asset["asset_id"]
+        BUILDERS[asset_id](contracts[asset_id])
+
+    # Add deterministic GLB export only after implementing the approved builders.
+    # GLBs are visual children; do not add gameplay collision or state in Blender.
+    raise RuntimeError("RAISE_UNTIL_EXPORT_IMPLEMENTED: export each stable asset ID to --output")
+
+
+if __name__ == "__main__":
+    main()

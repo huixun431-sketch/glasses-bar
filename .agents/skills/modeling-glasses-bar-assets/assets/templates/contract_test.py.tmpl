@@ -1,0 +1,28 @@
+"""Generated contract checks for ${BATCH_ID}; not executed by the Skill initializer."""
+
+import unittest
+
+from tools.modeling.${BATCH_SLUG}_asset_contract import ASSETS, approved_contracts
+
+
+class ${PASCAL_BATCH}AssetContractTests(unittest.TestCase):
+    def test_every_stable_asset_has_an_approved_contract_and_required_anchors(self):
+        contracts = approved_contracts()
+        self.assertEqual({asset["asset_id"] for asset in ASSETS}, set(contracts))
+        for asset in ASSETS:
+            asset_id = asset["asset_id"]
+            self.assertTrue(asset["required_anchors"], asset_id)
+            self.assertEqual(
+                tuple(asset["required_anchors"]),
+                tuple(contracts[asset_id]["required_anchors"]),
+                asset_id,
+            )
+            self.assertNotIn(
+                "RAISE_UNTIL_DESIGN_APPROVED",
+                repr(contracts[asset_id]),
+                "generated contract still contains the approval stop marker",
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

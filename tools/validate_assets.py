@@ -76,6 +76,17 @@ def validate_manifest(manifest_path: Path, allow_placeholders: bool) -> list[str
 
         nodes = gltf.get("nodes", [])
         names = {node.get("name", "") for node in nodes}
+        scenes = gltf.get("scenes", [])
+        scene_index = gltf.get("scene", 0)
+        root_indices = scenes[scene_index].get("nodes", []) if 0 <= scene_index < len(scenes) else []
+        root_names = {
+            nodes[index].get("name", "")
+            for index in root_indices
+            if 0 <= index < len(nodes)
+        }
+        if asset_id not in root_names:
+            messages.append(f"ERROR {asset_id}: scene root must be named {asset_id}")
+            errors += 1
         missing_anchors = sorted(set(entry.get("required_anchors", [])) - names)
         if missing_anchors:
             messages.append(f"ERROR {asset_id}: missing anchors {', '.join(missing_anchors)}")
@@ -99,12 +110,12 @@ def validate_manifest(manifest_path: Path, allow_placeholders: bool) -> list[str
     return messages
 
 
-def write_test_glb(path: Path, *, good: bool) -> None:
+def write_test_glb(path: Path, *, good: bool, root_name: str = "Root") -> None:
     payload = {
         "asset": {"version": "2.0"},
         "scene": 0,
         "scenes": [{"nodes": [0]}],
-        "nodes": ([{"name": "Root", "mesh": 0}, {"name": "Grip"}, {"name": "Placement"}] if good
+        "nodes": ([{"name": root_name, "mesh": 0}, {"name": "Grip"}, {"name": "Placement"}] if good
                   else [{"name": "Root", "mesh": 0, "scale": [2, 2, 2]}]),
         "meshes": [{"primitives": []}],
         "materials": [{"name": "PBR"}],
@@ -118,8 +129,9 @@ def write_test_glb(path: Path, *, good: bool) -> None:
 def self_test() -> int:
     with tempfile.TemporaryDirectory(prefix="glasses_bar_asset_test_") as tmp:
         root = Path(tmp)
-        write_test_glb(root / "good.glb", good=True)
+        write_test_glb(root / "good.glb", good=True, root_name="good")
         write_test_glb(root / "bad.glb", good=False)
+        write_test_glb(root / "wrong_root.glb", good=True, root_name="WrongRoot")
         good_manifest = {
             "units": "meters", "up_axis": "+Y", "forward_axis": "-Z",
             "assets": [{"id": "good", "path": "good.glb", "placeholder": False,
@@ -130,17 +142,27 @@ def self_test() -> int:
             "assets": [{"id": "bad", "path": "bad.glb", "placeholder": False,
                         "required_anchors": ["Grip"]}],
         }
+        wrong_root_manifest = {
+            "units": "meters", "up_axis": "+Y", "forward_axis": "-Z",
+            "assets": [{"id": "expected_root", "path": "wrong_root.glb", "placeholder": False,
+                        "required_anchors": ["Grip", "Placement"]}],
+        }
         good_path = root / "good.json"
         bad_path = root / "bad.json"
+        wrong_root_path = root / "wrong_root.json"
         good_path.write_text(json.dumps(good_manifest), encoding="utf-8")
         bad_path.write_text(json.dumps(bad_manifest), encoding="utf-8")
+        wrong_root_path.write_text(json.dumps(wrong_root_manifest), encoding="utf-8")
         good_lines = validate_manifest(good_path, False)
         bad_lines = validate_manifest(bad_path, False)
+        wrong_root_lines = validate_manifest(wrong_root_path, False)
         good_ok = good_lines[-1].endswith("errors=0")
         bad_ok = not bad_lines[-1].endswith("errors=0")
+        wrong_root_ok = not wrong_root_lines[-1].endswith("errors=0")
         print("SELFTEST good_manifest", "PASS" if good_ok else "FAIL")
         print("SELFTEST bad_manifest", "PASS" if bad_ok else "FAIL")
-        return 0 if good_ok and bad_ok else 1
+        print("SELFTEST wrong_root_manifest", "PASS" if wrong_root_ok else "FAIL")
+        return 0 if good_ok and bad_ok and wrong_root_ok else 1
 
 
 def main() -> int:

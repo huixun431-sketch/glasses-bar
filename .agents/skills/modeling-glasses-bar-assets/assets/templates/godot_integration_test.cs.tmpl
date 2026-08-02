@@ -1,0 +1,59 @@
+using System;
+using System.Collections.Generic;
+using Godot;
+
+namespace GlassesBar.Tests;
+
+// Generated integration skeleton for ${BATCH_ID}. It must exercise hand-authored
+// wrappers and project-owned gameplay behavior, never imported GLB nodes directly.
+public partial class ${PASCAL_BATCH}AssetIntegrationTests : Node
+{
+    private static readonly Dictionary<string, string[]> RequiredAnchors = new(StringComparer.Ordinal)
+    {
+${CSHARP_ANCHORS}
+    };
+
+    private static readonly Dictionary<string, string> WrapperPaths = new(StringComparer.Ordinal)
+    {
+${CSHARP_WRAPPERS}
+    };
+
+    public override void _Ready()
+    {
+        try
+        {
+            Run();
+            GD.Print("${PASCAL_BATCH}_ASSET_INTEGRATION_PASS");
+            GetTree().Quit(0);
+        }
+        catch (Exception exception)
+        {
+            GD.PushError(exception.ToString());
+            GetTree().Quit(1);
+        }
+    }
+
+    private static void Run()
+    {
+        foreach (var pair in WrapperPaths)
+        {
+            var assetId = pair.Key;
+            var scene = ResourceLoader.Load<PackedScene>(pair.Value);
+            Require(scene is not null, "Missing hand-authored wrapper for " + assetId);
+            using var wrapper = scene!.Instantiate<Node3D>();
+            Require(wrapper.GetMeta("asset_id").AsString() == assetId, "Stable asset ID mismatch for " + assetId);
+            foreach (var anchor in RequiredAnchors[assetId])
+                Require(wrapper.FindChild(anchor, true, false) is Node3D, "Missing " + anchor + " on " + assetId);
+        }
+
+        throw new InvalidOperationException(
+            "RAISE_UNTIL_GAMEPLAY_INTEGRATION_DEFINED: assert project-owned collision, graybox fallback, hands, reality interaction, glasses observation, and reset behavior"
+        );
+    }
+
+    private static void Require(bool condition, string message)
+    {
+        if (!condition)
+            throw new InvalidOperationException(message);
+    }
+}
