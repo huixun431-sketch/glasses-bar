@@ -38,17 +38,19 @@ def add_review_lighting() -> None:
     for obj in list(bpy.data.objects):
         if obj.type in {"LIGHT", "CAMERA"}:
             bpy.data.objects.remove(obj, do_unlink=True)
+    # Directional review lights avoid the hard rectangular projections that an
+    # area light can cast through the south openings.  The world node supplies
+    # the neutral fill; these lights only establish readable form and depth.
     light_specs = (
-        ("ReviewKey", (0.0, 4.1, 0.0), 760.0, (1.0, 0.86, 0.72), 7.0),
-        ("ReviewNorthFill", (0.0, 2.8, -3.8), 360.0, (0.68, 0.80, 1.0), 5.0),
-        ("ReviewSouthFill", (0.0, 2.6, 3.8), 320.0, (1.0, 0.72, 0.58), 5.0),
+        ("ReviewKey", (4.5, 7.0, 3.5), 2.2, (1.0, 0.90, 0.80)),
+        ("ReviewFill", (-4.0, 5.0, -3.0), 0.9, (0.76, 0.86, 1.0)),
     )
-    for name, location, energy, color, size in light_specs:
-        data = bpy.data.lights.new(name, "AREA")
+    for name, location, energy, color in light_specs:
+        data = bpy.data.lights.new(name, "SUN")
         data.energy = energy
         data.color = color
-        data.shape = "DISK"
-        data.size = size
+        data.angle = 0.12
+        data.use_shadow = False
         obj = bpy.data.objects.new(name, data)
         bpy.context.scene.collection.objects.link(obj)
         obj.location = location
@@ -75,9 +77,12 @@ def configure_render() -> None:
     scene.render.resolution_y = 1000
     scene.render.resolution_percentage = 100
     scene.render.film_transparent = False
-    scene.world.color = (0.035, 0.038, 0.043)
+    scene.world.use_nodes = True
+    background = scene.world.node_tree.nodes.get("Background")
+    background.inputs["Color"].default_value = (0.035, 0.038, 0.043, 1.0)
+    background.inputs["Strength"].default_value = 0.32
     scene.view_settings.look = "AgX - Medium High Contrast"
-    scene.view_settings.exposure = -0.85
+    scene.view_settings.exposure = -0.20
 
 
 def render_views(output: Path) -> None:

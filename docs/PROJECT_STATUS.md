@@ -2,16 +2,16 @@
 
 更新日期：2026-08-03
 
-## 当前里程碑：建筑轮廓检查点 1 待用户审批
+## 当前里程碑：正式环境几何／材质检查点 2 待用户审批
 
-- 后吧五个下柜已改为双片推拉门，上柜十扇铰链门不变；客侧台面仅向客区外挑 `0.30 m`。
-- 前吧实心主体已改为空心柜架，专项测试按五档行程验证抽屉与静态结构不相交；水槽下仍无任何柜体/储物/玩法碰撞，并补七段裸露排水与供水管线视觉。
-- 完整回归全绿；Godot 4.7.1 Vulkan Forward+ 在 RTX 5070 上生成并人工检查 20 张 `1920×1080` 图，证据见 `docs/assets/BAR_GRAYBOX_Z3_H3_DETAIL_FIX_CAPTURE_20260803.md`。
-- 生产模型计划 Task 6 已完成：六个环境模块已登记并保持占位，稳定根/节点、枢轴、所有权、灰盒回退和两道用户检查点已写入 `docs/assets/BAR_INTERIOR_ASSET_CONTRACT.md`。
-- 验证器现检查 `required_root`、`required_nodes` 和场景根单位变换；自测 4/4、资产清单 21/0、完整回归全部通过。
-- Task 7 已生成 ignored 建筑候选、确定性 master 和六张中性审查图。首轮不合格图已因构图、曝光和相机翻滚返修；第二轮逐张人工检查通过，证据见 `docs/assets/BAR_ARCHITECTURE_SILHOUETTE_REVIEW_20260803.md`。
-- Blender 合同通过，候选资产 1/0，正式清单仍为 21/0 且六个环境模块均占位。没有正式 GLB、Godot 包装或清单切换。
-- 当前停在建模 Skill 检查点 1，等待用户批准或返修；未获批准不进入前后吧正式候选与材质阶段。
+- 建筑轮廓检查点 1 已批准。南门异物由 Blender AREA 审查灯的矩形投影造成；更换为世界环境光与无阴影 SUN 灯并重拍后消失，场景对象边界未发现残留几何。
+- 灰盒吧台面专项复核已完成：22 张 Forward+ 图中的 `21–22` 显示玩家工作台和客侧台面连续存在；新增运行时顶面三角形方向／面积回归，排除真实缺面。
+- 已生成 `bar_architecture`、`bar_counter`、`bar_backbar`、`bar_furniture`、`bar_lighting`、`bar_wear_overlays` 六个正式候选 GLB、sidecar 与手写预览包装；清单六项仍为 `placeholder: true`，游戏继续使用完整灰盒。
+- 候选保留 Z3/H3 关键边界：`16 × 10 × 4.5 m` 房间、`9.10 m` 前吧、五湾双层规整瓶架、西侧仅手册、东侧弃物区／员工门、水槽下开放管线、无连续脚踏杆。
+- 已修复重复轴转换，Godot 回归锁定导入房间 AABB 为 `16 × 4.5 × 10 m`；导入视觉不拥有碰撞、灯光或玩法状态。
+- Godot 4.7.1 Vulkan Forward+ 在 RTX 5070 上生成并人工检查六张 `1920×1080` 正式候选图，路径 `artifacts/bar-interior-formal-forward-plus/`，批次记录见 `docs/assets/BAR_ARCHITECTURE_BATCH_RECORD.md`。
+- 验证通过：六份 sidecar 各 `1/0`，主清单 `21/0`，领域 `28/28`，Debug/Release `0` 警告／`0` 错误，全部既有 Godot 测试 PASS，批次 `forward-plus-review errors=0`。
+- 当前停在检查点 2。用户批准前不取消环境 placeholder、不替换运行时灰盒；批准后继续生产加载器、可动视觉绑定、双世界材质／灯光和全灰盒回退。
 - `export_presets.cfg` 继续排除提交；不推送、不发布。
 
 ## 已完成的 Z3/H3 重建基线

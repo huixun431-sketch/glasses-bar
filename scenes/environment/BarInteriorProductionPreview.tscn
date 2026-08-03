@@ -1,0 +1,18 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/environment/modules/bar_architecture.tscn" id="1_architecture"]
+[ext_resource type="PackedScene" path="res://scenes/environment/modules/bar_counter.tscn" id="2_counter"]
+[ext_resource type="PackedScene" path="res://scenes/environment/modules/bar_backbar.tscn" id="3_backbar"]
+[ext_resource type="PackedScene" path="res://scenes/environment/modules/bar_furniture.tscn" id="4_furniture"]
+[ext_resource type="PackedScene" path="res://scenes/environment/modules/bar_lighting.tscn" id="5_lighting"]
+[ext_resource type="PackedScene" path="res://scenes/environment/modules/bar_wear_overlays.tscn" id="6_wear"]
+
+[node name="BarInteriorProductionPreview" type="Node3D"]
+metadata/preview_only = true
+
+[node name="Architecture" parent="." instance=ExtResource("1_architecture")]
+[node name="Counter" parent="." instance=ExtResource("2_counter")]
+[node name="Backbar" parent="." instance=ExtResource("3_backbar")]
+[node name="Furniture" parent="." instance=ExtResource("4_furniture")]
+[node name="Lighting" parent="." instance=ExtResource("5_lighting")]
+[node name="WearOverlays" parent="." instance=ExtResource("6_wear")]

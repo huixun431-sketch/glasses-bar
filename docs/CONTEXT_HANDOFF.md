@@ -4,7 +4,19 @@
 
 本文件是长任务与上下文压缩后的首读入口。只保留当前决策、验证状态、阻塞和下一动作；详细内容回到链接文档读取。
 
-## P0｜2026-08-03 建筑轮廓候选完成，等待检查点 1
+## P0｜2026-08-03 正式环境样式候选完成，等待检查点 2
+
+- 用户确认建筑轮廓除南门异物外符合预期，并要求继续计划；南门异物已定位为 Blender 审查 AREA 灯穿过门洞产生的矩形投影，不是场景几何残留。审查灯改为世界环境光与无阴影 SUN 灯，六张建筑图重拍后异物消失，检查点 1 已按用户决定归档为 approved。
+- 用户怀疑灰盒吧台面渲染失败。实际 Forward+ 专项图 `21_player_worktop_surface_continuity.png` 与 `22_guest_top_surface_continuity.png` 显示两层台面连续存在；浅灰／高光来自审查补光与视角。`BarRuntimeGeometryTests` 新增顶面三角形朝向与覆盖面积断言，`BAR_RUNTIME_GEOMETRY_PASS`。
+- 已生成六个正式环境候选 GLB、sidecar 清单和手写预览包装：建筑、前吧、后吧、家具、灯具外壳、磨损叠加。六项主清单继续 `placeholder: true`，未替换游戏内灰盒。
+- 正式候选沿用 Z3/H3 `16 × 10 × 4.5 m`、`9.10 m` 前吧、五湾双层瓶架、西侧仅手册、东侧弃物区／员工门与水槽下开放管线，不恢复过时 `12 × 9 × 3.5 m` 方案。
+- 修复双重坐标轴转换：Blender master 已是项目 Y-up，GLB 导出不再重复转换；Godot 包装回归锁定 `room_shell` AABB 为 `16 × 4.5 × 10 m`，视觉 GLB 不含碰撞或真实灯光。
+- 已在 RTX 5070 上用 Godot 4.7.1 Vulkan Forward+ 生成并人工检查六张 `1920×1080` 正式候选图，证据位于 `artifacts/bar-interior-formal-forward-plus/`；批次记录为 `docs/assets/BAR_ARCHITECTURE_BATCH_RECORD.md`。
+- 当前回归：六份 sidecar 各 `1/0`，主清单 `21/0`（环境六模块保持占位），领域测试 `28/28`，Debug/Release `0` 警告／`0` 错误，全部既有 Godot 测试 PASS；建模 Skill 的 `forward-plus-review` 批次门禁 `errors=0`。
+- 当前唯一门禁是用户检查正式几何／材质候选。批准前不得取消环境 placeholder、替换运行时灰盒或进入双世界生产接入；获批后执行计划 Task 11–13。
+- 用户现有 `export_presets.cfg` 修改继续保留且不得纳入提交；不推送、不发布。
+
+## P1｜2026-08-03 建筑轮廓候选历史（检查点 1 已批准）
 
 - 用户确认大部分问题已解决，并要求：后吧台下柜改为推拉门；前吧客侧台面向客区延长 `0.30 m`；修复抽屉与前吧主体重合造成的实机错误；水槽下方补足可见内容。用户明确要求无需再次复核，修好后自行执行下一步计划。
 - 权威补充规格与执行计划分别为 `docs/superpowers/specs/2026-08-03-bar-graybox-detail-corrections-design.md` 和 `docs/superpowers/plans/2026-08-03-bar-graybox-detail-corrections.md`。

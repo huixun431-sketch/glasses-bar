@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "units": "meters",
+  "up_axis": "+Y",
+  "forward_axis": "-Z",
+  "assets": [
+    {
+      "id": "bar_architecture",
+      "path": "bar_architecture.glb",
+      "placeholder": false,
+      "required_root": "bar_architecture",
+      "required_anchors": [
+        "Placement"
+      ],
+      "required_nodes": [
+        "room_shell",
+        "south_main_entry",
+        "south_east_window",
+        "north_east_service_door"
+      ]
+    }
+  ]
+}

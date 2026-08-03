@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "units": "meters",
+  "up_axis": "+Y",
+  "forward_axis": "-Z",
+  "assets": [
+    {
+      "id": "bar_wear_overlays",
+      "path": "bar_wear_overlays.glb",
+      "placeholder": false,
+      "required_root": "bar_wear_overlays",
+      "required_anchors": [],
+      "required_nodes": [
+        "wear_overlay_root"
+      ]
+    }
+  ]
+}

@@ -17,6 +17,7 @@ if str(BLENDER_TOOLS) not in sys.path:
 
 from bar_model_common import BAR_METRICS, MODULE_NAMES  # noqa: E402
 from build_bar_master import build_master_scene  # noqa: E402
+from render_bar_review import add_review_lighting, configure_render  # noqa: E402
 
 
 def require(condition: bool, message: str) -> None:
@@ -55,6 +56,42 @@ def run() -> None:
         require(near_vector(root.rotation_euler, (0.0, 0.0, 0.0)), f"{module_name} root rotation is not identity")
         require(near_vector(root.scale, (1.0, 1.0, 1.0)), f"{module_name} root scale is not identity")
 
+    placement = bpy.data.objects.get("Placement")
+    require(placement is not None and placement.parent == bpy.data.objects["bar_architecture"],
+            "bar_architecture must expose its approved Placement anchor")
+    require(near_vector(placement.location, (0.0, 0.0, 0.0)), "Placement anchor must remain at module origin")
+
+    required_counter = [
+        "bar_counter_Placement", "east_sink", "sink_plumbing", "waste_bin",
+        "employee_gate", "manual_shelf",
+        *[f"front_drawer_{bay}_{level}" for bay in range(1, 5) for level in ("upper", "lower")],
+    ]
+    required_backbar = [
+        *[f"rear_lower_cabinet_{bay}_{leaf}" for bay in range(1, 6) for leaf in ("fixed", "moving")],
+        *[f"back_cabinet_{bay}_{leaf}" for bay in range(1, 6) for leaf in ("left", "right")],
+        "bottle_rack_bay_1", "bottle_rack_bay_5",
+    ]
+    required_furniture = [
+        *[f"stool_{index}" for index in range(1, 7)],
+        *[f"lounge_table_{index}" for index in range(1, 4)],
+        *[f"lounge_chair_{index}" for index in range(1, 13)],
+    ]
+    required_lighting = [
+        "pendant_1", "pendant_2", "pendant_3", "rear_linear_1", "rear_linear_2",
+        "east_sconce_1", "east_sconce_2", "west_sconce_1", "west_sconce_2",
+    ]
+    for name in required_counter + required_backbar + required_furniture + required_lighting + ["wear_overlay_root"]:
+        require(bpy.data.objects.get(name) is not None, f"missing formal module node {name}")
+    require(not any("footrail" in name.lower() for name in bpy.data.objects.keys()),
+            "front footrail geometry is forbidden")
+
+    required_materials = {
+        "deep_green_cabinet", "dark_walnut", "warm_oak", "warm_gray_plaster",
+        "copper", "brushed_brass", "dark_silver", "simple_glass",
+    }
+    require(required_materials.issubset(set(bpy.data.materials.keys())),
+            "approved retro-modern material slots are incomplete")
+
     names = [obj.name for obj in bpy.data.objects]
     require(len(names) == len(set(names)), "duplicate stable object names are forbidden")
 
@@ -74,6 +111,18 @@ def run() -> None:
         require(near_vector(opening.dimensions, size), f"{name} size is wrong")
 
     require(BAR_METRICS["room_size"] == (16.0, 10.0, 4.5), "metric table drifted from Z3/H3")
+
+    configure_render()
+    add_review_lighting()
+    review_lights = [obj for obj in bpy.data.objects if obj.type == "LIGHT"]
+    require(review_lights, "review renderer must add neutral inspection lights")
+    require(all(obj.data.type == "SUN" for obj in review_lights),
+            "review lights must be directional to avoid rectangular area-light projections")
+    require(scene.world is not None and scene.world.use_nodes,
+            "review renderer must use a world-node ambient fill")
+    background = scene.world.node_tree.nodes.get("Background")
+    require(background is not None and background.inputs["Strength"].default_value > 0.0,
+            "review world must provide non-zero neutral ambient fill")
     print("BAR_MODEL_CONTRACT_PASS")
 
 

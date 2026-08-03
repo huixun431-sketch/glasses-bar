@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/bar_furniture.glb" id="1_visual"]
+
+[node name="BarFurnitureVisual" type="Node3D"]
+metadata/asset_id = "bar_furniture"
+
+[node name="bar_furniture" parent="." instance=ExtResource("1_visual")]

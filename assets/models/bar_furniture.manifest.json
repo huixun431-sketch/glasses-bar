@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "units": "meters",
+  "up_axis": "+Y",
+  "forward_axis": "-Z",
+  "assets": [
+    {
+      "id": "bar_furniture",
+      "path": "bar_furniture.glb",
+      "placeholder": false,
+      "required_root": "bar_furniture",
+      "required_anchors": [],
+      "required_nodes": [
+        "stool_1",
+        "stool_6",
+        "lounge_table_1",
+        "lounge_table_3",
+        "lounge_chair_1",
+        "lounge_chair_12"
+      ]
+    }
+  ]
+}

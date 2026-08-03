@@ -1,0 +1,52 @@
+{
+  "batch_id": "bar-architecture",
+  "stage": "approved checkpoint 1 formal candidate",
+  "assets": [
+    {
+      "asset_id": "bar_architecture",
+      "runtime_id": "bar_architecture",
+      "required_anchors": ["Placement"],
+      "interaction_kind": "environment_visual"
+    }
+  ],
+  "paths": {
+    "candidate_root": "artifacts/blender_candidates",
+    "formal_model_root": "assets/models",
+    "wrapper_root": "scenes/environment/modules",
+    "batch_record": "docs/assets/BAR_ARCHITECTURE_BATCH_RECORD.md",
+    "json_manifest": "assets/asset_manifest.json"
+  },
+  "checkpoints": {
+    "silhouette": {
+      "status": "approved",
+      "approved_by": "user",
+      "approval_record": "User approved continuing the plan after the south-door review-light artifact was removed; all other architecture silhouette areas matched expectations.",
+      "inspection_record": "Six regenerated 1600x1000 neutral views were inspected; openings, room proportions, wainscot breaks, floor direction and player scale matched the approved contract, and the south-door rectangular projection was absent.",
+      "evidence": [
+        "artifacts/blender_review/architecture/01_north_interior.png",
+        "artifacts/blender_review/architecture/02_south_interior.png",
+        "artifacts/blender_review/architecture/03_east_interior.png",
+        "artifacts/blender_review/architecture/04_west_interior.png",
+        "artifacts/blender_review/architecture/05_overhead.png",
+        "artifacts/blender_review/architecture/06_interior_three_quarter.png"
+      ]
+    },
+    "forward_plus": {
+      "status": "pending",
+      "renderer": "Forward+",
+      "capture_scene": "tests/godot/BarInteriorFormalVisualCapture.tscn",
+      "inspection_record": "Six 1920x1080 Godot Forward+ PNGs were opened and inspected after correcting the duplicate axis conversion. The room, counter, backbar, furniture and visible fixtures are upright and within the approved 16x10x4.5 m room; the player-eye view shows the five regular non-overlapping bottle bays, the west view contains only the manual return on the side run, the east view shows the open sink bay, waste area and employee gate, and the overhead view shows no south-door foreign object.",
+      "evidence": [
+        "artifacts/bar-interior-formal-forward-plus/01_player_eye_backbar.png",
+        "artifacts/bar-interior-formal-forward-plus/02_customer_eye_front.png",
+        "artifacts/bar-interior-formal-forward-plus/03_east_sink_waste_gate.png",
+        "artifacts/bar-interior-formal-forward-plus/04_west_manual_only.png",
+        "artifacts/bar-interior-formal-forward-plus/05_customer_lounge_and_lights.png",
+        "artifacts/bar-interior-formal-forward-plus/06_overhead_layout.png"
+      ],
+      "integration_evidence": [
+        "artifacts/bar-interior-formal-forward-plus/integration.log"
+      ]
+    }
+  }
+}

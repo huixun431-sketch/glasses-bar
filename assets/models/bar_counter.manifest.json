@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "units": "meters",
+  "up_axis": "+Y",
+  "forward_axis": "-Z",
+  "assets": [
+    {
+      "id": "bar_counter",
+      "path": "bar_counter.glb",
+      "placeholder": false,
+      "required_root": "bar_counter",
+      "required_anchors": [
+        "Placement"
+      ],
+      "required_nodes": [
+        "front_drawer_1_upper",
+        "front_drawer_1_lower",
+        "front_drawer_2_upper",
+        "front_drawer_2_lower",
+        "front_drawer_3_upper",
+        "front_drawer_3_lower",
+        "front_drawer_4_upper",
+        "front_drawer_4_lower",
+        "east_sink",
+        "sink_plumbing",
+        "waste_bin",
+        "employee_gate",
+        "manual_shelf"
+      ]
+    }
+  ]
+}

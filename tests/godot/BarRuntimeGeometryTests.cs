@@ -36,6 +36,10 @@ public partial class BarRuntimeGeometryTests : Node
             Require(body.GetAabb().Size.X > 7f && guestTop.GetAabb().Size.X > 9f,
                 "new front geometry visibly spans the approved length");
 
+            var layout = BarLayoutDefinition.Prototype;
+            VerifyTopSurface(playerTop, layout.FrontPlayerTopFootprint);
+            VerifyTopSurface(guestTop, layout.FrontGuestTopFootprint);
+
             var forbiddenNames = new[]
             {
                 "MergedBottleRackBack", "MergedShelf0", "MergedShelf1",
@@ -85,6 +89,44 @@ public partial class BarRuntimeGeometryTests : Node
     {
         if (!condition)
             throw new InvalidOperationException(message);
+    }
+
+    private static void VerifyTopSurface(
+        MeshInstance3D visual,
+        BarPolygonPrismLayout layout)
+    {
+        var mesh = visual.Mesh as ArrayMesh ??
+                   throw new InvalidOperationException($"{visual.Name} is not an ArrayMesh.");
+        var arrays = mesh.SurfaceGetArrays(0);
+        var vertices = arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+        var topArea = 0f;
+        var upwardTriangles = 0;
+        for (var index = 0; index + 2 < vertices.Length; index += 3)
+        {
+            var a = vertices[index];
+            var b = vertices[index + 1];
+            var c = vertices[index + 2];
+            if (!Mathf.IsEqualApprox(a.Y, layout.TopY) ||
+                !Mathf.IsEqualApprox(b.Y, layout.TopY) ||
+                !Mathf.IsEqualApprox(c.Y, layout.TopY))
+                continue;
+            var cross = (b - a).Cross(c - a);
+            Require(cross.Y > 0f,
+                $"{visual.Name} contains a back-facing top triangle at vertex {index}.");
+            topArea += cross.Length() * 0.5f;
+            upwardTriangles++;
+        }
+
+        var expectedArea = 0f;
+        for (var index = 0; index < layout.Footprint.Count; index++)
+        {
+            var next = (index + 1) % layout.Footprint.Count;
+            expectedArea += layout.Footprint[index].X * layout.Footprint[next].Y -
+                            layout.Footprint[next].X * layout.Footprint[index].Y;
+        }
+        expectedArea = Math.Abs(expectedArea) * 0.5f;
+        Require(upwardTriangles > 0 && Mathf.IsEqualApprox(topArea, expectedArea),
+            $"{visual.Name} top surface is incomplete: actual={topArea:0.###}, expected={expectedArea:0.###}.");
     }
 
     private static void VerifyRoomContainment(Node3D main)

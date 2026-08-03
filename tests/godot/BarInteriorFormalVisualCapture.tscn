@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tests/godot/BarInteriorFormalVisualCapture.cs" id="1_capture"]
+[ext_resource type="PackedScene" path="res://scenes/environment/BarInteriorProductionPreview.tscn" id="2_preview"]
+
+[node name="BarInteriorFormalVisualCapture" type="Node"]
+script = ExtResource("1_capture")
+
+[node name="Preview" parent="." instance=ExtResource("2_preview")]

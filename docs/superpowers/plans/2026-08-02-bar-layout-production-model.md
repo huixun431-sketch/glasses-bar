@@ -472,11 +472,11 @@ Create the approved 16 m × 10 m × 4.5 m shell, segmented south entry/window wa
 
 Keep the silhouette GLB and review images ignored under `artifacts/`. Do not add a formal GLB, wrapper, or manifest switch before checkpoint-1 approval.
 
-- [ ] **Step 6: Render clay views and request architecture silhouette approval**
+- [x] **Step 6: Render clay views and request architecture silhouette approval**
 
 Render north/south/east/west interior elevations and an overhead view to `artifacts/blender_review/architecture/`. Verify openings, wainscot break, floor direction, and player-scale reference mannequin. Apply user corrections before continuing.
 
-Status 2026-08-03: six neutral views rendered and manually inspected; waiting for explicit user checkpoint-1 approval. Evidence: `docs/assets/BAR_ARCHITECTURE_SILHOUETTE_REVIEW_20260803.md`.
+Status 2026-08-03: user approved checkpoint 1 after the south-door AREA-light projection was removed and all six neutral views were regenerated and manually inspected. Evidence: `docs/assets/BAR_ARCHITECTURE_SILHOUETTE_REVIEW_20260803.md`.
 
 - [ ] **Step 7: Proposed commit boundary after approval and explicit permission**
 
@@ -601,6 +601,8 @@ Render the same cameras in neutral clay, reality warm palette, and cold/desatura
 git add tools/blender/bar_model_common.py tools/blender/build_bar_master.py tools/blender/render_bar_review.py models/bar_architecture.glb models/bar_counter.glb models/bar_backbar.glb models/bar_furniture.glb models/bar_lighting.glb models/bar_wear_overlays.glb
 git commit -m "art: finish retro modern bar material pass"
 ```
+
+Status 2026-08-03: following the user's instruction to produce the style before review, Tasks 8–10 were consolidated into one non-runtime formal candidate pass. Six GLBs, sidecars, preview wrappers and six inspected Godot Forward+ images now exist, while all six environment manifest entries deliberately remain placeholders. The candidate is paused at checkpoint 2 for user geometry/material review; unchecked requirements above remain open where the current candidate or checkpoint has not yet satisfied the exact wording.
 
 ### Task 11: Add hand-authored Godot wrappers and guarded graybox fallback
 

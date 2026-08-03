@@ -2,7 +2,11 @@
 
 日期：2026-08-03
 
-阶段：`silhouette-review`，等待用户明确批准
+阶段：`silhouette-review`，已批准
+
+批准人：`user`
+
+批准记录：用户在指出南门疑似异物后明确说明“其余部分符合预期，继续执行计划”；经确认疑似异物为审查 AREA 灯穿过开口产生的矩形投影，并改用无阴影方向光完整重拍后，按该条件批准继续进入正式候选阶段。
 
 候选：`artifacts/blender_candidates/bar_architecture.glb`（ignored，不是正式资产）
 
@@ -16,8 +20,8 @@
 
 ## 人工视觉检查
 
-- 首轮图因相机过窄、曝光过高和 Y-up 相机翻滚未通过，已修正后完全重拍；首轮不得作为证据。
-- 第二轮六图均为 `1600×1000` 中性黏土审查图，已逐张打开检查。
+- 首轮图因相机过窄、曝光过高和 Y-up 相机翻滚未通过；第二轮南门旁出现 AREA 灯穿过开口造成的矩形投影。两轮均不得作为证据。
+- 最终轮改为世界环境光与无阴影方向光，六图均为 `1600×1000` 中性审查图，已逐张打开检查；南门矩形投影消失，门洞附近对象边界检查仅包含房间、门、把手、门缝、护墙和地板。
 - 北／南立面可同时说明北东服务门、南双门和南东窗与墙体分段的关系；墙体未跨越开口。
 - 1.05 m 护墙板绕开门窗，窗下仅保留 0.75 m 高护墙；地板窄板沿南北方向延伸。
 - 俯视图显示 16:10 房间比例与三处开口位置；1.83 m 橙色人体参照在立面和三分之四视角均为竖直且落地。
@@ -25,13 +29,13 @@
 
 ## 审查图与 SHA-256
 
-- `01_north_interior.png` — `aec71e3e4e2035f8666cd886a9fea3c3afce2da21b6b115e00e7502d11c8cb19`
-- `02_south_interior.png` — `0e56c42ed097e9bb0dcf02d45f3f13a5e3c9790e4cc3707a904de00a188e399a`
-- `03_east_interior.png` — `ab96a0ef39ace50120dc91446f3a8340a19516fe4064981b1ca2499323cd3df4`
-- `04_west_interior.png` — `f5418bde0560bbc7ac9af5314af6d2a196fd972d1c726eadcf1665b2ba9cd695`
-- `05_overhead.png` — `9d858850393aba803cb12c2859f1c2580b11463e70f400ba4c852981b492cd76`
-- `06_interior_three_quarter.png` — `107acb0c883abdffe7b451aae8f22a2d69a6602f2eb942e68dc81de8bd771c30`
+- `01_north_interior.png` — `b21996a1ec1605f8b4af34030b794cc521148e8dce27ce0ac56ab428c1b80871`
+- `02_south_interior.png` — `3bdb12fcd27af59cdea101fa8bd08d0448909141f516c2915e0eb5b30d42bb43`
+- `03_east_interior.png` — `225fff2849599bfdad1d0b9014a8ea28250eff07d67ada446c341b92a45eefd7`
+- `04_west_interior.png` — `a018b4135b1d312702d332392f02cbae58db2b6dba468251e2fa4e8286cdf15d`
+- `05_overhead.png` — `49ae36010afa41008e2cae3ca2b3ebd015916534b5ab6422dc3279ec6808d3dd`
+- `06_interior_three_quarter.png` — `31b003ee9d0a8a0683adb3f08b2500289532bfe88b0745fd98d1a6131b518088`
 
 ## 当前门禁
 
-等待用户对建筑轮廓检查点 1 明确批准或提出返修。批准前不得运行 `formal-candidate`，不得开始前后吧正式模型、材质抛光、Godot 包装或 placeholder 切换。
+检查点 1 已由用户批准，可运行 `formal-candidate` 并继续前后吧正式候选模型。六个环境模块仍保持 `placeholder: true`；在 Godot Forward+ 检查点 2 获得用户明确批准前不得切换正式资产。

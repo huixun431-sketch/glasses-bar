@@ -5,10 +5,11 @@
 ## 捕获环境与范围
 
 - Godot `4.7.1.stable.mono`，Vulkan Forward+，NVIDIA GeForce RTX 5070 Laptop GPU。
-- 输出：`artifacts/visual_review_bar_graybox_z3_h3_detail_fix/`，20 张 PNG；PNG 头与捕获脚本均确认全部为 `1920×1080`。
-- `01–16` 复核既有全景、玩家眼高、Z3 分区、收纳、瓶架、客区与双世界灯光；`17–20` 专门复核客侧外挑、抽屉／柜架净空、后下柜推拉门和水槽裸露管线。
+- 输出：`artifacts/visual_review_bar_graybox_z3_h3_detail_fix/`，22 张 PNG；PNG 头与捕获脚本均确认全部为 `1920×1080`。
+- `01–16` 复核既有全景、玩家眼高、Z3 分区、收纳、瓶架、客区与双世界灯光；`17–20` 专门复核客侧外挑、抽屉／柜架净空、后下柜推拉门和水槽裸露管线；`21–22` 分别近看玩家工作台与客侧台面的顶面连续性。
 - 已逐张人工检查：未见房间外溢出、旧柜体残留、抽屉与静态柜架穿插、推拉门侵入相邻柜或水槽下封闭柜体。推拉门开放侧的原料可见；客侧台面保持连续。
-- Movie Maker 的附带 AVI 写入报告 MJPEG 文件打开错误，但脚本直接保存的 20 张 PNG 完整生成并输出 `BAR_PRODUCTION_VISUAL_CAPTURE_PASS`；本记录只把 PNG 作为证据。
+- 用户指出的“吧台面似乎渲染失败”并非缺面：两张专项图可见完整顶面，浅灰／高光变化来自审查补光和观察角度。`BarRuntimeGeometryTests` 另行读取运行时 ArrayMesh 的三角形，要求玩家工作台与客侧台面所有顶面朝上且顶面总面积等于其平面占地面积。
+- Movie Maker 的附带 AVI 写入报告 MJPEG 文件打开错误，但脚本直接保存的 22 张 PNG 完整生成并输出 `BAR_PRODUCTION_VISUAL_CAPTURE_PASS`；本记录只把 PNG 作为证据。
 
 ## SHA-256
 
@@ -33,10 +34,12 @@
 18_front_drawer_carcass_clearance.png  360b3f2ff09c9f0878bfa96b84b11fefa2eced522fa084ad2572b0a193104dd1
 19_rear_sliding_door_open.png          b0cbd4baf41e63b26ce9a929eee306eeaebca45fff4d68bcf5015eecf013b59c
 20_sink_exposed_plumbing_close.png     6c6ffde9638660fe26b082e95744b4b2a39c6ec821070bccfdabe50b27045b91
+21_player_worktop_surface_continuity.png 27f943f086011a8cd29904710713b26928f93b827501fbe753c86e4dbc391d58
+22_guest_top_surface_continuity.png     5dbd1ece1818945af904e90710ac4984cc06c8a85aa7e23dfb095be646001861
 ```
 
 ## 自动验证结论
 
 - 资产 `16/0`；领域测试 `28/28`；Debug/Release `0` 警告、`0` 错误。
 - `BAR_PRODUCTION_LAYOUT_CONTRACT_PASS`、`BAR_STORAGE_INTEGRATION_PASS`、`BAR_RUNTIME_GEOMETRY_PASS`、`SMOKE_TESTS_PASS`、`STAGE1_ASSET_INTEGRATION_PASS`、`STAGE2_ASSET_INTEGRATION_PASS`、`INPUT_INTEGRATION_PASS`、`FLOW_INTEGRATION_PASS` 全部通过。
-- 下一动作：执行生产模型计划 Task 6，再按建模 Skill 推进 Task 7 至中性建筑轮廓强制审阅点。
+- 下一动作：灰盒细节修订已封板；继续执行正式环境六模块候选，并在 Godot Forward+ 几何／材质检查点等待用户决定。

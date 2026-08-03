@@ -76,7 +76,9 @@ public partial class BarProductionVisualCapture : Node
                 new("17_guest_counter_extension_close", new Vector3(-2.80f, 1.75f, 0.25f), new Vector3(-2.80f, 1.28f, -0.86f)),
                 new("18_front_drawer_carcass_clearance", new Vector3(-0.65f, 1.45f, -3.20f), new Vector3(-1.86f, 0.58f, -1.70f), OpenStorageId: "front_drawer_4_lower"),
                 new("19_rear_sliding_door_open", new Vector3(-5.05f, 1.45f, -1.90f), new Vector3(-6.20f, 0.52f, -3.58f), OpenStorageId: "rear_lower_cabinet_1"),
-                new("20_sink_exposed_plumbing_close", new Vector3(0.65f, 1.20f, -2.85f), new Vector3(0.65f, 0.56f, -1.42f))
+                new("20_sink_exposed_plumbing_close", new Vector3(0.65f, 1.20f, -2.85f), new Vector3(0.65f, 0.56f, -1.42f)),
+                new("21_player_worktop_surface_continuity", new Vector3(-2.80f, 2.05f, -2.85f), new Vector3(-2.80f, 1.12f, -1.35f)),
+                new("22_guest_top_surface_continuity", new Vector3(-2.80f, 2.18f, 0.35f), new Vector3(-2.80f, 1.38f, -0.82f))
             };
 
             foreach (var state in states)

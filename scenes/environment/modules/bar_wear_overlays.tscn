@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/bar_wear_overlays.glb" id="1_visual"]
+
+[node name="BarWearOverlaysVisual" type="Node3D"]
+metadata/asset_id = "bar_wear_overlays"
+
+[node name="bar_wear_overlays" parent="." instance=ExtResource("1_visual")]

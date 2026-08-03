@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "units": "meters",
+  "up_axis": "+Y",
+  "forward_axis": "-Z",
+  "assets": [
+    {
+      "id": "bar_lighting",
+      "path": "bar_lighting.glb",
+      "placeholder": false,
+      "required_root": "bar_lighting",
+      "required_anchors": [],
+      "required_nodes": [
+        "pendant_1",
+        "pendant_3",
+        "rear_linear_1",
+        "rear_linear_2",
+        "east_sconce_1",
+        "east_sconce_2",
+        "west_sconce_1",
+        "west_sconce_2"
+      ]
+    }
+  ]
+}

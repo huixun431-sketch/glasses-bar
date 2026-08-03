@@ -28,6 +28,7 @@
 
 ### `bar_architecture`
 
+- 必需锚点：`Placement`，位于模块原点，用于手写包装场景对齐；不承载碰撞或玩法状态。
 - 必需节点：`room_shell`、`south_main_entry`、`south_east_window`、`north_east_service_door`。
 - 门窗节点保持独立，方便包装隐藏/替换可动表现；不得合并进 `room_shell`。
 - 不建后台区域，不封堵南侧入口、南东窗或北东服务门。
