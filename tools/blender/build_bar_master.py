@@ -9,6 +9,7 @@ from pathlib import Path
 import math
 
 import bpy
+from mathutils import Vector
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 if str(SCRIPT_DIRECTORY) not in sys.path:
@@ -21,6 +22,7 @@ from bar_model_common import (
     add_collection,
     add_combined_boxes,
     add_frame,
+    add_polygon_prism,
     add_root,
     configure_scene,
     material,
@@ -115,7 +117,7 @@ def _build_architecture(root: bpy.types.Object, collection: bpy.types.Collection
     clay = material("warm_gray_plaster", (0.47, 0.43, 0.38, 1.0), 0.88)
     dark_clay = material("dark_walnut", (0.16, 0.065, 0.035, 1.0), 0.76)
     trim_clay = material("warm_oak", (0.48, 0.25, 0.095, 1.0), 0.72)
-    glass_clay = material("simple_glass", (0.16, 0.29, 0.32, 0.55), 0.28)
+    glass_clay = material("simple_glass", (0.16, 0.29, 0.32, 0.55), 0.28, 0.0, 0.72)
     metal_clay = material("dark_silver", (0.18, 0.20, 0.22, 1.0), 0.34, 0.58)
 
     placement = bpy.data.objects.new("Placement", None)
@@ -200,6 +202,19 @@ def _cylinder(name, location, radius, height, parent, collection, surface, verti
     return _move_primitive(bpy.context.object, name, parent, collection, surface)
 
 
+def _cylinder_between(name, start, end, radius, parent, collection, surface, vertices=16):
+    start_point = Vector(start)
+    end_point = Vector(end)
+    direction = end_point - start_point
+    bpy.ops.mesh.primitive_cylinder_add(
+        vertices=vertices, radius=radius, depth=direction.length,
+        location=(start_point + end_point) * 0.5)
+    bpy.context.object.rotation_mode = "QUATERNION"
+    bpy.context.object.rotation_quaternion = Vector((0.0, 0.0, 1.0)).rotation_difference(
+        direction.normalized())
+    return _move_primitive(bpy.context.object, name, parent, collection, surface)
+
+
 def _torus(name, location, major_radius, minor_radius, parent, collection, surface):
     bpy.ops.mesh.primitive_torus_add(
         major_radius=major_radius, minor_radius=minor_radius,
@@ -208,57 +223,118 @@ def _torus(name, location, major_radius, minor_radius, parent, collection, surfa
     return _move_primitive(bpy.context.object, name, parent, collection, surface)
 
 
+def _join_mesh_objects(target, parts):
+    """Join touching construction pieces into one exported mesh object."""
+    bpy.ops.object.select_all(action="DESELECT")
+    for part in parts:
+        part.select_set(True)
+    bpy.context.view_layer.objects.active = target
+    bpy.ops.object.join()
+    target.data.name = f"{target.name}_Mesh"
+    return target
+
+
 def _palette():
     return {
-        "green": material("deep_green_cabinet", (0.035, 0.16, 0.105, 1.0), 0.76),
+        "cabinet": material("deep_brown_cabinet", (0.115, 0.045, 0.025, 1.0), 0.78),
         "walnut": material("dark_walnut", (0.16, 0.065, 0.035, 1.0), 0.76),
         "oak": material("warm_oak", (0.48, 0.25, 0.095, 1.0), 0.72),
         "plaster": material("warm_gray_plaster", (0.47, 0.43, 0.38, 1.0), 0.88),
         "copper": material("copper", (0.56, 0.22, 0.095, 1.0), 0.42, 0.72),
         "brass": material("brushed_brass", (0.56, 0.38, 0.12, 1.0), 0.38, 0.68),
         "silver": material("dark_silver", (0.18, 0.20, 0.22, 1.0), 0.34, 0.58),
-        "glass": material("simple_glass", (0.16, 0.29, 0.32, 0.55), 0.28),
+        "glass": material("simple_glass", (0.16, 0.29, 0.32, 0.55), 0.28, 0.0, 0.72),
+        "frosted_shade": material(
+            "frosted_translucent_shade", (0.78, 0.67, 0.55, 0.48), 0.65, 0.0, 0.45),
     }
 
 
 def _build_counter(root, collection):
     p = _palette()
     _empty("bar_counter_Placement", (0.0, 0.0, 0.0), root, collection)
-    west, east = -7.35, 1.75
-    add_box("front_guest_apron", (-3.725, 0.59, -0.90), (7.25, 1.02, 0.10), root, collection, p["green"])
-    add_box("guest_counter_top", (-2.80, 1.35, -0.85), (9.10, 0.06, 0.60), root, collection, p["walnut"])
-    add_box("player_worktop_west", (-3.725, 1.10, -1.53), (7.25, 0.05, 0.78), root, collection, p["walnut"])
-    add_box("player_worktop_east_cap", (1.575, 1.10, -1.53), (0.35, 0.05, 0.78), root, collection, p["walnut"])
+    structural_footprint = (
+        (-7.35, -0.85), (1.75, -0.85), (1.75, -1.95),
+        (-6.45, -1.95), (-6.75, -2.25), (-6.75, -3.20),
+        (-6.45, -3.50), (1.75, -3.50), (1.75, -4.06), (-7.35, -4.06),
+    )
+    guest_top_footprint = (
+        (-7.35, -0.55), (1.75, -0.55), (1.75, -1.15), (-7.35, -1.15),
+    )
+    add_polygon_prism("bar_structural_base", structural_footprint, 0.0, 0.08,
+                      root, collection, p["cabinet"])
+    add_combined_boxes("bar_carcass_monolith", (
+        ((-2.80, 0.70, -0.90), (9.10, 1.24, 0.10)),
+        ((-7.30, 0.58, -2.605), (0.10, 1.00, 2.91)),
+        ((-2.80, 0.57, -4.01), (9.10, 0.98, 0.10)),
+    ), root, collection, p["cabinet"])
+    add_polygon_prism("guest_counter_top", guest_top_footprint, 1.32, 1.38, root, collection, p["walnut"])
+    # Construct the front worktop as one joined mesh around the sink aperture.
+    # This avoids a renderer-dependent Boolean while preserving one exported
+    # continuous object and a genuinely empty, testable bowl opening.
+    worktop = add_box("bar_worktop_monolith", (-3.605, 1.10, -1.55),
+                      (7.49, 0.04, 0.80), root, collection, p["walnut"])
+    worktop_sink_east = add_box("_bar_worktop_sink_east", (1.455, 1.10, -1.55),
+                                (0.59, 0.04, 0.80), root, collection, p["walnut"])
+    worktop_sink_guest = add_box("_bar_worktop_sink_guest", (0.65, 1.10, -1.21),
+                                 (1.02, 0.04, 0.12), root, collection, p["walnut"])
+    worktop_sink_worker = add_box("_bar_worktop_sink_worker", (0.65, 1.10, -1.87),
+                                  (1.02, 0.04, 0.16), root, collection, p["walnut"])
+    worktop_west = add_polygon_prism("_bar_worktop_west", (
+        (-7.35, -1.95), (-6.45, -1.95), (-6.75, -2.25),
+        (-6.75, -3.20), (-6.45, -3.50), (-7.35, -3.50),
+    ), 1.08, 1.12, root, collection, p["walnut"])
+    worktop_rear = add_box("_bar_worktop_rear", (-2.80, 1.10, -3.78),
+                           (9.10, 0.04, 0.56), root, collection, p["walnut"])
+    _join_mesh_objects(worktop, (
+        worktop, worktop_sink_east, worktop_sink_guest, worktop_sink_worker,
+        worktop_west, worktop_rear,
+    ))
     for index, x in enumerate((-7.29, -5.51, -4.05, -2.59, -1.13, -0.13), 1):
-        add_box(f"counter_carcass_divider_{index}", (x, 0.55, -1.53), (0.06, 1.00, 0.76), root, collection, p["green"])
-    add_box("counter_carcass_top_rail", (-3.72, 1.045, -1.53), (7.18, 0.05, 0.76), root, collection, p["green"])
+        add_box(f"counter_carcass_divider_{index}", (x, 0.55, -1.53), (0.06, 1.00, 0.76), root, collection, p["cabinet"])
+    add_box("counter_carcass_top_rail", (-3.72, 1.045, -1.53), (7.18, 0.05, 0.76), root, collection, p["cabinet"])
     drawer_x = (-6.24, -4.78, -3.32, -1.86)
     for bay, x in enumerate(drawer_x, 1):
         for level, y in (("upper", 0.83), ("lower", 0.39)):
             drawer = _empty(f"front_drawer_{bay}_{level}", (x, y, -1.91), root, collection)
-            add_box(f"front_drawer_{bay}_{level}_face", (0.0, 0.0, 0.0), (1.30, 0.36, 0.08), drawer, collection, p["green"])
+            drawer["open_travel_m"] = 0.38
+            drawer["outward_axis"] = "-Z"
+            add_box(f"front_drawer_{bay}_{level}_face", (0.0, 0.0, 0.0), (1.30, 0.36, 0.08), drawer, collection, p["cabinet"])
             add_box(f"front_drawer_{bay}_{level}_handle", (0.0, 0.0, -0.055), (0.34, 0.035, 0.035), drawer, collection, p["brass"])
-    add_box("west_manual_return", (-7.0, 0.56, -2.72), (0.70, 1.12, 1.54), root, collection, p["green"])
-    add_box("west_manual_return_top", (-7.0, 1.10, -2.72), (0.70, 0.05, 1.54), root, collection, p["walnut"])
+            add_box(f"front_drawer_{bay}_{level}_tray", (0.0, -0.11, 0.33), (1.24, 0.08, 0.58), drawer, collection, p["walnut"])
     shelf = _empty("manual_shelf", (-7.0, 1.145, -2.72), root, collection)
+    shelf["orientation_axis"] = "west_counter_depth"
+    shelf["clockwise_rotation_degrees"] = 90.0
     shelf.rotation_euler.x = math.radians(-10.0)
-    add_box("manual_shelf_board", (0.0, 0.0, 0.0), (0.52, 0.05, 0.38), shelf, collection, p["walnut"])
-    add_box("manual_shelf_stop", (0.0, 0.055, 0.17), (0.52, 0.09, 0.025), shelf, collection, p["brass"])
-    sink = _empty("east_sink", (0.65, 1.12, -1.40), root, collection)
-    add_frame("east_sink_rim", (0.0, 0.01, 0.0), (1.10, 0.62, 0.05), 0.08, sink, collection, p["silver"])
-    add_box("east_sink_basin", (0.0, -0.12, 0.0), (0.92, 0.20, 0.44), sink, collection, p["silver"])
-    plumbing = _empty("sink_plumbing", (0.0, 0.0, 0.0), root, collection)
-    for name, loc, size in (
-        ("sink_drain_vertical", (0.65, 0.75, -1.40), (0.09, 0.42, 0.09)),
-        ("sink_trap_bottom", (0.52, 0.42, -1.40), (0.32, 0.09, 0.09)),
-        ("sink_hot_supply", (0.87, 0.56, -1.60), (0.035, 0.78, 0.035)),
-        ("sink_cold_supply", (0.99, 0.56, -1.60), (0.035, 0.78, 0.035))):
-        add_box(name, loc, size, plumbing, collection, p["copper"])
+    shelf.rotation_euler.y = math.radians(90.0)
+    add_box("manual_shelf_board", (0.0, 0.0, 0.0), (0.62, 0.05, 0.28), shelf, collection, p["walnut"])
+    add_box("manual_shelf_stop", (0.0, 0.055, 0.12), (0.62, 0.09, 0.025), shelf, collection, p["brass"])
+    add_box("sink_base", (0.65, 0.42, -1.53), (1.12, 0.84, 0.72), root, collection, p["cabinet"])
+    sink = _empty("east_sink", (0.65, 1.12, -1.53), root, collection)
+    add_combined_boxes("east_sink_rim", (
+        ((-0.51, 0.01, 0.0), (0.08, 0.05, 0.60)),
+        ((0.51, 0.01, 0.0), (0.08, 0.05, 0.60)),
+        ((0.0, 0.01, -0.26), (0.94, 0.05, 0.08)),
+        ((0.0, 0.01, 0.26), (0.94, 0.05, 0.08)),
+    ), sink, collection, p["silver"])
+    add_combined_boxes("east_sink_basin", (
+        ((0.0, -0.22, 0.0), (0.92, 0.04, 0.42)),
+        ((-0.44, -0.11, 0.0), (0.04, 0.22, 0.42)),
+        ((0.44, -0.11, 0.0), (0.04, 0.22, 0.42)),
+        ((0.0, -0.11, -0.19), (0.84, 0.22, 0.04)),
+        ((0.0, -0.11, 0.19), (0.84, 0.22, 0.04)),
+    ), sink, collection, p["silver"])
+    faucet = _empty("east_sink_faucet", (0.0, 0.0, 0.0), sink, collection)
+    _cylinder("east_sink_faucet_riser", (0.49, 0.20, 0.0), 0.035, 0.40,
+              faucet, collection, p["copper"], 12)
+    _cylinder_between("east_sink_faucet_angled_spout", (0.49, 0.40, 0.0),
+                      (0.16, 0.30, 0.0), 0.035, faucet, collection, p["copper"], 12)
+    _cylinder("east_sink_faucet_outlet", (0.16, 0.25, 0.0), 0.035, 0.10,
+              faucet, collection, p["copper"], 12)
     waste = _empty("waste_bin", (1.40, 0.50, -3.42), root, collection)
-    add_box("waste_bin_body", (0.0, 0.0, 0.0), (0.70, 1.00, 0.76), waste, collection, p["green"])
+    add_box("waste_bin_body", (0.0, 0.0, 0.0), (0.70, 1.00, 0.76), waste, collection, p["cabinet"])
     add_box("waste_bin_opening", (0.0, 0.42, -0.39), (0.46, 0.22, 0.025), waste, collection, p["silver"])
     gate = _empty("employee_gate", (1.40, 0.49, -2.62), root, collection)
-    add_box("employee_gate_leaf", (0.0, 0.0, 0.0), (0.08, 0.98, 0.72), gate, collection, p["green"])
+    add_box("employee_gate_leaf", (0.0, 0.0, 0.0), (0.08, 0.98, 0.90), gate, collection, p["cabinet"])
     add_box("workboard", (-3.15, 1.15, -1.50), (2.05, 0.04, 0.52), root, collection, p["oak"])
     for index, x in enumerate((-3.77, -3.15, -2.53), 1):
         add_box(f"workboard_slot_{index}", (x, 1.176, -1.50), (0.28, 0.006, 0.22), root, collection, p["brass"])
@@ -266,21 +342,40 @@ def _build_counter(root, collection):
 
 def _build_backbar(root, collection):
     p = _palette()
-    add_box("rear_bar_worktop", (-2.80, 1.09, -3.78), (9.10, 0.06, 0.56), root, collection, p["walnut"])
     centers = tuple(-6.20 + index * 1.70 for index in range(5))
     for bay, x in enumerate(centers, 1):
-        add_box(f"rear_carcass_{bay}", (x, 0.52, -3.84), (1.64, 0.98, 0.46), root, collection, p["green"])
-        add_box(f"rear_lower_cabinet_{bay}_fixed", (x - 0.39, 0.52, -3.49), (0.78, 0.96, 0.045), root, collection, p["green"])
-        add_box(f"rear_lower_cabinet_{bay}_moving", (x + 0.39, 0.52, -3.46), (0.78, 0.96, 0.045), root, collection, p["green"])
+        add_combined_boxes(f"rear_carcass_{bay}", (
+            ((x - 0.79, 0.52, -3.84), (0.06, 0.98, 0.46)),
+            ((x + 0.79, 0.52, -3.84), (0.06, 0.98, 0.46)),
+            ((x, 0.98, -3.84), (1.64, 0.06, 0.46)),
+            ((x, 0.06, -3.84), (1.64, 0.06, 0.46)),
+            ((x, 0.52, -4.03), (1.64, 0.98, 0.08)),
+        ), root, collection, p["cabinet"])
+        add_box(f"rear_cabinet_interior_{bay}", (x, 0.52, -3.985),
+                (1.52, 0.86, 0.02), root, collection, p["walnut"])
+        add_box(f"rear_lower_cabinet_{bay}_fixed", (x - 0.39, 0.52, -3.49), (0.78, 0.96, 0.045), root, collection, p["cabinet"])
+        moving = add_box(f"rear_lower_cabinet_{bay}_moving", (x + 0.39, 0.52, -3.505), (0.78, 0.96, 0.045), root, collection, p["cabinet"])
+        moving["slide_travel_m"] = 0.79
+        moving["slide_axis"] = "X"
         rack = _empty(f"bottle_rack_bay_{bay}", (x, 0.0, 0.0), root, collection)
         add_box(f"bottle_rack_bay_{bay}_back", (0.0, 1.835, -4.10), (1.62, 1.43, 0.05), rack, collection, p["walnut"])
         for level, y in (("lower", 1.48), ("upper", 2.08)):
             add_box(f"bottle_rack_bay_{bay}_{level}_shelf", (0.0, y, -3.84), (1.62, 0.04, 0.48), rack, collection, p["walnut"])
             add_box(f"bottle_rack_bay_{bay}_{level}_lip", (0.0, y + 0.035, -3.61), (1.62, 0.07, 0.012), rack, collection, p["brass"])
-        add_box(f"upper_cabinet_shell_{bay}", (x, 3.30, -3.84), (1.66, 1.30, 0.42), root, collection, p["walnut"])
+        add_combined_boxes(f"upper_cabinet_shell_{bay}", (
+            ((x - 0.80, 3.30, -3.84), (0.06, 1.30, 0.42)),
+            ((x + 0.80, 3.30, -3.84), (0.06, 1.30, 0.42)),
+            ((x, 3.92, -3.84), (1.66, 0.06, 0.42)),
+            ((x, 2.68, -3.84), (1.66, 0.06, 0.42)),
+            ((x, 3.30, -4.02), (1.66, 1.30, 0.06)),
+        ), root, collection, p["walnut"])
+        add_box(f"upper_cabinet_interior_{bay}", (x, 3.30, -3.985),
+                (1.54, 1.18, 0.02), root, collection, p["cabinet"])
         for leaf, sign in (("left", -1.0), ("right", 1.0)):
             pivot = _empty(f"back_cabinet_{bay}_{leaf}", (x + sign * 0.81, 3.30, -3.62), root, collection)
-            add_box(f"back_cabinet_{bay}_{leaf}_panel", (-sign * 0.405, 0.0, 0.0), (0.81, 1.22, 0.06), pivot, collection, p["green"])
+            pivot["open_angle_degrees"] = 85.0
+            pivot["hinge_side"] = leaf
+            add_box(f"back_cabinet_{bay}_{leaf}_panel", (-sign * 0.405, 0.0, 0.0), (0.81, 1.22, 0.06), pivot, collection, p["cabinet"])
             add_box(f"back_cabinet_{bay}_{leaf}_handle", (-sign * 0.70, 0.0, -0.05), (0.035, 0.34, 0.035), pivot, collection, p["brass"])
 
 
@@ -300,6 +395,7 @@ def _build_furniture(root, collection):
         _cylinder(f"lounge_table_{table_index}_stem", (0.0, 0.35, 0.0), 0.045, 0.66, table, collection, p["silver"], 12)
         for dx, dz in ((0.0, 0.68), (0.0, -0.68), (-0.68, 0.0), (0.68, 0.0)):
             chair = _empty(f"lounge_chair_{chair_index}", (x + dx, 0.0, z + dz), root, collection)
+            chair.rotation_euler.y = math.atan2(-dx, -dz)
             add_box(f"lounge_chair_{chair_index}_seat", (0.0, 0.43, 0.0), (0.46, 0.08, 0.46), chair, collection, p["oak"])
             add_box(f"lounge_chair_{chair_index}_back", (0.0, 0.68, -0.20), (0.46, 0.44, 0.06), chair, collection, p["oak"])
             for leg, lx, lz in ((1, -0.18, -0.18), (2, 0.18, -0.18), (3, -0.18, 0.18), (4, 0.18, 0.18)):
@@ -309,12 +405,21 @@ def _build_furniture(root, collection):
 
 def _build_lighting(root, collection):
     p = _palette()
+    def add_pendant(name, location, shade_y, cord_center_y, cord_height):
+        pendant = _empty(name, location, root, collection)
+        _cylinder(f"{name}_canopy", (0.0, 4.38, 0.0), 0.12, 0.05,
+                  pendant, collection, p["silver"], 16)
+        _cylinder(f"{name}_cord", (0.0, cord_center_y, 0.0), 0.012, cord_height,
+                  pendant, collection, p["silver"], 8)
+        _cylinder(f"{name}_shade", (0.0, shade_y, 0.0), 0.24, 0.18,
+                  pendant, collection, p["frosted_shade"], 16)
+        _cylinder(f"{name}_emitter", (0.0, shade_y - 0.10, 0.0), 0.14, 0.015,
+                  pendant, collection, p["brass"], 16)
+
     for index, x in enumerate((-5.40, -2.80, -0.20), 1):
-        pendant = _empty(f"pendant_{index}", (x, 0.0, -1.40), root, collection)
-        _cylinder(f"pendant_{index}_canopy", (0.0, 4.38, 0.0), 0.12, 0.05, pendant, collection, p["silver"], 16)
-        _cylinder(f"pendant_{index}_cord", (0.0, 3.47, 0.0), 0.012, 1.78, pendant, collection, p["silver"], 8)
-        _cylinder(f"pendant_{index}_shade", (0.0, 2.53, 0.0), 0.24, 0.18, pendant, collection, p["copper"], 16)
-        _cylinder(f"pendant_{index}_emitter", (0.0, 2.43, 0.0), 0.14, 0.015, pendant, collection, p["brass"], 16)
+        add_pendant(f"pendant_{index}", (x, 0.0, -1.40), 2.53, 3.47, 1.78)
+    for index, (x, z) in enumerate(((4.35, -2.15), (4.65, 0.25), (4.35, 2.65)), 1):
+        add_pendant(f"lounge_pendant_{index}", (x, 0.0, z), 2.72, 3.57, 1.58)
     for index, x in enumerate((-5.05, -0.55), 1):
         add_box(f"rear_linear_{index}", (x, 2.45, -3.58), (4.25, 0.08, 0.10), root, collection, p["silver"])
     for side, x in (("west", -7.84), ("east", 7.84)):
@@ -322,7 +427,7 @@ def _build_lighting(root, collection):
             sconce = _empty(f"{side}_sconce_{index}", (x, 2.15, z), root, collection)
             add_box(f"{side}_sconce_{index}_backplate", (0.0, 0.0, 0.0), (0.08, 0.34, 0.22), sconce, collection, p["silver"])
             add_box(f"{side}_sconce_{index}_arm", ((0.10 if side == "west" else -0.10), 0.0, 0.0), (0.20, 0.035, 0.035), sconce, collection, p["brass"])
-            _cylinder(f"{side}_sconce_{index}_shade", ((0.20 if side == "west" else -0.20), 0.0, 0.0), 0.13, 0.18, sconce, collection, p["copper"], 12)
+            _cylinder(f"{side}_sconce_{index}_shade", ((0.20 if side == "west" else -0.20), 0.0, 0.0), 0.13, 0.18, sconce, collection, p["frosted_shade"], 12)
 
 
 def _build_wear(root, collection):

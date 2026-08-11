@@ -23,7 +23,8 @@ REQUIRED_NODES = {
     ],
     "bar_counter": [
         *[f"front_drawer_{bay}_{level}" for bay in range(1, 5) for level in ("upper", "lower")],
-        "east_sink", "sink_plumbing", "waste_bin", "employee_gate", "manual_shelf",
+        "east_sink", "sink_base", "waste_bin", "employee_gate", "manual_shelf",
+        "bar_structural_base", "bar_carcass_monolith", "bar_worktop_monolith",
     ],
     "bar_backbar": [
         *[f"rear_lower_cabinet_{bay}_{leaf}" for bay in range(1, 6) for leaf in ("fixed", "moving")],
@@ -36,6 +37,7 @@ REQUIRED_NODES = {
     ],
     "bar_lighting": [
         "pendant_1", "pendant_3", "rear_linear_1", "rear_linear_2",
+        "lounge_pendant_1", "lounge_pendant_2", "lounge_pendant_3",
         "east_sconce_1", "east_sconce_2", "west_sconce_1", "west_sconce_2",
     ],
     "bar_wear_overlays": ["wear_overlay_root"],

@@ -48,6 +48,8 @@ if ($godotPath) {
     Assert-LastExitCode 'Godot bar storage integration'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/BarRuntimeGeometryTests.tscn
     Assert-LastExitCode 'Godot bar runtime geometry'
+    & $godotPath --headless --path $root --quit-after 300 res://tests/godot/BarFormalReviewVariantTests.tscn
+    Assert-LastExitCode 'Godot formal review variants'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/SmokeTests.tscn
     Assert-LastExitCode 'Godot smoke tests'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/Stage1AssetIntegrationTests.tscn

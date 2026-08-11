@@ -95,6 +95,7 @@ def material(
     color: tuple[float, float, float, float],
     roughness: float = 0.72,
     metallic: float = 0.0,
+    transmission: float = 0.0,
 ) -> bpy.types.Material:
     existing = bpy.data.materials.get(name)
     if existing is not None:
@@ -109,6 +110,11 @@ def material(
     shader.inputs["Base Color"].default_value = color
     shader.inputs["Roughness"].default_value = roughness
     shader.inputs["Metallic"].default_value = metallic
+    transmission_input = shader.inputs.get("Transmission Weight")
+    if transmission_input is not None:
+        transmission_input.default_value = transmission
+    if color[3] < 1.0 and hasattr(result, "surface_render_method"):
+        result.surface_render_method = "DITHERED"
     return result
 
 
@@ -145,6 +151,45 @@ def add_box(
     collection.objects.link(obj)
     obj.parent = parent
     obj.location = tuple(float(value) for value in location)
+    return obj
+
+
+def add_polygon_prism(
+    name: str,
+    footprint: Sequence[Sequence[float]],
+    bottom_y: float,
+    top_y: float,
+    parent: bpy.types.Object,
+    collection: bpy.types.Collection,
+    surface: bpy.types.Material,
+) -> bpy.types.Object:
+    """Create one deterministic Y-up prism from an X/Z polygon footprint."""
+    points = [(float(point[0]), float(point[1])) for point in footprint]
+    if len(points) < 3:
+        raise ValueError(f"{name} requires at least three footprint points")
+    signed_area = sum(
+        points[index][0] * points[(index + 1) % len(points)][1] -
+        points[(index + 1) % len(points)][0] * points[index][1]
+        for index in range(len(points))
+    )
+    # Clockwise X/Z order produces an upward +Y normal for the top face.
+    if signed_area > 0.0:
+        points.reverse()
+    vertices = [(x, float(bottom_y), z) for x, z in points]
+    vertices.extend((x, float(top_y), z) for x, z in points)
+    count = len(points)
+    faces: list[tuple[int, ...]] = [tuple(reversed(range(count))), tuple(range(count, count * 2))]
+    for index in range(count):
+        next_index = (index + 1) % count
+        faces.append((index, next_index, count + next_index, count + index))
+    mesh = bpy.data.meshes.new(f"{name}_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(surface)
+    mesh.validate(verbose=True)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    collection.objects.link(obj)
+    obj.parent = parent
     return obj
 
 

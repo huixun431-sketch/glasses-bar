@@ -7,6 +7,36 @@
       "runtime_id": "bar_architecture",
       "required_anchors": ["Placement"],
       "interaction_kind": "environment_visual"
+    },
+    {
+      "asset_id": "bar_counter",
+      "runtime_id": "bar_counter",
+      "required_anchors": ["Placement"],
+      "interaction_kind": "environment_visual"
+    },
+    {
+      "asset_id": "bar_backbar",
+      "runtime_id": "bar_backbar",
+      "required_anchors": ["rear_lower_cabinet_1_fixed"],
+      "interaction_kind": "environment_visual"
+    },
+    {
+      "asset_id": "bar_furniture",
+      "runtime_id": "bar_furniture",
+      "required_anchors": ["lounge_table_1"],
+      "interaction_kind": "environment_visual"
+    },
+    {
+      "asset_id": "bar_lighting",
+      "runtime_id": "bar_lighting",
+      "required_anchors": ["lounge_pendant_1"],
+      "interaction_kind": "environment_visual"
+    },
+    {
+      "asset_id": "bar_wear_overlays",
+      "runtime_id": "bar_wear_overlays",
+      "required_anchors": ["wear_overlay_root"],
+      "interaction_kind": "environment_visual"
     }
   ],
   "paths": {
@@ -33,19 +63,41 @@
     },
     "forward_plus": {
       "status": "pending",
-      "renderer": "Forward+",
+      "evidence": []
+    },
+    "preintegration_material_review": {
+      "status": "ready_for_user_review",
+      "renderer": "Godot 4.7.1 Vulkan Forward+",
       "capture_scene": "tests/godot/BarInteriorFormalVisualCapture.tscn",
-      "inspection_record": "Six 1920x1080 Godot Forward+ PNGs were opened and inspected after correcting the duplicate axis conversion. The room, counter, backbar, furniture and visible fixtures are upright and within the approved 16x10x4.5 m room; the player-eye view shows the five regular non-overlapping bottle bays, the west view contains only the manual return on the side run, the east view shows the open sink bay, waste area and employee gate, and the overhead view shows no south-door foreign object.",
+      "inspection_record": "Twenty-seven current 1920x1080 captures were generated and inspected after the 2026-08-11 rework: eight matched views in neutral, reality and glasses preview states plus three open-state views. The review confirms the continuous C bar, inward chamfers, east gate, drawer-free sink base, unobstructed bowl and angled faucet, the compact west manual shelf rotated clockwise 90 degrees from the rejected placement, dark-brown hollow cabinets, recessed sliding leaves, table-facing chairs, six frosted translucent pendant fixtures and lit tabletops. This is Task 10 pre-integration evidence only, not checkpoint 2.",
       "evidence": [
-        "artifacts/bar-interior-formal-forward-plus/01_player_eye_backbar.png",
-        "artifacts/bar-interior-formal-forward-plus/02_customer_eye_front.png",
-        "artifacts/bar-interior-formal-forward-plus/03_east_sink_waste_gate.png",
-        "artifacts/bar-interior-formal-forward-plus/04_west_manual_only.png",
-        "artifacts/bar-interior-formal-forward-plus/05_customer_lounge_and_lights.png",
-        "artifacts/bar-interior-formal-forward-plus/06_overhead_layout.png"
-      ],
-      "integration_evidence": [
-        "artifacts/bar-interior-formal-forward-plus/integration.log"
+        "artifacts/bar-interior-formal-preintegration/neutral/01_player_eye_backbar.png",
+        "artifacts/bar-interior-formal-preintegration/neutral/02_customer_eye_front.png",
+        "artifacts/bar-interior-formal-preintegration/neutral/03_east_sink_waste_gate.png",
+        "artifacts/bar-interior-formal-preintegration/neutral/04_west_manual_only.png",
+        "artifacts/bar-interior-formal-preintegration/neutral/05_customer_lounge_and_lights.png",
+        "artifacts/bar-interior-formal-preintegration/neutral/06_overhead_layout.png",
+        "artifacts/bar-interior-formal-preintegration/neutral/07_south_entry_clean.png",
+        "artifacts/bar-interior-formal-preintegration/neutral/08_sink_bowl_closeup.png",
+        "artifacts/bar-interior-formal-preintegration/reality/01_player_eye_backbar.png",
+        "artifacts/bar-interior-formal-preintegration/reality/02_customer_eye_front.png",
+        "artifacts/bar-interior-formal-preintegration/reality/03_east_sink_waste_gate.png",
+        "artifacts/bar-interior-formal-preintegration/reality/04_west_manual_only.png",
+        "artifacts/bar-interior-formal-preintegration/reality/05_customer_lounge_and_lights.png",
+        "artifacts/bar-interior-formal-preintegration/reality/06_overhead_layout.png",
+        "artifacts/bar-interior-formal-preintegration/reality/07_south_entry_clean.png",
+        "artifacts/bar-interior-formal-preintegration/reality/08_sink_bowl_closeup.png",
+        "artifacts/bar-interior-formal-preintegration/glasses/01_player_eye_backbar.png",
+        "artifacts/bar-interior-formal-preintegration/glasses/02_customer_eye_front.png",
+        "artifacts/bar-interior-formal-preintegration/glasses/03_east_sink_waste_gate.png",
+        "artifacts/bar-interior-formal-preintegration/glasses/04_west_manual_only.png",
+        "artifacts/bar-interior-formal-preintegration/glasses/05_customer_lounge_and_lights.png",
+        "artifacts/bar-interior-formal-preintegration/glasses/06_overhead_layout.png",
+        "artifacts/bar-interior-formal-preintegration/glasses/07_south_entry_clean.png",
+        "artifacts/bar-interior-formal-preintegration/glasses/08_sink_bowl_closeup.png",
+        "artifacts/bar-interior-formal-preintegration/open-states/09_open_drawer_clearance.png",
+        "artifacts/bar-interior-formal-preintegration/open-states/10_all_rear_sliding_doors_open.png",
+        "artifacts/bar-interior-formal-preintegration/open-states/11_all_upper_doors_open.png"
       ]
     }
   }

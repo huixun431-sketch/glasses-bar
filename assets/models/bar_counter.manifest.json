@@ -22,10 +22,13 @@
         "front_drawer_4_upper",
         "front_drawer_4_lower",
         "east_sink",
-        "sink_plumbing",
+        "sink_base",
         "waste_bin",
         "employee_gate",
-        "manual_shelf"
+        "manual_shelf",
+        "bar_structural_base",
+        "bar_carcass_monolith",
+        "bar_worktop_monolith"
       ]
     }
   ]

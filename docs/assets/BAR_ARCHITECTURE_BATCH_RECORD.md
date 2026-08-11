@@ -1,7 +1,7 @@
 # Asset batch record: `bar-architecture`
 
 - Stage: `approved checkpoint 1 formal candidate`
-- Status: REVIEW READY；Forward+ 检查点 2 等待用户决定，尚未替换游戏内灰盒。
+- Status: Task 10 PRE-INTEGRATION CANDIDATE READY FOR USER REVIEW；建模 Skill 检查点 2 尚未开始。
 - Candidate root: `artifacts/blender_candidates`
 - Formal model root: `assets/models`
 - Wrapper root: `scenes/environment/modules`
@@ -9,70 +9,76 @@
 
 ## Scope and contracts
 
-| Asset ID | Runtime ID | Required anchors | Interaction kind |
+| Asset ID | Runtime ID | Required anchor | Interaction kind |
 |---|---|---|---|
 | `bar_architecture` | `bar_architecture` | `Placement` | `environment_visual` |
+| `bar_counter` | `bar_counter` | `Placement` | `environment_visual` |
+| `bar_backbar` | `bar_backbar` | `rear_lower_cabinet_1_fixed` | `environment_visual` |
+| `bar_furniture` | `bar_furniture` | `lounge_table_1` | `environment_visual` |
+| `bar_lighting` | `bar_lighting` | `lounge_pendant_1` | `environment_visual` |
+| `bar_wear_overlays` | `bar_wear_overlays` | `wear_overlay_root` | `environment_visual` |
 
-当前 Z3/H3 权威建筑尺度为 `16.00 × 10.00 × 4.50 m`。正式候选沿用已批准南侧双门、南东景观窗、北东服务门、`1.05 m` 护墙与南北向地板，不恢复被打回的旧 `12 × 9 × 3.5 m` 方案。
+当前 Z3/H3 权威建筑尺度为 `16.00 × 10.00 × 4.50 m`。六个模块均已导出至 `assets/models/` 并带独立 sidecar；主清单继续保持 `placeholder: true`，当前游戏仍使用完整灰盒。
 
 ## Checkpoint 1: neutral Blender silhouette review
 
-- 候选合同：`BAR_MODEL_CONTRACT_PASS`；单 GLB 验证 `assets=1 errors=0`。
-- 证据：`artifacts/blender_review/architecture/01_north_interior.png` 至 `06_interior_three_quarter.png`，六张 `1600×1000` PNG。
-- 修正：南门矩形异物由 AREA 灯穿过门洞的矩形投影造成；改用世界环境光与无阴影 SUN 灯后消失，门附近对象边界未发现场景残留。
-- 用户决定：approved。
-- Approval record：用户确认“其余部分符合预期，继续执行计划”。
+- Status：approved by user。
+- 证据：`artifacts/blender_review/architecture/01_north_interior.png` 至 `06_interior_three_quarter.png`。
+- 南门矩形异物确认是旧审查 AREA 灯投影；改用世界环境光与无阴影 SUN 后消失，没有删除或隐藏建筑节点。
 
-## Formal candidate and behavior integration
+## 2026-08-11 Task 8–10 rework
 
-- 正式 GLB：六个环境模块均已导出到 `assets/models/`，每个模块附带独立 `.manifest.json`；正式清单仍保持 `placeholder: true`。
-- 手写包装：`scenes/environment/modules/` 下六个包装只实例化视觉 GLB，并保留稳定 `asset_id` 元数据。
-- 建筑锚点：`Placement` 存在；导入根、房间包络及三处开口通过合同检查。
-- 坐标轴回归：主文件已按项目 Y-up 编写，导出改为不重复执行 Z-up → Y-up 转换；Godot 端 `room_shell` AABB 固定为 `16 × 4.5 × 10 m`。
-- 所有权边界：候选 GLB 不含碰撞与真实灯光。灰盒玩法、碰撞、抽屉／门／手册状态仍是唯一权威；本轮仅创建预览场景，没有接管正式运行时。
+- 吧台结构：前吧、西侧连接与后吧的基座、柜体、工作台分别为单一连续 C 形网格；只在东侧 `0.90 m` 员工门处切分。45° 倒角只存在于工作区内侧边缘。
+- 功能收敛：西侧只保留手册架；架板相对上一候选顺时针旋转 `90°` 并收紧为 `0.62 × 0.28 m`，长边贴合西侧吧台纵深。东侧保留无抽屉的水槽基座、弃物区和员工门，不恢复已取消的东侧下柜，不显示管线。
+- 水槽：水平 XZ 槽沿、真正空心槽体、东侧立管和向槽内下倾的短出水嘴。几何射线从槽中心向下首先命中槽底，旧竖直槽框和横向栏杆式节点被合同拒绝。
+- 后吧：五湾两层瓶架规整且无重叠；上下柜体为空心框；下柜活动推拉门后移，闭合时不突出明显边缝。
+- 材质：柜体全部为 `deep_brown_cabinet`，合同拒绝任意 `deep_green_cabinet`。灯罩统一标注为 `frosted_translucent_shade`，具半透明、透射和高粗糙度。
+- 客座：三桌十二椅逐把朝向所属桌心；三盏客桌吊灯居中，并由 Godot 向下 SpotLight3D 实际照亮台面。加上三盏前吧吊灯，共六盏可见吊灯。
 
-## Checkpoint 2: Godot Forward+ visual review
+## Task 10 pre-integration Forward+ review
 
 - Capture scene：`tests/godot/BarInteriorFormalVisualCapture.tscn`。
 - Renderer：Godot `4.7.1.stable.mono`，Vulkan Forward+，NVIDIA GeForce RTX 5070 Laptop GPU，`1920×1080`。
-- 实际证据：`artifacts/bar-interior-formal-forward-plus/01_player_eye_backbar.png` 至 `06_overhead_layout.png`，六张均已逐张打开检查。
-- SHA-256：
-  - `01_player_eye_backbar.png` `220ee08e1ab5772ef29bf39ecc78006ede8955219a72b9d421e589275d21975c`
-  - `02_customer_eye_front.png` `94d20ccc08f5ca147aa1efc4dccbfa1f848bc0ff2b97148aa56b92c7dd163ea7`
-  - `03_east_sink_waste_gate.png` `69f2453f404f3386384bf70e08a3c9cc4db7733a991670e3c51933b7e7e02a44`
-  - `04_west_manual_only.png` `fc2d54ce94696b8771c6e3a8c9bd4f6514371f53b9556c53e1c2e8826006aeba`
-  - `05_customer_lounge_and_lights.png` `d405a34d959c27d0168042016af9107f83fa0176c151b34f046a31e4982ed056`
-  - `06_overhead_layout.png` `c77191dbe57346ef1165d5f65295e32fcd269958efaf8f47baa62add9da25443`
-- 检查结果：建筑、前后吧、五湾双层规整瓶架、家具和灯具方向正确且未越界；西侧只保留手册回位区，东侧展示开放水槽下方、弃物区与员工门；俯视图未出现南门异物。
-- 集成证据：`artifacts/bar-interior-formal-forward-plus/integration.log` 同时记录 Vulkan Forward+ 捕获 PASS 和建筑包装集成 PASS。
-- 用户决定：pending。
-- Approval record：pending；在用户批准前不切换清单占位状态，也不替换运行时灰盒。
+- 当前证据：`artifacts/bar-interior-formal-preintegration/` 下共 27 张现行 PNG：neutral/reality/glasses 各八个同机位，以及抽屉、五组下推拉柜、十扇上柜三个开启状态。
+- 重点视图：
+  - `reality/04_west_manual_only.png`：顺时针旋转后的紧凑手册架与连续西侧连接。
+  - `reality/05_customer_lounge_and_lights.png`：三桌、朝桌椅子、磨砂吊灯和已照亮台面。
+  - `reality/06_overhead_layout.png`：连续 C 形吧台、内侧倒角、东侧门洞与全局通路。
+  - `reality/08_sink_bowl_closeup.png`：空心槽底、水平槽沿、下倾短出水嘴与无异物净空。
+  - `open-states/09_open_drawer_clearance.png`、`10_all_rear_sliding_doors_open.png`、`11_all_upper_doors_open.png`：可动件不与柜体重叠，柜内为空腔。
+- 检查结果：27 张均已在本机打开检查；本轮未发现南门异物、顶棚光斑、墨绿残留、旧水槽横栏或过时开启状态截图。
+- 用户决定：pending。本批现停在 Task 10 预集成审查，等待用户检查样式。
+
+## Checkpoint 2: actual integrated Godot Forward+
+
+- Status：pending，未开始。
+- 必需证据：Task 11 正式包装接入、共享玩法状态、现实可交互／眼镜只观察、强制缺模块全灰盒回退，以及实际生产现实／眼镜／回退 Forward+ 图。
+- 只有上述行为与视觉证据齐全并由用户明确批准后，才可将六个环境项从 `placeholder: true` 切换为正式状态。
 
 ## Completion
 
 ### Completed items
 
-- 完成检查点 1 修正与用户批准归档。
-- 完成六模块正式样式候选、GLB/sidecar、手写预览包装和 Forward+ 检查图。
-- 完成轴向、稳定 ID、锚点、无碰撞／无灯光和房间包络回归。
-- 完成灰盒吧台面顶面专项截图与运行时三角形面积回归。
+- 完成检查点 1、六模块正式候选、sidecar、手写预览包装、Task 8–10 最新返修及 27 张 Forward+ 预集成证据。
+- 完成连续吧台、空心水槽、深棕空心柜、规整瓶架、推拉门后移、椅子朝桌、客桌吊灯和磨砂透光灯罩的自动合同。
+- 保持视觉 GLB 与玩法/碰撞/稳定 ID/双世界状态分离，未替换运行时灰盒。
 
 ### Key decisions
 
-- 南门异物只修审查灯光，不删除或掩藏建筑节点。
-- 正式候选沿用 Z3/H3 `16 × 10 × 4.5 m`、`9.10 m` 前吧及当前功能收敛，不回退到旧设计。
-- 视觉 GLB 与玩法状态继续分离；检查点 2 批准之前，六项环境清单全部保持占位并保留完整灰盒。
+- Task 10 预览不是建模 Skill 检查点 2；不得用预览模式替代 Task 11 的实际双世界与回退验证。
+- 六项环境主清单保持 `placeholder: true`；旧设计不得通过模型节点、材质名、文档或截图文件名残留。
+- 用户批准本轮样式后才执行 Task 11–13；不自行扩展最终配方、平衡、顾客内容或最终美术范围。
 
 ### Remaining TODOs
 
-- 等待用户审查并决定正式几何／材质检查点 2。
-- 获批后实现生产视觉加载器、移动件视觉绑定、现实／眼镜材质与灯光切换，以及任一模块失败时的全灰盒回退。
-- 完成最终生产/眼镜/回退三组 Forward+ QA 后，才可将六个环境模块从 placeholder 切换为正式状态。
+- 请用户检查当前 Task 10 几何／材质预审。
+- 获批后实现生产视觉加载器、移动件视觉绑定、现实／眼镜材质和灯光切换，以及任一模块失败时的全灰盒回退。
+- 完成生产/眼镜/回退三组 Forward+ QA 与用户检查点 2 批准后，才取消六项 placeholder。
 
 ## Verification summary
 
-- Command：Blender 合同、六份 sidecar 资产验证、Godot 包装集成、Forward+ 捕获、批次 `forward-plus-review` 门禁及项目一键回归。
-- Status: PASS for the current Forward+ review gate；用户批准与运行时替换不在本状态内。
-- Evidence：`artifacts/bar-interior-formal-forward-plus/integration.log` 与本记录所列 PNG。
-- Asset manifest scope：环境六模块均保留 `placeholder: true`；既有已批准手持资产状态不变。
-- Stage boundary：停在检查点 2，未执行正式运行时替换。
+- Blender geometry/material contract：`BAR_MODEL_CONTRACT_PASS`。
+- Godot Forward+ capture：`BAR_INTERIOR_FORMAL_PREINTEGRATION_CAPTURE_PASS`，27 张 `1920×1080`。
+- 六份 sidecar：各 `assets=1 errors=0`；主清单：`assets=21 errors=0`，六项环境仍为 placeholder。
+- 建模 Skill 批次门禁：`formal-candidate errors=0`。严格 `forward-plus-review` 保持 pending，因为 Task 11 实际集成尚未开始。
+- 项目一键回归：领域 `28/28`；Debug/Release `0` 警告／`0` 错误；`BAR_PRODUCTION_LAYOUT_CONTRACT_PASS`、`BAR_STORAGE_INTEGRATION_PASS`、`BAR_RUNTIME_GEOMETRY_PASS`、`BAR_FORMAL_REVIEW_VARIANT_PASS`、冒烟、Stage 1/2、输入和流程测试全部 PASS。

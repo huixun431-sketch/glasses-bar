@@ -1,8 +1,4 @@
-"""Generated Blender entry point for bar-architecture.
-
-The scaffold contains no geometry or material decisions. Implement each builder
-from the approved contract, preserving the stable asset ID and required anchors.
-"""
+"""Build and export the complete approved bar-interior module batch."""
 
 import argparse
 import sys
@@ -18,18 +14,11 @@ if str(BLENDER_TOOLS) not in sys.path:
 
 from build_bar_master import build_master_scene
 from export_bar_modules import export_module
-from bar_architecture_asset_contract import ASSETS, BATCH_ID, approved_contracts
+from bar_model_common import MODULE_NAMES
+from bar_architecture_asset_contract import BATCH_ID
 
 
 SILHOUETTE_CHECKPOINT_STATUS = 'approved'
-BUILDERS = {}
-
-def build_bar_architecture(contract):
-    if contract["room_size_m"] != (16.0, 10.0, 4.5):
-        raise RuntimeError("Approved architecture contract has drifted from Z3/H3")
-    build_master_scene()
-
-BUILDERS['bar_architecture'] = build_bar_architecture
 
 
 def parse_args():
@@ -45,11 +34,9 @@ def main():
     if args.mode == "final" and SILHOUETTE_CHECKPOINT_STATUS != "approved":
         raise SystemExit("final mode is locked until checkpoint 1 has explicit user approval")
 
-    contracts = approved_contracts()
     args.output.mkdir(parents=True, exist_ok=True)
-    for asset in ASSETS:
-        asset_id = asset["asset_id"]
-        BUILDERS[asset_id](contracts[asset_id])
+    build_master_scene()
+    for asset_id in MODULE_NAMES:
         export_module(
             asset_id,
             args.mode,

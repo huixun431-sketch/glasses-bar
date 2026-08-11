@@ -291,9 +291,9 @@ Move the existing high-frequency tools as one cohesive cluster around the centra
 
 - [x] **Step 5: Build the approved wet and manual-side fixtures**
 
-East wet side: 0.50 m north-south × 0.40 m east-west undermount sink opening, 0.22 m bowl depth, 8 mm overlap, faucet on east rim with west-facing 0.22 m reach and outlet 0.34 m above top, clear volume below, then a north-adjacent 0.60 m waste module with 0.32 m × 0.24 m R30 opening and stable `waste_bin` station. The south-hinged 0.60 m inspection door opens west approximately 85° and is noninteractive.
+East wet side: retain an undermount sink with an actual open bowl, horizontal XZ rim, unobstructed center clearance and a faucet rooted on the east rim. The faucet uses a vertical riser plus a short down-angled outlet into the bowl; reject the obsolete transverse pipe/vertical-frame geometry. Below it retain a solid drawer-free base that hides all plumbing, then the waste module and the `0.90 m` employee gate. Do not restore the deleted east-front lower cabinet or inspection door.
 
-West dry side: move the manual shelf 0.30 m north of the chamfer; use a 0.36 m × 0.50 m shelf for a 0.32 m north-south × 0.46 m east-west book, slope the shelf 20° east/inward, set the east pickup edge to 1.02 m and west edge to 1.19 m, and use 70 mm north/south stops at 25 mm height with a 220 mm center pickup gap. Keep the manual as a separate pick-up item with `Grip`, `Placement`, cover, and page-pivot nodes.
+West dry side: keep only the manual shelf. The 2026-08-11 final review supersedes the earlier east-west candidate: rotate that rejected placement clockwise `90°`, reduce it from `0.80 m × 0.32 m` to `0.62 m × 0.28 m`, and align the long edge with the west-counter depth while retaining the inward reading slope and stop. Keep the manual as a separate pick-up item with `Grip`, `Placement`, cover, and page-pivot nodes; do not reintroduce obsolete tools or ingredients on the west return.
 
 - [x] **Step 6: Rebuild the rear bar graybox**
 
@@ -408,10 +408,10 @@ Support optional `required_root` and `required_nodes` keys in addition to `requi
 
 ```json
 {"id":"bar_architecture","path":"models/bar_architecture.glb","placeholder":true,"required_root":"bar_architecture","required_nodes":["room_shell","south_main_entry","south_east_window","north_east_service_door"]}
-{"id":"bar_counter","path":"models/bar_counter.glb","placeholder":true,"required_root":"bar_counter","required_anchors":["Placement"],"required_nodes":["front_drawer_2_upper","east_sink","sink_plumbing","waste_bin","employee_gate","manual_shelf"]}
+{"id":"bar_counter","path":"models/bar_counter.glb","placeholder":true,"required_root":"bar_counter","required_anchors":["Placement"],"required_nodes":["front_drawer_2_upper","east_sink","sink_base","waste_bin","employee_gate","manual_shelf","bar_structural_base","bar_carcass_monolith","bar_worktop_monolith"]}
 {"id":"bar_backbar","path":"models/bar_backbar.glb","placeholder":true,"required_root":"bar_backbar","required_nodes":["rear_lower_cabinet_1_fixed","rear_lower_cabinet_1_moving","rear_lower_cabinet_2_fixed","rear_lower_cabinet_2_moving","rear_lower_cabinet_3_fixed","rear_lower_cabinet_3_moving","rear_lower_cabinet_4_fixed","rear_lower_cabinet_4_moving","rear_lower_cabinet_5_fixed","rear_lower_cabinet_5_moving","back_cabinet_1_left","back_cabinet_1_right","back_cabinet_2_left","back_cabinet_2_right","back_cabinet_3_left","back_cabinet_3_right","back_cabinet_4_left","back_cabinet_4_right","back_cabinet_5_left","back_cabinet_5_right","bottle_rack_bay_1","bottle_rack_bay_5"]}
 {"id":"bar_furniture","path":"models/bar_furniture.glb","placeholder":true,"required_root":"bar_furniture","required_nodes":["stool_1","stool_6","lounge_table_1","lounge_table_3","lounge_chair_1","lounge_chair_12"]}
-{"id":"bar_lighting","path":"models/bar_lighting.glb","placeholder":true,"required_root":"bar_lighting","required_nodes":["pendant_1","pendant_3","rear_linear_1","rear_linear_2","east_sconce_1","east_sconce_2","west_sconce_1","west_sconce_2"]}
+{"id":"bar_lighting","path":"models/bar_lighting.glb","placeholder":true,"required_root":"bar_lighting","required_nodes":["pendant_1","pendant_3","lounge_pendant_1","lounge_pendant_2","lounge_pendant_3","rear_linear_1","rear_linear_2","east_sconce_1","east_sconce_2","west_sconce_1","west_sconce_2"]}
 {"id":"bar_wear_overlays","path":"models/bar_wear_overlays.glb","placeholder":true,"required_root":"bar_wear_overlays","required_nodes":["wear_overlay_root"]}
 ```
 
@@ -485,7 +485,7 @@ git add tools/blender/bar_model_common.py tools/blender/build_bar_master.py tool
 git commit -m "feat: build modular bar architecture asset"
 ```
 
-### Task 8: Model the front U counter, wet/dry fixtures, manual shelf, and rear bar
+### Task 8: Model the continuous C counter, wet/dry fixtures, manual shelf, and rear bar
 
 **Files:**
 - Modify: `tools/blender/build_bar_master.py`
@@ -494,21 +494,21 @@ git commit -m "feat: build modular bar architecture asset"
 - Create: `models/bar_backbar.glb`
 - Modify: `assets/asset_manifest.json`
 
-- [ ] **Step 1: Add failing geometry and pivot assertions**
+- [x] **Step 1: Add failing geometry and pivot assertions**
 
-Assert all current approved Z3/H3 dimensions, eight detachable drawer roots at 0.38 m animation direction, the exact stable ice drawer ID, ten upper-door hinge pivots at the correct edges, 85° collision-free sample poses, five lower sliding-door pairs, the employee gate, sink under-clearance with exposed plumbing and no cabinet, waste opening, manual shelf slope/stops, three-slot workboard, five rear bays, two rack levels, hollow front carcass clearance, and absence of a front footrail object.
+Assert all current approved Z3/H3 dimensions; a single continuous C-shaped structural base, carcass and worktop spanning front/west/rear; inward-only 45° chamfers; a 0.90 m east employee-gate cut; eight detachable drawer roots with 0.38 m travel; the exact stable ice drawer ID; ten upper-door hinge pivots with 85° collision-free sample poses; five lower sliding-door pairs; a retained solid sink base with no drawers or visible plumbing; waste opening; manual shelf slope/stops; three-slot workboard; five rear bays; two rack levels; hollow drawer clearance; and absence of a front footrail object. Reject obsolete separate front/rear worktop meshes and every dark-green cabinet material.
 
-- [ ] **Step 2: Run Blender contract tests and confirm failure**
+- [x] **Step 2: Run Blender contract tests and confirm failure**
 
-- [ ] **Step 3: Model `bar_counter` from the approved metric table**
+- [x] **Step 3: Model `bar_counter` from the approved metric table**
 
-Build the asymmetric U, 45° inner chamfers, split-level tops, front toe recess, three facade bays, central handoff, workboard/etched parking marks, eight drawer faces/trays, sink/faucet, open waste aperture, inspection door, employee gate, and dedicated sloped manual shelf. Keep drawers and manual parts separate under stable named roots. Use the existing `bar_counter` asset ID and `Placement` anchor.
+Carve the front, west return and rear counter from one continuous C-shaped structural base, one carcass mesh and one worktop mesh. Apply the 45° chamfers only to the worker-side inner corners, then cut only the 0.90 m east employee gate. Retain the raised customer top and its approved 0.30 m customer-side extension, central handoff, workboard/etched parking marks, eight drawer faces/trays, sink/faucet above a solid drawer-free base, open waste aperture, employee gate and dedicated sloped manual shelf. Keep drawers, gate and manual parts separate under stable named roots. Do not expose plumbing or restore the deleted east-front lower cabinet. Use the existing `bar_counter` asset ID and `Placement` anchor.
 
-- [ ] **Step 4: Model `bar_backbar` from the approved metric table**
+- [x] **Step 4: Model `bar_backbar` from the approved metric table**
 
-Build the approved rear counter as five regular bays: five lower sliding-door pairs, a continuous-backed five-bay/two-level bottle rack with thin non-overlapping uprights and 12 mm lips, set-back upper cabinets, and ten independent upper doors with correct hinge pivots. Preserve bottle-storage capacity while removing obsolete overlapping rack geometry.
+Build the approved rear counter as five regular bays: five hollow lower cabinets with sliding-door pairs, a continuous-backed five-bay/two-level bottle rack with thin non-overlapping uprights and 12 mm lips, set-back hollow upper cabinets, and ten independent upper doors with correct hinge pivots. Move each lower moving leaf slightly behind its fixed leaf so the closed seam does not read as a protruding edge. Preserve bottle-storage capacity while removing obsolete overlapping rack geometry.
 
-- [ ] **Step 5: Export, validate, and inspect open states**
+- [x] **Step 5: Export, validate, and inspect open states**
 
 ```powershell
 & 'D:\Applications\Blender 4.5 LTS\blender.exe' --background artifacts/blender/bar_interior_master.blend --python tools/blender/export_bar_modules.py -- --module bar_counter --output models/bar_counter.glb
@@ -516,7 +516,7 @@ Build the approved rear counter as five regular bays: five lower sliding-door pa
 python tools/validate_assets.py assets/asset_manifest.json --allow-placeholders
 ```
 
-Keep both manifest entries as placeholders until the formal candidates pass Forward+ checkpoint 2. Render closed/open drawers, all ten upper doors, lower sliding doors, sink under-clearance/plumbing, waste/manual reach, and a player-eye view. Request user approval before material polish.
+Keep both manifest entries as placeholders until the formal candidates pass Forward+ checkpoint 2. Render closed/open drawers, all ten hollow upper cabinets, hollow lower sliding cabinets, retained sink base without drawers/pipes, waste/manual reach, the east gate and a player-eye view. Request user approval before production integration.
 
 - [ ] **Step 6: Proposed commit boundary after approval and explicit permission**
 
@@ -535,27 +535,27 @@ git commit -m "feat: model production U bar and backbar"
 - Create: `models/bar_wear_overlays.glb`
 - Modify: `assets/asset_manifest.json`
 
-- [ ] **Step 1: Add failing count, dimension, and exclusion tests**
+- [x] **Step 1: Add failing count, dimension, and exclusion tests**
 
-Assert six stools with individual foot rings, three tables, twelve armless chairs, three pendant fixtures, two rear linear housings, four sconces, no customer-zone floor light fixture, and only sparse non-colliding wear meshes.
+Assert six stools with individual foot rings, three tables, twelve armless chairs each facing its assigned table center, six pendant fixtures (three front-bar and three table-centered lounge pendants), two rear linear housings, four sconces, no customer-zone floor light fixture, and only sparse non-colliding wear meshes.
 
-- [ ] **Step 2: Run Blender contract tests and confirm failure**
+- [x] **Step 2: Run Blender contract tests and confirm failure**
 
-- [ ] **Step 3: Model furniture as independent named objects**
+- [x] **Step 3: Model furniture as independent named objects**
 
-Use warm-oak round stool seats, dark-silver legs and independent rings; warm-oak 0.80 m table tops with dark-silver central pedestals; warm-oak chair seats/broad backs with dark-silver frames and no upholstery. Preserve individual transforms for all 21 loose pieces so Godot clearance/debug tools can identify them.
+Use warm-oak round stool seats, dark-silver legs and independent rings; warm-oak 0.80 m table tops with dark-silver central pedestals; warm-oak chair seats/broad backs with dark-silver frames and no upholstery. Rotate all twelve chairs toward their assigned table centers. Preserve individual transforms for all 21 loose pieces so Godot clearance/debug tools can identify them.
 
-- [ ] **Step 4: Model visible lighting fixtures only**
+- [x] **Step 4: Model visible lighting fixtures only**
 
-Model three separable pendant assemblies, two concealed rear-linear housings, and four simplified low-poly retro sconces with compact shades, dark-silver bodies, and small brass detail. The Godot wrapper supplies their soft up/down light distribution. Invisible ceiling fills remain Godot lights and do not become GLB geometry.
+Model three separable front-bar pendant assemblies plus one pendant centered over each of the three lounge tables, two concealed rear-linear housings, and four simplified low-poly retro sconces. All visible shades use the explicitly labelled `frosted_translucent_shade` material with translucent alpha, transmission and high roughness. The Godot wrapper supplies actual downward SpotLight3D illumination strong enough to light every tabletop without producing ceiling blobs. Invisible ceiling fills remain Godot lights and do not become GLB geometry.
 
-- [ ] **Step 5: Model sparse glasses-only wear overlays**
+- [x] **Step 5: Model sparse glasses-only wear overlays**
 
 Add named non-colliding chips, rubbed edges, and stain masks as shallow overlay meshes. Keep them sparse, avoid new silhouette-changing damage, and do not duplicate the architecture/counter meshes.
 
-- [ ] **Step 6: Export, validate, and request furniture/fixture approval**
+- [x] **Step 6: Export, validate, and request furniture/fixture approval**
 
-Export all three modules, set their manifest placeholders false after validation, and render pulled-out chairs, bar stools, all sconces/pendants, and overlays on/off. Correct route or readability issues before continuing.
+Export all three modules while keeping their manifest entries `placeholder: true`, and render table-facing chairs, bar stools, all sconces/pendants, illuminated tabletops, and overlays on/off. Correct route or readability issues before continuing; only Task 11 behavior integration plus checkpoint 2 may authorize placeholder removal.
 
 - [ ] **Step 7: Proposed commit boundary after approval and explicit permission**
 
@@ -577,23 +577,23 @@ git commit -m "feat: add bar furniture lighting and wear assets"
 - Replace generated GLBs: `models/bar_lighting.glb`
 - Replace generated GLBs: `models/bar_wear_overlays.glb`
 
-- [ ] **Step 1: Add failing material-slot contract assertions**
+- [x] **Step 1: Add failing material-slot contract assertions**
 
-Require named slots for deep-green cabinet fronts only, dark walnut tops/racks/wainscot, warm oak floor/tables/chairs/stools, warm-gray mineral plaster, copper/brushed brass/dark silver, and simplified glass. Reject deep-green assignment on walls, floors, tables, or chairs.
+Require named slots for deep-brown cabinet fronts/carcasses, dark walnut tops/racks/wainscot, warm oak floor/tables/chairs/stools, warm-gray mineral plaster, copper/brushed brass/dark silver, and simplified glass. Reject every deep-green material name and assignment.
 
-- [ ] **Step 2: Run Blender contract tests and confirm material failures**
+- [x] **Step 2: Run Blender contract tests and confirm material failures**
 
-- [ ] **Step 3: Implement reusable low-poly PBR materials**
+- [x] **Step 3: Implement reusable low-poly PBR materials**
 
 Use hand-painted base-color variation and baked/procedural AO suitable for long-distance readability. Keep broad color masses low-saturation, roughness readable, metals controlled, and glass simple. Do not introduce photoreal micro-detail that conflicts with the art document's low-poly retro 3D direction.
 
-- [ ] **Step 4: Re-export every module and rerun strict validation**
+- [x] **Step 4: Re-export every module and rerun candidate validation**
 
-Run the Blender contract test, export all six GLBs, then run the manifest validator without `--allow-placeholders`. No production module may remain a placeholder.
+Run the Blender contract test, export all six GLBs, validate each generated sidecar strictly, then run the project manifest with `--allow-placeholders`. All six environment entries must remain `placeholder: true` until behavior integration, actual dual-world Forward+ review, and explicit checkpoint-2 approval are complete.
 
-- [ ] **Step 5: Render a fixed material comparison sheet and STOP for user approval**
+- [x] **Step 5: Render a fixed pre-integration material comparison and STOP for user approval**
 
-Render the same cameras in neutral clay, reality warm palette, and cold/desaturated glasses palette with overlays on. Present architecture, bar, rear rack, seating, and fixtures at close and room scales. Do not start Godot replacement until the user approves the material/geometry review.
+Render the same cameras in neutral clay, reality warm palette, and cold/desaturated glasses preview palette with overlays on. Present architecture, bar, rear rack, seating, and fixtures at close and room scales. This is the Task 10 geometry/material pre-review, not the modeling Skill's final checkpoint 2: do not start Godot replacement until the user approves this review, and do not record checkpoint 2 until Task 11 behavior integration proves shared state, fallback, and actual reality/glasses runtime presentation.
 
 - [ ] **Step 6: Proposed commit boundary after approval and explicit permission**
 
@@ -602,7 +602,7 @@ git add tools/blender/bar_model_common.py tools/blender/build_bar_master.py tool
 git commit -m "art: finish retro modern bar material pass"
 ```
 
-Status 2026-08-03: following the user's instruction to produce the style before review, Tasks 8–10 were consolidated into one non-runtime formal candidate pass. Six GLBs, sidecars, preview wrappers and six inspected Godot Forward+ images now exist, while all six environment manifest entries deliberately remain placeholders. The candidate is paused at checkpoint 2 for user geometry/material review; unchecked requirements above remain open where the current candidate or checkpoint has not yet satisfied the exact wording.
+Status 2026-08-11 rework: Tasks 8–10 were rebuilt after review. The current candidate uses one continuous C-shaped bar base/carcass/worktop with inward chamfers and only an east-gate cut; a solid drawer-free sink base with hidden plumbing; an actually open sink bowl with a horizontal rim and short down-angled east-rim faucet; a compact west manual shelf rotated clockwise `90°` from the rejected placement and reduced to `0.62 m × 0.28 m`; dark-brown hollow cabinets; recessed lower sliding leaves; table-facing chairs; and three added lounge pendants with real downward Godot lights and labelled frosted translucent shades. Six GLBs/sidecars and 27 inspected `1920×1080` Forward+ images now cover eight matched cameras in neutral/reality/glasses plus drawer/lower-cabinet/upper-cabinet open states. All six environment entries remain placeholders. This remains Task 10 pre-integration review, not modeling Skill checkpoint 2; Task 11 must not begin until the user approves this comparison.
 
 ### Task 11: Add hand-authored Godot wrappers and guarded graybox fallback
 
