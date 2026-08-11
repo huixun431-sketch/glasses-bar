@@ -728,3 +728,24 @@
 
 - 等待用户审查 Task 10 样式；获批后才按现有计划进入 Task 11–13。
 - 六项环境资产继续保持 `placeholder: true`，直到行为集成与用户检查点 2 均通过。
+
+## 2026-08-11 — GitHub 发布准备与开发线整合
+
+### 已完成的事项
+
+- 审计 Git worktree、分支与远端：仓库实际只登记一个物理工作树；`main` 是 `codex/integrate-modeling-workflow` 的祖先。
+- 将 `main` fast-forward 到 `2e823ce`，两条本地分支现在指向同一提交，差异为 `0/0`，未产生冲突或重写历史。
+- 确认 `huixun431-sketch/glasses-bar` 已是 PUBLIC，GitHub CLI 已登录；当前跟踪树的常见敏感文件名／密钥模式扫描无命中。
+- 合并后完整运行 `tools/run_verification.ps1`，退出码 `0`：资产 `21/0`、领域测试 `28/28`、Debug/Release 构建与布局、储物、运行时几何、正式表现模式、冒烟、Stage 1/2、输入、流程场景全部通过。
+
+### 关键决策
+
+- 采用可证明无分叉的 fast-forward 整合，不制造多余合并提交。
+- `export_presets.cfg` 保持未提交并排除 GitHub 同步；不使用 force push。
+- 仓库尚缺 README 与 LICENSE。README 可按当前可验证状态补充；LICENSE 涉及权利授予，等待用户选择，不擅自决定。
+
+### 未完成的待办
+
+- 推送本地 `main` 到公开 GitHub 远端，并核对远端提交。
+- 根据用户许可证选择补充 LICENSE，并完善 README 的构建、验证、项目状态与贡献边界。
+- 按既有批准规格和 Task 11–13 计划继续生产视觉加载、可动件绑定、双世界表现与全灰盒回退；检查点 2 和 placeholder 切换仍需满足既有门禁。

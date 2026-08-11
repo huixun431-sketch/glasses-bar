@@ -2,6 +2,12 @@
 
 更新日期：2026-08-11
 
+## GitHub 同步与分支整合
+
+- `main` 已 fast-forward 到 `codex/integrate-modeling-workflow` 的 `2e823ce`，两条分支当前无差异；本地仅登记一个物理工作树。
+- 合并后重新运行 `tools/run_verification.ps1`，退出码为 `0`：主资产清单 `21/0`、领域测试 `28/28`，Debug/Release 构建以及全部 Godot 集成场景通过。
+- GitHub 仓库 `huixun431-sketch/glasses-bar` 已为 PUBLIC；`export_presets.cfg` 仍是未提交的用户本地改动并排除发布。README 与开源许可证仍待补充，其中许可证需用户选择。
+
 ## 当前里程碑：Task 10 正式环境预集成几何／材质审查
 
 - 建筑轮廓检查点 1 已批准；南门审查灯投影已消失，建筑节点无残留异物。
@@ -11,7 +17,7 @@
 - Godot 4.7.1 Vulkan Forward+ 在 RTX 5070 上生成并人工检查 27 张 `1920×1080` 图：neutral/reality/glasses 各八个同机位，加三组开启状态。路径为 `artifacts/bar-interior-formal-preintegration/`。
 - 验证通过：Blender `BAR_MODEL_CONTRACT_PASS`；六份 sidecar 各 `1/0`；主清单 `21/0`；批次 `formal-candidate errors=0`；领域 `28/28`；Debug/Release `0` 警告／`0` 错误；全部 Godot 集成测试 PASS。
 - 六项环境主清单继续 `placeholder: true`，当前游戏仍使用完整灰盒。本轮只是 Task 10 预集成审查，不是建模 Skill 检查点 2；用户批准当前样式后才进入 Task 11 的生产加载、可动绑定、双世界与全灰盒回退。
-- `export_presets.cfg` 继续排除提交；不推送、不发布。
+- `export_presets.cfg` 继续排除提交；当前进度已获用户授权同步到公开 GitHub 仓库。
 
 ## 已完成的 Z3/H3 重建基线
 
