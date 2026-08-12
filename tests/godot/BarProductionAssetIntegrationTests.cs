@@ -29,6 +29,7 @@ public partial class BarProductionAssetIntegrationTests : Node
     {
         try
         {
+            VerifyCompletedRuntimeManifest();
             VerifyCompleteProductionSet();
             VerifyAtomicFallback();
             VerifyCompositionRootProductionAndFallback();
@@ -39,6 +40,24 @@ public partial class BarProductionAssetIntegrationTests : Node
         {
             GD.PushError(exception.ToString());
             GetTree().Quit(1);
+        }
+    }
+
+    private static void VerifyCompletedRuntimeManifest()
+    {
+        var manifest = ResourceLoader.Load<AssetManifest>("res://data/assets/asset_manifest.tres") ??
+            throw new InvalidOperationException("Runtime asset manifest is missing.");
+        string[] environmentIds =
+        {
+            "bar_architecture", "bar_counter", "bar_backbar",
+            "bar_furniture", "bar_lighting", "bar_wear_overlays"
+        };
+        foreach (var id in environmentIds)
+        {
+            var entry = manifest.Find(id) ??
+                throw new InvalidOperationException($"Runtime manifest is missing completed environment asset {id}.");
+            Require(!entry.IsPlaceholder,
+                $"Approved environment asset {id} must not remain a runtime placeholder.");
         }
     }
 

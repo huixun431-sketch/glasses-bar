@@ -728,7 +728,7 @@ git commit -m "feat: switch bar presentation across glasses worlds"
 
 Capture the same approved camera set in reality production, glasses production, and forced graybox fallback. Add open drawer, open upper door, manual picked up, chairs pulled out, entry/window, and player-eye frames. Use deterministic exposure and no HUD/menu obstruction.
 
-- [ ] **Step 2: Run the complete automated verification**
+- [x] **Step 2: Run the complete automated verification**
 
 ```powershell
 python tools/validate_assets.py --self-test
@@ -738,7 +738,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_verification.ps1
 
 Expected: strict asset validation, Debug/Release builds, domain tests, layout contract, asset integration, smoke, input, and flow tests all pass with explicit PASS tokens and no warnings introduced by this work.
 
-- [ ] **Step 3: Render and inspect final Forward+ evidence**
+- [x] **Step 3: Render and inspect final Forward+ evidence**
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts/visual_review_bar_production | Out-Null
@@ -747,15 +747,15 @@ New-Item -ItemType Directory -Force artifacts/visual_review_bar_production | Out
 
 Inspect every frame for orientation, silhouette, clipped geometry, door/drawer pivots, manual pickup, sink/waste clearances, table/chair routes, stool alignment, fixture placement, material legibility, light balance, glasses overlay restraint, and absence of bar-attached footrails. Record filenames and SHA-256 hashes.
 
-- [ ] **Step 4: Fix every visual defect and repeat automated plus visual verification**
+- [x] **Step 4: Fix every visual defect and repeat automated plus visual verification**
 
 Do not declare completion from parameters alone. Any geometry/material/light correction requires rerunning the affected Blender test/export/validator and the final Godot capture.
 
-- [ ] **Step 5: Update project records**
+- [x] **Step 5: Update project records**
 
 Update `PROJECT_STATUS.md`, `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, and root `progress.md` with: completed items, approved decisions, exact verification results, visual evidence paths/hashes, retained graybox fallback, deferred manual animations/reading, deferred customer AI/backstage, and any remaining work.
 
-- [ ] **Step 6: Request final user acceptance**
+- [x] **Step 6: Request final user acceptance**
 
 Present the final production and glasses screenshots beside the approved graybox reference. Clearly distinguish completed, deferred, and unapproved scope.
 

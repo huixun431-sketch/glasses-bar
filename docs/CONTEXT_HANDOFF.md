@@ -11,7 +11,9 @@
 - 灯光最终候选保留六吊灯、两后吧线性灯、四壁灯和两不可见填光的既有逻辑数量；降低直下灯峰值，并将不可见填光改为低能量双方向光，使深棕吧台／背柜立面可读，现实世界保持暖色，眼镜世界保持更暗冷色。
 - `artifacts/bar-interior-production-integration/` 有 24 张现行 `1920×1080` Forward+ PNG。全部已打开检查；其中 `14/15` 宽景与 `23/24` 玩家眼高现实／眼镜帧没有捕获专用补光，当前未见过曝白片、死黑吧台、柜门行程错位、座椅／通道或灯具位置回归。
 - `tools/run_verification.ps1` 退出码 `0`：主清单 `21/0`、领域 `28/28`、Debug/Release `0/0`，生产资产、强制回退、布局、储物、运行时几何、冒烟、Stage 1/2、输入和流程场景全部 PASS；批次 `forward-plus-review errors=0`。
-- 建模 Skill 检查点 2 仍为 `pending`，六项环境 `placeholder: true`；下一动作是向用户展示现实／眼镜代表图并等待明确批准。`export_presets.cfg` 始终排除提交。
+- 用户已明确回复“批准”，检查点 2 已归档。六项环境在 JSON／Godot Resource 清单均为 `placeholder: false`；其他六项未制作资产仍保持灰盒。
+- 用户选择 MIT License；根目录 `LICENSE` 使用标准 MIT 文本和 `2026 Glasses Bar contributors` 版权行。`export_presets.cfg` 始终排除提交。
+- 正式酒吧环境批次完成；后续可独立补 README、手册动画／阅读、顾客 AI、后台区域或剩余灰盒资产，不将这些误报为本批内容。
 
 ## P0｜2026-08-11 GitHub 发布、分支整合与下一阶段
 

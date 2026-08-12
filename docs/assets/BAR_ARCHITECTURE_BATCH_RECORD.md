@@ -60,34 +60,34 @@
 
 ## Checkpoint 2: actual integrated Godot Forward+
 
-- Status：pending，未开始。
-- 必需证据：Task 11 正式包装接入、共享玩法状态、现实可交互／眼镜只观察、强制缺模块全灰盒回退，以及实际生产现实／眼镜／回退 Forward+ 图。
-- 只有上述行为与视觉证据齐全并由用户明确批准后，才可将六个环境项从 `placeholder: true` 切换为正式状态。
+- Status：approved by user on 2026-08-12。
+- 批准记录：用户在检查重新配平后的现实／眼镜 Forward+ 宽景后明确回复“批准”。
+- 证据：Task 11 正式包装接入、共享玩法状态、强制缺模块全灰盒回退、24 张实际生产 Forward+ 图以及完整项目验证均已归档。
 
 ## Completion
 
 ### Completed items
 
-- 完成检查点 1、六模块正式候选、sidecar、手写预览包装、Task 8–10 最新返修及 27 张 Forward+ 预集成证据。
-- 完成连续吧台、空心水槽、深棕空心柜、规整瓶架、推拉门后移、椅子朝桌、客桌吊灯和磨砂透光灯罩的自动合同。
-- 保持视觉 GLB 与玩法/碰撞/稳定 ID/双世界状态分离，未替换运行时灰盒。
+- 完成检查点 1、六模块正式 GLB／sidecar／手写包装、Task 8–10 返修、Task 11 生产接入与检查点 2 批准。
+- 默认游戏使用完整正式酒吧视觉；事务式加载器在任一模块失败时仍整体回退到可玩的完整灰盒。
+- 六项环境资产已在 JSON 与 Godot Resource 清单中统一切换为 `placeholder: false`；其他未制作资产状态不变。
 
 ### Key decisions
 
-- Task 10 预览不是建模 Skill 检查点 2；不得用预览模式替代 Task 11 的实际双世界与回退验证。
-- 六项环境主清单保持 `placeholder: true`；旧设计不得通过模型节点、材质名、文档或截图文件名残留。
-- 用户批准本轮样式后才执行 Task 11–13；不自行扩展最终配方、平衡、顾客内容或最终美术范围。
+- GLB 只负责视觉；碰撞、灯光、稳定 ID、柜门状态与玩法状态继续由 Godot 权威层拥有。
+- 现实／眼镜灯光以用户批准的暖／冷候选为准；捕获专用技术补光不进入游戏运行时。
+- 正式酒吧完成不扩展正式配方、平衡、顾客内容、手册动画或后台区域。
 
 ### Remaining TODOs
 
-- 请用户检查当前 Task 10 几何／材质预审。
-- 获批后实现生产视觉加载器、移动件视觉绑定、现实／眼镜材质和灯光切换，以及任一模块失败时的全灰盒回退。
-- 完成生产/眼镜/回退三组 Forward+ QA 与用户检查点 2 批准后，才取消六项 placeholder。
+- 手册拿取／阅读动画、顾客 AI 与后台区域继续留给后续批准的里程碑。
+- `ice_bucket`、`bar_sink`、`cutting_board`、`water_kettle`、`coffee_beans`、`waste_bin` 仍是明确的灰盒资产，不属于本批完成范围。
+- 公开仓库 README 仍待后续补充；许可证已按用户决定设置为 MIT。
 
 ## Verification summary
 
 - Blender geometry/material contract：`BAR_MODEL_CONTRACT_PASS`。
-- Godot Forward+ capture：`BAR_INTERIOR_FORMAL_PREINTEGRATION_CAPTURE_PASS`，27 张 `1920×1080`。
-- 六份 sidecar：各 `assets=1 errors=0`；主清单：`assets=21 errors=0`，六项环境仍为 placeholder。
-- 建模 Skill 批次门禁：`formal-candidate errors=0`。严格 `forward-plus-review` 保持 pending，因为 Task 11 实际集成尚未开始。
-- 项目一键回归：领域 `28/28`；Debug/Release `0` 警告／`0` 错误；`BAR_PRODUCTION_LAYOUT_CONTRACT_PASS`、`BAR_STORAGE_INTEGRATION_PASS`、`BAR_RUNTIME_GEOMETRY_PASS`、`BAR_FORMAL_REVIEW_VARIANT_PASS`、冒烟、Stage 1/2、输入和流程测试全部 PASS。
+- Godot Forward+ capture：`BAR_PRODUCTION_VISUAL_CAPTURE_PASS`，24 张 `1920×1080`，全部已人工检查。
+- 六份 sidecar 各 `assets=1 errors=0`；主清单 `assets=21 errors=0`，本批六项环境均为正式资产。
+- 项目一键回归：领域 `28/28`；Debug/Release `0` 警告／`0` 错误；生产／回退、布局、储物、几何、冒烟、Stage 1/2、输入和流程全部 PASS。
+- Status: PASS

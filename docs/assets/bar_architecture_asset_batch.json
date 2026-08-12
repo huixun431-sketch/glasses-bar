@@ -1,6 +1,6 @@
 {
   "batch_id": "bar-architecture",
-  "stage": "approved checkpoint 1 formal candidate",
+  "stage": "complete",
   "assets": [
     {
       "asset_id": "bar_architecture",
@@ -62,7 +62,9 @@
       ]
     },
     "forward_plus": {
-      "status": "pending",
+      "status": "approved",
+      "approved_by": "user",
+      "approval_record": "User explicitly approved the final integrated production bar lighting and Forward+ checkpoint on 2026-08-12.",
       "renderer": "Forward+",
       "capture_scene": "tests/godot/BarProductionVisualCapture.tscn",
       "inspection_record": "Twenty-four current 1920x1080 production-integration frames were opened and inspected after the lighting rebalance. The complete set confirms the continuous production geometry, stable open drawer and sliding-door travel, sink and employee-gate clearances, pulled chair layout, worktop continuity, fixture placement and full-room bounds. The unassisted reality and glasses wide/player-eye pairs show readable dark-brown bar and backbar surfaces, controlled floor and tabletop highlights, and a clear warm-versus-cool world distinction without technical capture lights. Automated integration also confirms atomic all-graybox fallback, project-owned collision and lights, stable gameplay IDs and preserved cabinet state. This records evidence only; user checkpoint 2 approval remains pending.",
@@ -115,5 +117,11 @@
         "artifacts/bar-interior-formal-preintegration/open-states/11_all_upper_doors_open.png"
       ]
     }
+  },
+  "verification": {
+    "status": "passed",
+    "evidence": [
+      "artifacts/bar-interior-production-integration/integration_verification.txt"
+    ]
   }
 }

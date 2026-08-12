@@ -1,5 +1,13 @@
 # 变更记录
 
+## 2026-08-12（正式酒吧检查点 2 批准与 MIT 开源）
+
+- 用户明确批准重新配平后的现实／眼镜正式酒吧灯光，检查点 2 状态归档为 approved。
+- 仅将 `bar_architecture`、`bar_counter`、`bar_backbar`、`bar_furniture`、`bar_lighting`、`bar_wear_overlays` 六项在 JSON 与 Godot Resource 清单中切换为非占位；其他未制作资产保持灰盒。
+- 生产集成测试新增运行时清单完整性回归，先复现 Godot Resource 缺少五项环境资产，再补齐六项路径与正式状态。
+- 添加标准 MIT `LICENSE`，版权行使用 `2026 Glasses Bar contributors`。
+- 批准后完整回归通过：六项环境 GLB 全部 `OK`、清单 `21/0`、领域 `28/28`、Debug/Release `0/0`，全部 Godot 场景 PASS。
+
 ## 2026-08-12（正式环境生产集成与灯光验收候选）
 
 - 新增事务式六模块生产视觉加载器、玩法视觉绑定器、材质变体控制器和项目灯光控制器；正式视觉失败时清理部分实例并整体回退完整灰盒，不混用半套正式／半套灰盒。
