@@ -281,7 +281,7 @@ theme_override_colors/font_color = Color(0.67, 1, 0.94, 1)
 theme_override_colors/font_outline_color = Color(0.01, 0.08, 0.1, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 19
-text = "眼镜世界 // 查询信息（非制作前置）\n冰美式开发占位流程\n每天先在水槽洗手（漏做会小幅降低成功率）\n左手放研钵 → 右手原料勺放豆 → 研杵研磨\n原料勺转移咖啡粉 → 左手放滤具\n双头量酒器从水壶接水并倒入滤具 → 萃取\n滤具 + 高球杯 → 过滤；损失可重复工序有限补救\n左手拿杯，冰夹/量酒器携料后按 R 加入\nF 切换量酒器端｜原料勺禁止取冰｜按 G 返回现实"
+text = "眼镜世界 // 查询信息（非制作前置）\n冰美式正式配方｜当前部分实现\n150 g 碎冰 + 100 ml 水 + 18 g 咖啡豆（两勺）\n每天先在水槽洗手（漏做会小幅降低成功率）\n左手放研钵 → 右手两勺咖啡豆 → 研杵研磨\n原料勺转移咖啡粉 → 左手放滤具\n量酒器加水后萃取 → 滤具 + 高球杯过滤\n左手拿杯，以小量酒器大端分 5 次加入 100 ml 水\n当前冰夹仅为碎冰系统桥接｜F 换端｜G 返回现实"
 
 [node name="HUD" type="CanvasLayer" parent="."]
 layer = 10

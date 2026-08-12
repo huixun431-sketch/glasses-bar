@@ -11,7 +11,16 @@ public enum IngredientUnit
     PrototypeUnit,
     Milliliter,
     Gram,
-    Piece
+    Piece,
+    Drop,
+    Spoon
+}
+
+public enum RecipeImplementationStatus
+{
+    CatalogOnly,
+    Partial,
+    Playable
 }
 
 public enum StationKind

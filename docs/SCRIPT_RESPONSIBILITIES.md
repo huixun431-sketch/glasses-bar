@@ -40,8 +40,11 @@
 | `scripts/data/OperationDefinition.cs` | 工序 Resource 定义 → `OperationSpec` | 定义数据 | 保留 |
 | `scripts/data/RecipeDefinition.cs` | 配方 Resource 定义 → `RecipeTargets` | 定义数据 | 保留 |
 | `scripts/data/RecipeStep.cs` | 单个配方步骤定义 | 定义数据 | 保留 |
+| `scripts/data/RecipeCatalogDefinition.cs` | 第一阶段正式配方目录、稳定 ID 与原料引用闭合校验 | 定义数据 | 保留 |
+| `scripts/data/RecipeIngredientRequirement.cs` | 正式配方投料单值、范围与原始量词 | 定义数据 | 保留 |
 | `scripts/data/ToleranceProfile.cs` | 数量容差/评分策略定义 | 定义数据 | 保留 |
-| `scripts/data/IngredientDefinition.cs` | 原料稳定 ID、显示名、单位、原型标记 | 定义数据 | 待拆 P2：正式原料目录接入时纳入统一 catalog |
+| `scripts/data/IngredientDefinition.cs` | 原料稳定 ID、显示名、单位、原型标记 | 定义数据 | 保留 |
+| `scripts/data/IngredientCatalogDefinition.cs` | 正式原料目录与稳定 ID／非原型校验 | 定义数据 | 保留 |
 | `scripts/data/AssetManifest.cs`、`AssetEntry.cs` | 资产清单 Resource | 定义数据 | 保留 |
 | `scripts/interfaces/IInteractable.cs` | 交互发现、提示、动作定义映射与执行适配契约 | 无 | 待拆 P1：最终分成 interaction source 与 action handler |
 | `scripts/interfaces/IManualOperation.cs` | 连续动作过程契约 | 过程状态由实现持有 | 保留 |

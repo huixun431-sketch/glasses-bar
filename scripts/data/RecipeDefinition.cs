@@ -10,6 +10,8 @@ public partial class RecipeDefinition : Resource
     [Export] public StringName Id { get; set; } = new();
     [Export] public string DisplayName { get; set; } = string.Empty;
     [Export] public bool IsPrototype { get; set; } = true;
+    [Export] public RecipeImplementationStatus ImplementationStatus { get; set; } = RecipeImplementationStatus.CatalogOnly;
+    [Export] public Array<RecipeIngredientRequirement> Ingredients { get; set; } = new();
     [Export] public Array<RecipeStep> Steps { get; set; } = new();
     [Export] public ToleranceProfile? Tolerance { get; set; }
 

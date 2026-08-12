@@ -43,8 +43,8 @@ Kind = 4
 DisplayName = "咖啡豆"
 HandlerId = &"ingredient_source"
 IngredientId = &"coffee_beans"
-IngredientAmount = 0.25
-PromptTemplate = "[E] 用{right_hand}取 0.25 份开发占位咖啡豆"
+IngredientAmount = 9.0
+PromptTemplate = "[E] 用{right_hand}舀取 9 g 咖啡豆（两勺共 18 g）"
 HideUnavailablePromptInGlassesWorld = true
 
 [sub_resource type="Resource" id="Station_waste_bin"]

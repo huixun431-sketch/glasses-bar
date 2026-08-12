@@ -54,27 +54,27 @@ AllowedIngredientIds = Array[StringName]([&"ice"])
 [sub_resource type="Resource" id="Tool_jigger_small"]
 script = ExtResource("2_tool")
 Id = &"jigger_small"
-DisplayName = "小号双头量酒器（开发占位 15/30 ml）"
+DisplayName = "小号双头量酒器（10/20 ml）"
 CanCarryIngredients = true
 FootprintRadius = 0.1
-SmallMeasureAmount = 15.0
-LargeMeasureAmount = 30.0
+SmallMeasureAmount = 10.0
+LargeMeasureAmount = 20.0
 AllowedIngredientIds = Array[StringName]([&"water"])
 
 [sub_resource type="Resource" id="Tool_jigger_medium"]
 script = ExtResource("2_tool")
 Id = &"jigger_medium"
-DisplayName = "中号双头量酒器（开发占位 20/40 ml）"
+DisplayName = "中号双头量酒器（15/30 ml）"
 CanCarryIngredients = true
 FootprintRadius = 0.11
-SmallMeasureAmount = 20.0
-LargeMeasureAmount = 40.0
+SmallMeasureAmount = 15.0
+LargeMeasureAmount = 30.0
 AllowedIngredientIds = Array[StringName]([&"water"])
 
 [sub_resource type="Resource" id="Tool_jigger_large"]
 script = ExtResource("2_tool")
 Id = &"jigger_large"
-DisplayName = "大号双头量酒器（开发占位 25/50 ml）"
+DisplayName = "大号双头量酒器（25/50 ml）"
 CanCarryIngredients = true
 FootprintRadius = 0.12
 SmallMeasureAmount = 25.0
@@ -88,9 +88,9 @@ DisplayName = "研磨"
 RequiredPlacementToolIds = Array[StringName]([&"mortar"])
 RequiredHandheldToolId = &"pestle"
 InputIngredientIds = Array[StringName]([&"coffee_beans"])
-InputTargetAmounts = Array[float]([1.0])
+InputTargetAmounts = Array[float]([18.0])
 OutputIngredientIds = Array[StringName]([&"ground_coffee"])
-OutputAmounts = Array[float]([1.0])
+OutputAmounts = Array[float]([18.0])
 ResultTargetToolId = &"mortar"
 RequiredAction = 0.6
 
@@ -101,7 +101,7 @@ DisplayName = "浸润萃取"
 RequiredPlacementToolIds = Array[StringName]([&"traditional_filter"])
 AllowedHandheldToolIds = Array[StringName]([&"jigger_small", &"jigger_medium", &"jigger_large"])
 InputIngredientIds = Array[StringName]([&"ground_coffee", &"water"])
-InputTargetAmounts = Array[float]([1.0, 30.0])
+InputTargetAmounts = Array[float]([18.0, 30.0])
 OutputIngredientIds = Array[StringName]([&"coffee_extract"])
 OutputAmounts = Array[float]([30.0])
 ResultTargetToolId = &"traditional_filter"
@@ -144,12 +144,13 @@ script = ExtResource("3_operation")
 Id = &"add_water"
 DisplayName = "加水"
 CanRunOffBoard = true
+TransferActualInputAmounts = true
 RequiredPlacementToolIds = Array[StringName]([&"highball_glass"])
 AllowedHandheldToolIds = Array[StringName]([&"jigger_small", &"jigger_medium", &"jigger_large"])
 InputIngredientIds = Array[StringName]([&"water"])
-InputTargetAmounts = Array[float]([30.0])
+InputTargetAmounts = Array[float]([20.0])
 OutputIngredientIds = Array[StringName]([&"water"])
-OutputAmounts = Array[float]([30.0])
+OutputAmounts = Array[float]([20.0])
 ResultTargetToolId = &"highball_glass"
 RequiredAction = 0.0
 

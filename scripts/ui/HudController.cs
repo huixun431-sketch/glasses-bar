@@ -124,7 +124,7 @@ public partial class HudController : CanvasLayer
             ? "[Enter] 完成 30 天周目并返回主菜单"
             : $"[Enter] 开始第 {GameSession.Instance.CurrentDay + 1} 天";
         _summary.Text = $"第 {GameSession.Instance.CurrentDay} 天" + (passed ? "完成\n" : "结束\n") + summary +
-            $"\n\n正式配方数值尚未批准，本结果只验证流程。\n\n{continuation}";
+            $"\n\n配方正文已批准；当前结果仍使用开发占位容差、概率与恢复曲线。\n\n{continuation}";
         _summaryPanel.Visible = true;
         Input.MouseMode = Input.MouseModeEnum.Visible;
     }

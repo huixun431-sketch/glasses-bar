@@ -394,6 +394,56 @@ public sealed class DomainTests
     }
 
     [Test]
+    public void ProcessExecutionService_TransfersActualMeasuredAmountForDirectPour()
+    {
+        var inventory = new ToolInventoryService();
+        inventory.RegisterTool(new ToolSpec
+        {
+            Id = "highball_glass",
+            DisplayName = "Glass",
+            Category = ToolCategory.Placement,
+            CanContainIngredients = true
+        }, new SpatialPosition(0d, 0d, 0d));
+        var jigger = new ToolSpec
+        {
+            Id = "jigger",
+            DisplayName = "Jigger",
+            Category = ToolCategory.Handheld,
+            CanCarryIngredients = true
+        };
+        jigger.AllowedIngredientIds.Add("water");
+        inventory.RegisterTool(jigger, new SpatialPosition(1d, 0d, 0d));
+        inventory.PickUp("highball_glass");
+        inventory.PickUp("jigger");
+        inventory.LoadIngredient("water", 10d);
+
+        var pour = new OperationSpec
+        {
+            Id = "pour_water",
+            DisplayName = "Pour Water",
+            CanRunOffBoard = true,
+            RequiredHandheldToolId = "jigger",
+            ResultTargetToolId = "highball_glass",
+            TransferActualInputAmounts = true
+        };
+        pour.RequiredPlacementToolIds.Add("highball_glass");
+        pour.InputTargets["water"] = 20d;
+        pour.Outputs["water"] = 20d;
+
+        var assembly = new DrinkAssemblyState(300d);
+        var service = new ProcessExecutionService(inventory, assembly);
+        service.ConfigureOperations(new[] { pour });
+
+        var outcome = service.ExecuteSimpleOperation(() => 0.99d, 0d);
+
+        Assert.That(outcome, Is.Not.Null);
+        Assert.That(outcome!.Kind, Is.EqualTo(ProcessExecutionKind.Completed));
+        Assert.That(outcome.Attempt.CompletionRatio, Is.EqualTo(1d));
+        Assert.That(assembly.Glass.Ingredients["water"], Is.EqualTo(10d));
+        Assert.That(inventory.GetRequiredTool("highball_glass").Contents["water"], Is.EqualTo(10d));
+    }
+
+    [Test]
     public void ProcessExecutionService_MarksWrongIngredientsAsWaste()
     {
         var inventory = new ToolInventoryService();
@@ -687,6 +737,24 @@ public sealed class DomainTests
     {
         var snapshot = new GameSaveSnapshot { SchemaVersion = GameSaveSnapshot.CurrentSchemaVersion + 1 };
         Assert.That(() => SaveGameSerializer.Serialize(snapshot), Throws.TypeOf<InvalidDataException>());
+    }
+
+    [Test]
+    public void SaveSnapshot_NormalizesLegacyIcedAmericanoRecipeId()
+    {
+        var legacy = new GameSaveSnapshot
+        {
+            RecipeId = "prototype_iced_americano",
+            Workstation = new WorkstationSnapshot
+            {
+                Glass = new LiquidSnapshot { Capacity = 300d }
+            }
+        };
+
+        var restored = SaveGameSerializer.Deserialize(SaveGameSerializer.Serialize(legacy));
+
+        Assert.That(restored.RecipeId, Is.EqualTo("iced_americano"));
+        Assert.That(new GameSaveSnapshot().RecipeId, Is.EqualTo("iced_americano"));
     }
 
     [Test]

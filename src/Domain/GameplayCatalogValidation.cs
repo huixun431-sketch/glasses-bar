@@ -82,6 +82,11 @@ public static class GameplayCatalogValidator
                 errors.Add($"Operation '{operation.Id}' requires positive input targets.");
             if (operation.Outputs.Count == 0 || operation.Outputs.Any(output => output.Value <= 0d))
                 errors.Add($"Operation '{operation.Id}' requires positive outputs.");
+            if (operation.TransferActualInputAmounts &&
+                (!operation.CanRunOffBoard ||
+                 !operation.InputTargets.Keys.ToHashSet(StringComparer.Ordinal)
+                     .SetEquals(operation.Outputs.Keys)))
+                errors.Add($"Operation '{operation.Id}' can transfer actual amounts only as a direct simple pour.");
             _ = operation.ResolveComplexity();
         }
 

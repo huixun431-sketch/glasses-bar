@@ -19,7 +19,7 @@
 
 新增一个 `IngredientCatalogDefinition`，集中保存所有第一阶段正式原料。每项 `IngredientDefinition` 继续使用稳定 ID、显示名和主要计量单位，并将 `IsPrototype` 设为 `false`。计量单位扩展为 `Drop` 与 `Spoon`，避免虚构一滴或一勺的换算体积。
 
-正式原料目录包含配方正文所需的 24 个唯一成分 ID：
+正式原料目录包含配方正文所需的 26 个唯一成分 ID：
 
 `crushed_ice`、`water`、`coffee_beans`、`gin`、`tonic_water`、`lime_slice`、`ice_cube`、`whiskey`、`aromatic_bitters`、`sugar_cube`、`orange_peel`、`white_rum`、`lime_juice`、`soda_water`、`simple_syrup`、`mint_leaves`、`tequila`、`orange_liqueur`、`salt`、`vodka`、`ginger_beer`、`lime_wedge`、`dry_vermouth`、`olive`、`lemon_juice`、`egg_white`。
 

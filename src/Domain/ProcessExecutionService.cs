@@ -104,13 +104,15 @@ public sealed class ProcessExecutionService
             return null;
 
         var carrier = _inventory.GetRequiredTool(_inventory.RightHandToolId);
-        var attempt = ProcessRules.Evaluate(
-            operation,
-            _inventory.RightHandToolId,
-            carrier.Contents,
-            1d,
-            nextRoll(),
-            successProbabilityPenalty);
+        var attempt = operation.TransferActualInputAmounts
+            ? EvaluateDirectTransfer(operation, _inventory.RightHandToolId, carrier.Contents)
+            : ProcessRules.Evaluate(
+                operation,
+                _inventory.RightHandToolId,
+                carrier.Contents,
+                1d,
+                nextRoll(),
+                successProbabilityPenalty);
         return ApplyAttempt(operation, attempt, new[] { carrier });
     }
 
@@ -318,6 +320,9 @@ public sealed class ProcessExecutionService
 
         if (attempt.Completed)
         {
+            var actualOutputs = operation.TransferActualInputAmounts
+                ? MergeContents(sources)
+                : null;
             foreach (var source in sources)
             {
                 if (source.Id == "highball_glass")
@@ -327,7 +332,10 @@ public sealed class ProcessExecutionService
 
             if (_inventory.Tools.TryGetValue(operation.ResultTargetToolId, out var target))
             {
-                foreach (var output in operation.Outputs)
+                var outputs = operation.TransferActualInputAmounts
+                    ? actualOutputs!
+                    : operation.Outputs;
+                foreach (var output in outputs)
                     AddOutput(target, output.Key, output.Value, outputCompletion);
             }
 
@@ -448,4 +456,30 @@ public sealed class ProcessExecutionService
                 CompletionRatio = 0d
             }
         };
+
+    private static ProcessAttemptResult EvaluateDirectTransfer(
+        OperationSpec operation,
+        string heldHandheldToolId,
+        IReadOnlyDictionary<string, double> ingredients)
+    {
+        var actualTypes = PositiveIngredientIds(ingredients);
+        if (!operation.AcceptsHandheldTool(heldHandheldToolId))
+            return DirectTransferFailure(ProcessFailure.WrongHandheldTool);
+        if (!actualTypes.SetEquals(operation.InputTargets.Keys))
+            return DirectTransferFailure(ProcessFailure.WrongIngredients);
+        return new ProcessAttemptResult
+        {
+            Completed = true,
+            SuccessProbability = 1d,
+            CompletionRatio = 1d
+        };
+    }
+
+    private static ProcessAttemptResult DirectTransferFailure(ProcessFailure failure) => new()
+    {
+        Failure = failure,
+        MaterialsBecomeWaste = true,
+        SuccessProbability = 0d,
+        CompletionRatio = 0d
+    };
 }

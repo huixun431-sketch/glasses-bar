@@ -1,0 +1,190 @@
+[gd_resource type="Resource" script_class="IngredientCatalogDefinition" load_steps=28 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/IngredientCatalogDefinition.cs" id="1_catalog"]
+[ext_resource type="Script" path="res://scripts/data/IngredientDefinition.cs" id="2_ingredient"]
+
+[sub_resource type="Resource" id="Ingredient_crushed_ice"]
+script = ExtResource("2_ingredient")
+Id = &"crushed_ice"
+DisplayName = "碎冰"
+Unit = 2
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_water"]
+script = ExtResource("2_ingredient")
+Id = &"water"
+DisplayName = "水"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_coffee_beans"]
+script = ExtResource("2_ingredient")
+Id = &"coffee_beans"
+DisplayName = "咖啡豆"
+Unit = 2
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_gin"]
+script = ExtResource("2_ingredient")
+Id = &"gin"
+DisplayName = "金酒"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_tonic_water"]
+script = ExtResource("2_ingredient")
+Id = &"tonic_water"
+DisplayName = "汤力水"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_lime_slice"]
+script = ExtResource("2_ingredient")
+Id = &"lime_slice"
+DisplayName = "青柠片"
+Unit = 3
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_ice_cube"]
+script = ExtResource("2_ingredient")
+Id = &"ice_cube"
+DisplayName = "冰块"
+Unit = 3
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_whiskey"]
+script = ExtResource("2_ingredient")
+Id = &"whiskey"
+DisplayName = "威士忌"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_aromatic_bitters"]
+script = ExtResource("2_ingredient")
+Id = &"aromatic_bitters"
+DisplayName = "苦精"
+Unit = 4
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_sugar_cube"]
+script = ExtResource("2_ingredient")
+Id = &"sugar_cube"
+DisplayName = "方糖"
+Unit = 3
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_orange_peel"]
+script = ExtResource("2_ingredient")
+Id = &"orange_peel"
+DisplayName = "橙皮"
+Unit = 3
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_white_rum"]
+script = ExtResource("2_ingredient")
+Id = &"white_rum"
+DisplayName = "白朗姆酒"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_lime_juice"]
+script = ExtResource("2_ingredient")
+Id = &"lime_juice"
+DisplayName = "青柠汁"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_soda_water"]
+script = ExtResource("2_ingredient")
+Id = &"soda_water"
+DisplayName = "苏打水"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_simple_syrup"]
+script = ExtResource("2_ingredient")
+Id = &"simple_syrup"
+DisplayName = "糖浆"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_mint_leaves"]
+script = ExtResource("2_ingredient")
+Id = &"mint_leaves"
+DisplayName = "薄荷叶"
+Unit = 3
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_tequila"]
+script = ExtResource("2_ingredient")
+Id = &"tequila"
+DisplayName = "龙舌兰"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_orange_liqueur"]
+script = ExtResource("2_ingredient")
+Id = &"orange_liqueur"
+DisplayName = "橙味利口酒"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_salt"]
+script = ExtResource("2_ingredient")
+Id = &"salt"
+DisplayName = "盐"
+Unit = 2
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_vodka"]
+script = ExtResource("2_ingredient")
+Id = &"vodka"
+DisplayName = "伏特加"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_ginger_beer"]
+script = ExtResource("2_ingredient")
+Id = &"ginger_beer"
+DisplayName = "姜汁汽水"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_lime_wedge"]
+script = ExtResource("2_ingredient")
+Id = &"lime_wedge"
+DisplayName = "青柠角"
+Unit = 3
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_dry_vermouth"]
+script = ExtResource("2_ingredient")
+Id = &"dry_vermouth"
+DisplayName = "干味美思"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_olive"]
+script = ExtResource("2_ingredient")
+Id = &"olive"
+DisplayName = "橄榄"
+Unit = 3
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_lemon_juice"]
+script = ExtResource("2_ingredient")
+Id = &"lemon_juice"
+DisplayName = "柠檬汁"
+Unit = 1
+IsPrototype = false
+
+[sub_resource type="Resource" id="Ingredient_egg_white"]
+script = ExtResource("2_ingredient")
+Id = &"egg_white"
+DisplayName = "蛋白"
+Unit = 1
+IsPrototype = false
+
+[resource]
+script = ExtResource("1_catalog")
+Ingredients = Array[ExtResource("2_ingredient")]([SubResource("Ingredient_crushed_ice"), SubResource("Ingredient_water"), SubResource("Ingredient_coffee_beans"), SubResource("Ingredient_gin"), SubResource("Ingredient_tonic_water"), SubResource("Ingredient_lime_slice"), SubResource("Ingredient_ice_cube"), SubResource("Ingredient_whiskey"), SubResource("Ingredient_aromatic_bitters"), SubResource("Ingredient_sugar_cube"), SubResource("Ingredient_orange_peel"), SubResource("Ingredient_white_rum"), SubResource("Ingredient_lime_juice"), SubResource("Ingredient_soda_water"), SubResource("Ingredient_simple_syrup"), SubResource("Ingredient_mint_leaves"), SubResource("Ingredient_tequila"), SubResource("Ingredient_orange_liqueur"), SubResource("Ingredient_salt"), SubResource("Ingredient_vodka"), SubResource("Ingredient_ginger_beer"), SubResource("Ingredient_lime_wedge"), SubResource("Ingredient_dry_vermouth"), SubResource("Ingredient_olive"), SubResource("Ingredient_lemon_juice"), SubResource("Ingredient_egg_white")])

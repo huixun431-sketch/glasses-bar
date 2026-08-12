@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/RecipeDefinition.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://scripts/data/RecipeIngredientRequirement.cs" id="2_requirement"]
+
+[sub_resource type="Resource" id="Ingredient_vodka"]
+script = ExtResource("2_requirement")
+IngredientId = &"vodka"
+Amount = 50.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_lime_juice"]
+script = ExtResource("2_requirement")
+IngredientId = &"lime_juice"
+Amount = 15.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_ginger_beer"]
+script = ExtResource("2_requirement")
+IngredientId = &"ginger_beer"
+Amount = 125.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_crushed_ice"]
+script = ExtResource("2_requirement")
+IngredientId = &"crushed_ice"
+Amount = 150.0
+Unit = 2
+
+[sub_resource type="Resource" id="Ingredient_lime_wedge"]
+script = ExtResource("2_requirement")
+IngredientId = &"lime_wedge"
+Amount = 1.0
+Unit = 3
+
+[resource]
+script = ExtResource("1_recipe")
+Id = &"moscow_mule"
+DisplayName = "莫斯科骡子"
+IsPrototype = false
+Ingredients = Array[ExtResource("2_requirement")]([SubResource("Ingredient_vodka"), SubResource("Ingredient_lime_juice"), SubResource("Ingredient_ginger_beer"), SubResource("Ingredient_crushed_ice"), SubResource("Ingredient_lime_wedge")])

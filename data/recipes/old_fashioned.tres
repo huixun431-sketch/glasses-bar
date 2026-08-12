@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/RecipeDefinition.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://scripts/data/RecipeIngredientRequirement.cs" id="2_requirement"]
+
+[sub_resource type="Resource" id="Ingredient_whiskey"]
+script = ExtResource("2_requirement")
+IngredientId = &"whiskey"
+Amount = 60.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_bitters"]
+script = ExtResource("2_requirement")
+IngredientId = &"aromatic_bitters"
+Amount = 3.0
+Unit = 4
+
+[sub_resource type="Resource" id="Ingredient_sugar_cube"]
+script = ExtResource("2_requirement")
+IngredientId = &"sugar_cube"
+Amount = 1.0
+Unit = 3
+
+[sub_resource type="Resource" id="Ingredient_orange_peel"]
+script = ExtResource("2_requirement")
+IngredientId = &"orange_peel"
+Amount = 1.0
+Unit = 3
+
+[sub_resource type="Resource" id="Ingredient_water"]
+script = ExtResource("2_requirement")
+IngredientId = &"water"
+QuantityText = "少量"
+
+[resource]
+script = ExtResource("1_recipe")
+Id = &"old_fashioned"
+DisplayName = "古典鸡尾酒"
+IsPrototype = false
+Ingredients = Array[ExtResource("2_requirement")]([SubResource("Ingredient_whiskey"), SubResource("Ingredient_bitters"), SubResource("Ingredient_sugar_cube"), SubResource("Ingredient_orange_peel"), SubResource("Ingredient_water")])

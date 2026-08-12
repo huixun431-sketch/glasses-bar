@@ -92,7 +92,7 @@ public partial class DrinkWorkstation : Node
             return false;
         }
         state.UseLargeMeasureSide = !state.UseLargeMeasureSide;
-        feedback = $"已切换为{state.Definition.DisplayName}的{RightHandMeasureSideName}：{RightHandMeasureAmount:0} ml（开发占位容量）。";
+        feedback = $"已切换为{state.Definition.DisplayName}的{RightHandMeasureSideName}：{RightHandMeasureAmount:0} ml。";
         EmitHandsAndState(feedback);
         return true;
     }
@@ -151,9 +151,9 @@ public partial class DrinkWorkstation : Node
     public override void _Ready()
     {
         _random.Randomize();
-        var recipe = ResourceLoader.Load<RecipeDefinition>("res://data/recipes/prototype_iced_americano.tres");
+        var recipe = ResourceLoader.Load<RecipeDefinition>("res://data/recipes/iced_americano.tres");
         if (recipe is null)
-            throw new InvalidOperationException("Prototype recipe resource could not be loaded.");
+            throw new InvalidOperationException("Iced americano recipe resource could not be loaded.");
         _recipeTargets = recipe.BuildTargets();
         GameplayCatalogValidator.ValidateRecipeCompatibility(_recipeTargets, _processes.Operations);
         GameSession.Instance.DayPhaseChanged += OnPhaseChanged;
@@ -613,6 +613,7 @@ public partial class DrinkWorkstation : Node
     private static string IngredientAmountText(string ingredientId, double amount) => ingredientId switch
     {
         "water" or "coffee_extract" or "espresso" => $"{IngredientDisplay(ingredientId)} {amount:0.#} ml",
+        "coffee_beans" or "ground_coffee" => $"{IngredientDisplay(ingredientId)} {amount:0.#} g",
         "ice" => $"{IngredientDisplay(ingredientId)} {amount:0} 块",
         _ => $"{IngredientDisplay(ingredientId)} {amount:0.00} 份"
     };

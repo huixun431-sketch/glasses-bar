@@ -52,7 +52,7 @@ public partial class FlowIntegrationTests : Node
             OpenStorage(main, "front_drawer_1_upper");
             scoop.Interact(context);
             OpenStorage(main, "rear_lower_cabinet_1");
-            LoadBeans(main, context, 4);
+            LoadBeans(main, context, 2);
             OpenStorage(main, "front_drawer_1_lower");
             mortar.Interact(context);
             board.Interact(context);
@@ -73,7 +73,7 @@ public partial class FlowIntegrationTests : Node
             board.Interact(context);
             board.Interact(context);
             PlaceAt(workstation, "scoop_free");
-            Require(Math.Abs(workstation.GetToolContentAmount("traditional_filter", "ground_coffee") - 1d) < 0.000001d,
+            Require(Math.Abs(workstation.GetToolContentAmount("traditional_filter", "ground_coffee") - 18d) < 0.000001d,
                 "ground coffee reaches the board-mounted traditional filter");
 
             var largeJigger = Tool(main, "jigger_large");
@@ -95,7 +95,7 @@ public partial class FlowIntegrationTests : Node
             Require(CompleteBoard(board, context, 0.8d).Completed, "measured jigger water enables manual extraction");
             var firstExtraction = workstation.GetToolContentCompletionRatio("traditional_filter");
             Require(firstExtraction > 0.8d && firstExtraction < 1d,
-                "25 ml against the 30 ml prototype target creates a recoverable completion loss");
+                "25 ml against the current 30 ml extraction input target creates a recoverable completion loss");
             workstation.QueueAttemptRollForTests(0d);
             Require(CompleteBoard(board, context, 0.8d).Completed, "repeat extraction is a valid recovery attempt");
             var recoveredExtraction = workstation.GetToolContentCompletionRatio("traditional_filter");
@@ -118,14 +118,17 @@ public partial class FlowIntegrationTests : Node
             glass.Interact(context);
             OpenStorage(main, "front_drawer_3_upper");
             Tool(main, "jigger_small").Interact(context);
-            Require(Math.Abs(workstation.RightHandMeasureAmount - 30d) < 0.001d,
-                "small jigger defaults to its 30 ml end for keyboard-accessible measured water");
-            OpenStorage(main, "rear_lower_cabinet_2");
-            kettle.Interact(context);
-            workstation.QueueAttemptRollForTests(0d);
-            Require(workstation.TryUseSimpleOperation().Completed &&
-                    Math.Abs(workstation.Glass.Ingredients["water"] - 30d) < 0.001d,
-                "jigger water replaces the old direct-kettle pour operation");
+            Require(Math.Abs(workstation.RightHandMeasureAmount - 20d) < 0.001d,
+                "small jigger defaults to its 20 ml end for measured water");
+            for (var pour = 1; pour <= 5; pour++)
+            {
+                OpenStorage(main, "rear_lower_cabinet_2");
+                kettle.Interact(context);
+                workstation.QueueAttemptRollForTests(0d);
+                Require(workstation.TryUseSimpleOperation().Completed &&
+                        Math.Abs(workstation.Glass.Ingredients["water"] - pour * 20d) < 0.001d,
+                    $"measured water pour {pour} of 5 reaches the approved 100 ml total");
+            }
             PlaceAt(workstation, "glass_free");
             PlaceAt(workstation, "jigger_free");
             glass.Interact(context);
@@ -146,7 +149,7 @@ public partial class FlowIntegrationTests : Node
             Require(customer.CanInteract(context), "finished drink can be submitted only after approaching the customer");
             customer.Interact(context);
             Require(_evaluationPassed && GameSession.Instance.Flow.Current == DayPhase.DaySummary,
-                "prototype drink reaches evaluation with bounded recovery preserved");
+                "partial iced americano workflow reaches evaluation with bounded recovery preserved");
             Require(workstation.TryDiscardHeldContents(out _) && !workstation.EvaluateCurrentDrink().Passed,
                 "discarding the delivered glass removes its ingredients from the current drink evaluation");
 
@@ -207,7 +210,7 @@ public partial class FlowIntegrationTests : Node
                 stationDefinitions["ice_bucket"].IngredientId.ToString() == "ice" &&
                 Math.Abs(stationDefinitions["ice_bucket"].IngredientAmount - 1d) < 0.000001d &&
                 stationDefinitions["coffee_beans"].IngredientId.ToString() == "coffee_beans" &&
-                Math.Abs(stationDefinitions["coffee_beans"].IngredientAmount - 0.25d) < 0.000001d,
+                Math.Abs(stationDefinitions["coffee_beans"].IngredientAmount - 9d) < 0.000001d,
             "station resource catalog retains six unique kinds, registered handlers and existing interaction values");
         var runtimeStations = main.GetTree()
             .GetNodesInGroup("interactable")
@@ -411,15 +414,15 @@ public partial class FlowIntegrationTests : Node
         var before = workstation.KettleWaterAmountMl;
         OpenStorage(main, "rear_lower_cabinet_2");
         kettle.Interact(context);
-        Require(Math.Abs(workstation.GetRightHandIngredientAmount("water") - 30d) < 0.001d &&
-                Math.Abs(workstation.KettleWaterAmountMl - (before - 30d)) < 0.001d,
+        Require(Math.Abs(workstation.GetRightHandIngredientAmount("water") - 20d) < 0.001d &&
+                Math.Abs(workstation.KettleWaterAmountMl - (before - 20d)) < 0.001d,
             "jigger takes its selected measured amount from the kettle");
         var storage = main.GetTree().GetNodesInGroup("cabinet_storage").OfType<CabinetInteractable>().ToArray();
         var serialized = SaveGameSerializer.Serialize(GameSession.Instance.CaptureState(workstation, context.Player, storage));
         bin.Interact(context);
         GameSession.Instance.RestoreState(SaveGameSerializer.Deserialize(serialized), workstation, context.Player, storage);
         Require(workstation.RightHandToolId == "jigger_small" &&
-                Math.Abs(workstation.GetRightHandIngredientAmount("water") - 30d) < 0.001d &&
+                Math.Abs(workstation.GetRightHandIngredientAmount("water") - 20d) < 0.001d &&
                 workstation.GetToolLocation("jigger_small") == ToolLocation.RightHand &&
                 main.GetNode<CabinetInteractable>("NeutralGameplay/rear_lower_cabinet_2").IsOpen,
             "versioned save snapshot restores authoritative held-tool, contents, player and storage instance state without scene-node references");

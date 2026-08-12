@@ -1,22 +1,42 @@
-[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/RecipeDefinition.cs" id="1_recipe"]
 [ext_resource type="Script" path="res://scripts/data/RecipeStep.cs" id="2_step"]
 [ext_resource type="Script" path="res://scripts/data/ToleranceProfile.cs" id="3_tolerance"]
+[ext_resource type="Script" path="res://scripts/data/RecipeIngredientRequirement.cs" id="4_requirement"]
+
+[sub_resource type="Resource" id="Ingredient_crushed_ice"]
+script = ExtResource("4_requirement")
+IngredientId = &"crushed_ice"
+Amount = 150.0
+Unit = 2
+
+[sub_resource type="Resource" id="Ingredient_water"]
+script = ExtResource("4_requirement")
+IngredientId = &"water"
+Amount = 100.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_coffee_beans"]
+script = ExtResource("4_requirement")
+IngredientId = &"coffee_beans"
+Amount = 18.0
+Unit = 2
 
 [sub_resource type="Resource" id="Step_ice"]
 script = ExtResource("2_step")
 Id = &"add_ice"
-DisplayName = "加入冰"
+DisplayName = "加入碎冰"
 IngredientId = &"ice"
 TargetAmount = 1.0
 
 [sub_resource type="Resource" id="Step_water"]
 script = ExtResource("2_step")
 Id = &"add_water"
-DisplayName = "手工倒水"
+DisplayName = "加入水"
 IngredientId = &"water"
-TargetAmount = 30.0
+TargetAmount = 100.0
+Unit = 1
 
 [sub_resource type="Resource" id="Step_grind"]
 script = ExtResource("2_step")
@@ -26,7 +46,7 @@ DisplayName = "研磨咖啡豆"
 [sub_resource type="Resource" id="Step_extract"]
 script = ExtResource("2_step")
 Id = &"manual_extract"
-DisplayName = "手工浸润萃取"
+DisplayName = "咖啡萃取"
 
 [sub_resource type="Resource" id="Step_filter"]
 script = ExtResource("2_step")
@@ -34,16 +54,19 @@ Id = &"filter_coffee"
 DisplayName = "过滤咖啡液入杯"
 IngredientId = &"espresso"
 TargetAmount = 30.0
+Unit = 1
 
-[sub_resource type="Resource" id="Tolerance_prototype"]
+[sub_resource type="Resource" id="Tolerance_partial"]
 script = ExtResource("3_tolerance")
 AmountToleranceRatio = 0.1
 EnableQuantityScoring = false
 
 [resource]
 script = ExtResource("1_recipe")
-Id = &"prototype_iced_americano"
-DisplayName = "冰美式（开发占位）"
-IsPrototype = true
+Id = &"iced_americano"
+DisplayName = "冰美式"
+IsPrototype = false
+ImplementationStatus = 1
+Ingredients = Array[ExtResource("4_requirement")]([SubResource("Ingredient_crushed_ice"), SubResource("Ingredient_water"), SubResource("Ingredient_coffee_beans")])
 Steps = Array[ExtResource("2_step")]([SubResource("Step_ice"), SubResource("Step_water"), SubResource("Step_grind"), SubResource("Step_extract"), SubResource("Step_filter")])
-Tolerance = SubResource("Tolerance_prototype")
+Tolerance = SubResource("Tolerance_partial")

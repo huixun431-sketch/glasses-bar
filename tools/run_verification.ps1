@@ -54,6 +54,8 @@ if ($godotPath) {
     Assert-LastExitCode 'Godot production bar asset integration'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/SmokeTests.tscn
     Assert-LastExitCode 'Godot smoke tests'
+    & $godotPath --headless --path $root --quit-after 300 res://tests/godot/FormalContentCatalogTests.tscn
+    Assert-LastExitCode 'Godot formal content catalog tests'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/Stage1AssetIntegrationTests.tscn
     Assert-LastExitCode 'Godot stage 1 asset integration tests'
     & $godotPath --headless --path $root --quit-after 300 res://tests/godot/Stage2AssetIntegrationTests.tscn

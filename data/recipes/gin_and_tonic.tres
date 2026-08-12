@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/RecipeDefinition.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://scripts/data/RecipeIngredientRequirement.cs" id="2_requirement"]
+
+[sub_resource type="Resource" id="Ingredient_gin"]
+script = ExtResource("2_requirement")
+IngredientId = &"gin"
+Amount = 50.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_tonic_water"]
+script = ExtResource("2_requirement")
+IngredientId = &"tonic_water"
+Amount = 150.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_lime_slice"]
+script = ExtResource("2_requirement")
+IngredientId = &"lime_slice"
+Amount = 1.0
+Unit = 3
+
+[sub_resource type="Resource" id="Ingredient_ice_cube"]
+script = ExtResource("2_requirement")
+IngredientId = &"ice_cube"
+MinimumAmount = 4.0
+MaximumAmount = 5.0
+Unit = 3
+
+[resource]
+script = ExtResource("1_recipe")
+Id = &"gin_and_tonic"
+DisplayName = "金汤力"
+IsPrototype = false
+Ingredients = Array[ExtResource("2_requirement")]([SubResource("Ingredient_gin"), SubResource("Ingredient_tonic_water"), SubResource("Ingredient_lime_slice"), SubResource("Ingredient_ice_cube")])

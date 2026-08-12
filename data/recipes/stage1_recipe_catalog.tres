@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RecipeCatalogDefinition" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/RecipeCatalogDefinition.cs" id="1_catalog"]
+[ext_resource type="Resource" path="res://data/recipes/iced_americano.tres" id="2_americano"]
+[ext_resource type="Resource" path="res://data/recipes/gin_and_tonic.tres" id="3_gin_tonic"]
+[ext_resource type="Resource" path="res://data/recipes/old_fashioned.tres" id="4_old_fashioned"]
+[ext_resource type="Resource" path="res://data/recipes/mojito.tres" id="5_mojito"]
+[ext_resource type="Resource" path="res://data/recipes/margarita.tres" id="6_margarita"]
+[ext_resource type="Resource" path="res://data/recipes/moscow_mule.tres" id="7_moscow_mule"]
+[ext_resource type="Resource" path="res://data/recipes/daiquiri.tres" id="8_daiquiri"]
+[ext_resource type="Resource" path="res://data/recipes/martini.tres" id="9_martini"]
+[ext_resource type="Resource" path="res://data/recipes/whiskey_sour.tres" id="10_whiskey_sour"]
+
+[resource]
+script = ExtResource("1_catalog")
+Recipes = Array[ExtResource("2_americano")]([ExtResource("2_americano"), ExtResource("3_gin_tonic"), ExtResource("4_old_fashioned"), ExtResource("5_mojito"), ExtResource("6_margarita"), ExtResource("7_moscow_mule"), ExtResource("8_daiquiri"), ExtResource("9_martini"), ExtResource("10_whiskey_sour")])

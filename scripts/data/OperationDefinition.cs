@@ -11,6 +11,7 @@ public partial class OperationDefinition : Resource
     [Export] public string DisplayName { get; set; } = string.Empty;
     [Export] public OperationComplexity Complexity { get; set; } = OperationComplexity.Automatic;
     [Export] public bool CanRunOffBoard { get; set; }
+    [Export] public bool TransferActualInputAmounts { get; set; }
     [Export] public bool IsPrototype { get; set; } = true;
     [Export] public Array<StringName> RequiredPlacementToolIds { get; set; } = new();
     [Export] public StringName RequiredHandheldToolId { get; set; } = new();
@@ -33,6 +34,7 @@ public partial class OperationDefinition : Resource
             DisplayName = DisplayName,
             Complexity = Complexity,
             CanRunOffBoard = CanRunOffBoard,
+            TransferActualInputAmounts = TransferActualInputAmounts,
             IsPrototype = IsPrototype,
             RequiredHandheldToolId = RequiredHandheldToolId.ToString(),
             ResultTargetToolId = ResultTargetToolId.ToString(),

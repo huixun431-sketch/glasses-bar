@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/RecipeDefinition.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://scripts/data/RecipeIngredientRequirement.cs" id="2_requirement"]
+
+[sub_resource type="Resource" id="Ingredient_white_rum"]
+script = ExtResource("2_requirement")
+IngredientId = &"white_rum"
+Amount = 50.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_lime_juice"]
+script = ExtResource("2_requirement")
+IngredientId = &"lime_juice"
+Amount = 25.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_soda_water"]
+script = ExtResource("2_requirement")
+IngredientId = &"soda_water"
+Amount = 75.0
+Unit = 1
+
+[sub_resource type="Resource" id="Ingredient_syrup"]
+script = ExtResource("2_requirement")
+IngredientId = &"simple_syrup"
+Amount = 2.0
+Unit = 5
+
+[sub_resource type="Resource" id="Ingredient_mint"]
+script = ExtResource("2_requirement")
+IngredientId = &"mint_leaves"
+QuantityText = "未注明"
+
+[sub_resource type="Resource" id="Ingredient_crushed_ice"]
+script = ExtResource("2_requirement")
+IngredientId = &"crushed_ice"
+Amount = 150.0
+Unit = 2
+
+[resource]
+script = ExtResource("1_recipe")
+Id = &"mojito"
+DisplayName = "莫吉托"
+IsPrototype = false
+Ingredients = Array[ExtResource("2_requirement")]([SubResource("Ingredient_white_rum"), SubResource("Ingredient_lime_juice"), SubResource("Ingredient_soda_water"), SubResource("Ingredient_syrup"), SubResource("Ingredient_mint"), SubResource("Ingredient_crushed_ice")])

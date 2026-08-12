@@ -57,10 +57,12 @@ public sealed class PlayerSnapshot
 public sealed class GameSaveSnapshot
 {
     public const int CurrentSchemaVersion = 1;
+    public const string CurrentRecipeId = "iced_americano";
+    public const string LegacyIcedAmericanoRecipeId = "prototype_iced_americano";
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public int CurrentDay { get; set; } = 1;
-    public string RecipeId { get; set; } = "prototype_iced_americano";
+    public string RecipeId { get; set; } = CurrentRecipeId;
     public DayPhase DayPhase { get; set; } = DayPhase.WaitingForOrder;
     public string WorldModeId { get; set; } = "reality";
     public bool GameStarted { get; set; }
@@ -89,6 +91,9 @@ public static class SaveGameSerializer
     {
         var snapshot = JsonSerializer.Deserialize<GameSaveSnapshot>(json, Options)
             ?? throw new InvalidDataException("Save payload is empty.");
+        if (string.Equals(snapshot.RecipeId, GameSaveSnapshot.LegacyIcedAmericanoRecipeId,
+                StringComparison.Ordinal))
+            snapshot.RecipeId = GameSaveSnapshot.CurrentRecipeId;
         Validate(snapshot);
         return snapshot;
     }

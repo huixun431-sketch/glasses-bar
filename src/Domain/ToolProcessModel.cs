@@ -61,6 +61,7 @@ public sealed class OperationSpec
     public string DisplayName { get; init; } = string.Empty;
     public OperationComplexity Complexity { get; init; } = OperationComplexity.Automatic;
     public bool CanRunOffBoard { get; init; }
+    public bool TransferActualInputAmounts { get; init; }
     public bool IsPrototype { get; init; } = true;
     public string RequiredHandheldToolId { get; init; } = string.Empty;
     public string ResultTargetToolId { get; init; } = string.Empty;
