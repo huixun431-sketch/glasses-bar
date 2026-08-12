@@ -88,8 +88,11 @@ public partial class InputIntegrationTests : Node
             Require(player.GlobalPosition.Z > BarLayoutDefinition.RearBarFrontZ &&
                     player.GlobalPosition.Z < BarLayoutDefinition.FrontBarInnerEdgeZ,
                 "player starts between the north rear bar and south front bar");
-            Require(main.GetNode<Node3D>("RealityWorld/SouthWindows").GetChildCount() == 1 &&
-                    !main.GetNode<Node3D>("RealityWorld").HasNode("RearBooth"),
+            var realityWorld = main.GetNode<Node3D>("RealityWorld");
+            var hasApprovedSouthWindow = realityWorld.GetNodeOrNull<Node3D>("SouthWindows") is { } grayboxWindows
+                ? grayboxWindows.GetChildCount() == 1
+                : realityWorld.FindChild("south_east_window", true, false) is Node3D;
+            Require(hasApprovedSouthWindow && realityWorld.FindChild("RearBooth", true, false) is null,
                 "runtime shell has one south-east window and no obsolete booths");
             player.GlobalPosition = new Vector3(0.50f, 0.915f, BarLayoutDefinition.PlayerStartZ);
             Input.ActionPress("move_left");

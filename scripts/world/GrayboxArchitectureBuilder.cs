@@ -532,6 +532,7 @@ public sealed class GrayboxArchitectureBuilder
         var rig = new Node3D { Name = "BarLightRig" };
         parent.AddChild(rig);
         BuildFixtureGroup(rig, "Pendants", _layout.PendantFixtures, glasses, true);
+        BuildFixtureGroup(rig, "LoungePendants", _layout.LoungePendantFixtures, glasses, true);
         BuildFixtureGroup(rig, "RearLinears", _layout.RearLinearFixtures, glasses, true);
         BuildFixtureGroup(rig, "CustomerSconces", _layout.CustomerSconces, glasses, true);
         BuildFixtureGroup(rig, "CustomerFills", _layout.CustomerFillLights, glasses, false);
@@ -568,6 +569,7 @@ public sealed class GrayboxArchitectureBuilder
             var energy = fixture.Group switch
             {
                 "front_pendant" => 3.4f,
+                "lounge_pendant" => 3.4f,
                 "rear_linear" => 2.2f,
                 "customer_fill" => 1.35f,
                 _ => 1.6f

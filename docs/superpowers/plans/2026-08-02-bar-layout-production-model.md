@@ -623,13 +623,13 @@ Status 2026-08-11 rework: Tasks 8–10 were rebuilt after review. The current ca
 - Create: `tests/godot/BarProductionAssetIntegrationTests.cs`
 - Create: `tests/godot/BarProductionAssetIntegrationTests.tscn`
 
-- [ ] **Step 1: Write failing production-load, fallback, and ownership tests**
+- [x] **Step 1: Write failing production-load, fallback, and ownership tests**
 
 Test successful load with all six modules, forced missing-module fallback, one copy of each moving gameplay stable ID, no collisions under imported visual roots, and no real lights embedded in imported GLBs. Require `BAR_PRODUCTION_ASSET_INTEGRATION_PASS`.
 
-- [ ] **Step 2: Run the integration scene and confirm it fails before wrappers exist**
+- [x] **Step 2: Run the integration scene and confirm it fails before wrappers exist**
 
-- [ ] **Step 3: Implement a loader with an all-or-graybox result**
+- [x] **Step 3: Implement a loader with an all-or-graybox result**
 
 Use this explicit surface:
 
@@ -646,19 +646,19 @@ public sealed class BarEnvironmentVisualLoader
 
 The loader first verifies every PackedScene/resource and required node. If any module fails, free every partially created production instance, return `false`, and let the caller build complete graybox visuals. Never mix half-production and half-graybox room modules.
 
-- [ ] **Step 4: Keep static and moving modules in the correct owners**
+- [x] **Step 4: Keep static and moving modules in the correct owners**
 
 Instance architecture/furniture/visible-light geometry twice from the same GLB resources, once under `RealityWorld` and once under `GlassesWorld`. Instance counter/backbar only once under `NeutralGameplay`. Instance wear overlays once under `NeutralGameplay`, with collision disabled and visibility controlled by world mode.
 
-- [ ] **Step 5: Bind detachable imported visuals to authoritative interactables**
+- [x] **Step 5: Bind detachable imported visuals to authoritative interactables**
 
 `BarGameplayVisualBinder` resolves stable child names, reparents each imported drawer/door/manual visual under its existing authoritative gameplay node, resets local transform to the contract pose, and calls a new `CabinetInteractable.SetProductionVisual(Node3D visual)` that hides only the generated graybox panel/tray/handle. It must not create or own open/closed state.
 
-- [ ] **Step 6: Put real Godot lights and collisions in wrappers**
+- [x] **Step 6: Put real Godot lights and collisions in wrappers**
 
 Create static collision shapes from `BarLayoutDefinition`; create pendants, rear linear lights, four sconces, and two invisible customer fills in `BarLightRigController`. Fixture GLBs are meshes only. Keep the existing world toggle owner and avoid duplicate directional/global lights.
 
-- [ ] **Step 7: Wire guarded loading into the composition root**
+- [x] **Step 7: Wire guarded loading into the composition root**
 
 ```csharp
 architecture.BuildCollisions();
@@ -668,7 +668,7 @@ if (!new BarEnvironmentVisualLoader().TryInstantiate(neutral, reality, glasses, 
 
 Build gameplay stations/cabinets/tools regardless of visual result.
 
-- [ ] **Step 8: Run production and forced-fallback tests**
+- [x] **Step 8: Run production and forced-fallback tests**
 
 Run asset integration, smoke, input, and flow tests once with all assets and once with the loader test hook forcing fallback. Both modes must preserve stable paths and gameplay behavior.
 

@@ -63,7 +63,22 @@
     },
     "forward_plus": {
       "status": "pending",
-      "evidence": []
+      "renderer": "Forward+",
+      "capture_scene": "tests/godot/BarProductionVisualCapture.tscn",
+      "inspection_record": "Twenty-four current 1920x1080 production-integration frames were opened and inspected after the lighting rebalance. The complete set confirms the continuous production geometry, stable open drawer and sliding-door travel, sink and employee-gate clearances, pulled chair layout, worktop continuity, fixture placement and full-room bounds. The unassisted reality and glasses wide/player-eye pairs show readable dark-brown bar and backbar surfaces, controlled floor and tabletop highlights, and a clear warm-versus-cool world distinction without technical capture lights. Automated integration also confirms atomic all-graybox fallback, project-owned collision and lights, stable gameplay IDs and preserved cabinet state. This records evidence only; user checkpoint 2 approval remains pending.",
+      "evidence": [
+        "artifacts/bar-interior-production-integration/09_tool_storage_open.png",
+        "artifacts/bar-interior-production-integration/13_customer_chairs_pulled.png",
+        "artifacts/bar-interior-production-integration/14_reality_lighting.png",
+        "artifacts/bar-interior-production-integration/15_glasses_lighting.png",
+        "artifacts/bar-interior-production-integration/19_rear_sliding_door_open.png",
+        "artifacts/bar-interior-production-integration/20_sink_exposed_plumbing_close.png",
+        "artifacts/bar-interior-production-integration/23_reality_player_eye_lighting.png",
+        "artifacts/bar-interior-production-integration/24_glasses_player_eye_lighting.png"
+      ],
+      "integration_evidence": [
+        "artifacts/bar-interior-production-integration/integration_verification.txt"
+      ]
     },
     "preintegration_material_review": {
       "status": "ready_for_user_review",

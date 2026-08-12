@@ -53,7 +53,7 @@ public partial class BarProductionVisualCapture : Node
             _main.AddChild(_technicalFillLights);
 
             var outputDirectory = ProjectSettings.GlobalizePath(
-                "res://artifacts/visual_review_bar_graybox_z3_h3_detail_fix");
+                "res://artifacts/bar-interior-production-integration");
             DirAccess.MakeDirRecursiveAbsolute(outputDirectory);
             var states = new List<CaptureState>
             {
@@ -78,7 +78,9 @@ public partial class BarProductionVisualCapture : Node
                 new("19_rear_sliding_door_open", new Vector3(-5.05f, 1.45f, -1.90f), new Vector3(-6.20f, 0.52f, -3.58f), OpenStorageId: "rear_lower_cabinet_1"),
                 new("20_sink_exposed_plumbing_close", new Vector3(0.65f, 1.20f, -2.85f), new Vector3(0.65f, 0.56f, -1.42f)),
                 new("21_player_worktop_surface_continuity", new Vector3(-2.80f, 2.05f, -2.85f), new Vector3(-2.80f, 1.12f, -1.35f)),
-                new("22_guest_top_surface_continuity", new Vector3(-2.80f, 2.18f, 0.35f), new Vector3(-2.80f, 1.38f, -0.82f))
+                new("22_guest_top_surface_continuity", new Vector3(-2.80f, 2.18f, 0.35f), new Vector3(-2.80f, 1.38f, -0.82f)),
+                new("23_reality_player_eye_lighting", new Vector3(-2.8f, 1.83f, -2.72f), new Vector3(-2.8f, 1.18f, 1.0f)),
+                new("24_glasses_player_eye_lighting", new Vector3(-2.8f, 1.83f, -2.72f), new Vector3(-2.8f, 1.18f, 1.0f), Glasses: true)
             };
 
             foreach (var state in states)
@@ -116,13 +118,13 @@ public partial class BarProductionVisualCapture : Node
         if (!string.IsNullOrEmpty(state.OpenStorageId))
             _main.GetNode<CabinetInteractable>($"NeutralGameplay/{state.OpenStorageId}")
                 .SetOpen(true, false);
-        SetChairPositions("RealityWorld/LoungeChairs", state.PullOutChairs);
-        SetChairPositions("GlassesWorld/LoungeChairs", state.PullOutChairs);
+        SetChairPositions("RealityWorld", state.PullOutChairs);
+        SetChairPositions("GlassesWorld", state.PullOutChairs);
         _diagnostics.Visible = state.ShowDiagnostics;
-        _technicalFillLights.Visible = state.Name is not "14_reality_lighting" and not "15_glasses_lighting";
+        _technicalFillLights.Visible = !state.Name.EndsWith("_lighting", StringComparison.Ordinal);
         var showCeiling = state.Name is not "01_overhead_9m10_span" and not "16_runtime_aabb_overview";
-        _main.GetNode<MeshInstance3D>("RealityWorld/Ceiling").Visible = showCeiling;
-        _main.GetNode<MeshInstance3D>("GlassesWorld/Ceiling").Visible = showCeiling;
+        SetCeilingVisible("RealityWorld", showCeiling);
+        SetCeilingVisible("GlassesWorld", showCeiling);
         _camera.LookAtFromPosition(state.CameraPosition, state.Target, state.Up ?? Vector3.Up);
     }
 
@@ -177,12 +179,29 @@ public partial class BarProductionVisualCapture : Node
         return root;
     }
 
-    private void SetChairPositions(string path, bool pulledOut)
+    private void SetChairPositions(string worldPath, bool pulledOut)
     {
-        var group = _main.GetNode<Node3D>(path);
+        var world = _main.GetNode<Node3D>(worldPath);
+        var production = world.GetNodeOrNull<Node3D>("ProductionFurniture");
+        var graybox = world.GetNodeOrNull<Node3D>("LoungeChairs");
         var chairs = BarLayoutDefinition.Prototype.LoungeChairs;
         for (var index = 0; index < chairs.Count; index++)
-            group.GetNode<Node3D>(chairs[index].Id).Position =
+        {
+            var chair = production?.FindChild($"lounge_chair_{index + 1}", true, false) as Node3D ??
+                graybox?.GetNodeOrNull<Node3D>(chairs[index].Id) ??
+                throw new InvalidOperationException($"Missing chair {index + 1} in {worldPath}.");
+            chair.Position =
                 pulledOut ? chairs[index].PulledOutPosition : chairs[index].Position;
+        }
+    }
+
+    private void SetCeilingVisible(string worldPath, bool visible)
+    {
+        var world = _main.GetNode<Node3D>(worldPath);
+        var ceiling = world.GetNodeOrNull<MeshInstance3D>("Ceiling") ??
+            world.GetNodeOrNull<Node3D>("ProductionArchitecture")?
+                .FindChild("ceiling", true, false) as MeshInstance3D ??
+            throw new InvalidOperationException($"Missing ceiling in {worldPath}.");
+        ceiling.Visible = visible;
     }
 }

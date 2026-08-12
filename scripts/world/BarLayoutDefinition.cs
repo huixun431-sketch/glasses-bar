@@ -354,6 +354,12 @@ public sealed class BarLayoutDefinition
             new BarLightFixtureLayout("pendant_2", new Vector3(BarCenterX, 2.85f, FrontCounterZ), "front_pendant", true),
             new BarLightFixtureLayout("pendant_3", new Vector3(BarCenterX + 2.6f, 2.85f, FrontCounterZ), "front_pendant", true)
         });
+        LoungePendantFixtures = Array.AsReadOnly(new[]
+        {
+            new BarLightFixtureLayout("lounge_pendant_1", new Vector3(4.35f, 2.55f, -2.15f), "lounge_pendant", true),
+            new BarLightFixtureLayout("lounge_pendant_2", new Vector3(4.65f, 2.55f, 0.25f), "lounge_pendant", true),
+            new BarLightFixtureLayout("lounge_pendant_3", new Vector3(4.35f, 2.55f, 2.65f), "lounge_pendant", true)
+        });
         RearLinearFixtures = Array.AsReadOnly(new[]
         {
             new BarLightFixtureLayout("rear_linear_1", new Vector3(BarCenterX - 2.25f, 2.45f, -3.58f), "rear_linear", true),
@@ -486,6 +492,7 @@ public sealed class BarLayoutDefinition
     public IReadOnlyList<BarBoxLayout> FrontFootrails { get; }
     public IReadOnlyList<BarBoxLayout> NightWindows { get; }
     public IReadOnlyList<BarLightFixtureLayout> PendantFixtures { get; }
+    public IReadOnlyList<BarLightFixtureLayout> LoungePendantFixtures { get; }
     public IReadOnlyList<BarLightFixtureLayout> RearLinearFixtures { get; }
     public IReadOnlyList<BarLightFixtureLayout> CustomerSconces { get; }
     public IReadOnlyList<BarLightFixtureLayout> CustomerFillLights { get; }
@@ -512,6 +519,7 @@ public sealed class BarLayoutDefinition
             .Append(NorthEastServiceDoor.Id), "opening");
         EnsureUnique(LoungeChairs.Select(chair => chair.Id), "chair");
         EnsureUnique(PendantFixtures
+            .Concat(LoungePendantFixtures)
             .Concat(RearLinearFixtures)
             .Concat(CustomerSconces)
             .Concat(CustomerFillLights)
@@ -577,7 +585,7 @@ public sealed class BarLayoutDefinition
             throw new InvalidOperationException("Player must face south inside the 1.55 metre bar aisle.");
         if (FrontStools.Count != 6 || LoungeTables.Count != 3 || LoungeChairs.Count != 12 || Booths.Count != 0)
             throw new InvalidOperationException("Prototype guest furniture counts must match the approved loose seating.");
-        if (PendantFixtures.Count != 3 || RearLinearFixtures.Count != 2 ||
+        if (PendantFixtures.Count != 3 || LoungePendantFixtures.Count != 3 || RearLinearFixtures.Count != 2 ||
             CustomerSconces.Count != 4 || CustomerFillLights.Count != 2)
             throw new InvalidOperationException("Prototype light fixture groups must match the approved lighting plan.");
         if (FrontFootrails.Count != 0)

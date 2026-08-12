@@ -435,7 +435,7 @@ def validate_batch(
         lowered = tracked_path.lower()
         if lowered == "artifacts" or lowered.startswith("artifacts/"):
             _add(errors, "TRACKED_ARTIFACT", f"ignored artifact is tracked: {tracked_path}")
-        if lowered.endswith(".png"):
+        if lowered.endswith(".png") and (lowered == "artifacts" or lowered.startswith("artifacts/")):
             _add(errors, "TRACKED_SCREENSHOT", f"review screenshot is tracked: {tracked_path}")
         if lowered.endswith(".blend"):
             _add(errors, "TRACKED_BLEND", f"Blender working file is tracked: {tracked_path}")

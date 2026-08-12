@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using GlassesBar.Domain;
 
@@ -27,6 +28,10 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
     private Vector3 _movingLeafClosedPosition;
     private Vector3 _movingLeafOpenPosition;
     private StandardMaterial3D _material = null!;
+    private Node3D? _productionVisual;
+    private Node3D? _productionMovingVisual;
+    private Vector3 _productionMovingClosedPosition;
+    private Vector3 _productionMovingOpenPosition;
     private Tween? _tween;
 
     public bool IsOpen { get; private set; }
@@ -151,6 +156,32 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
     public void SetContentsDescription(string description) =>
         _contentsDescription = string.IsNullOrWhiteSpace(description) ? "当前为空" : description;
 
+    public void SetProductionVisual(Node3D visual)
+    {
+        ArgumentNullException.ThrowIfNull(visual);
+        if (_productionVisual is not null)
+            throw new InvalidOperationException($"Production visual is already bound to {Name}.");
+        if (visual.GetParent() != this)
+            throw new InvalidOperationException($"Production visual for {Name} must be parented to the authoritative cabinet.");
+
+        _productionVisual = visual;
+        _productionVisual.Name = "ProductionVisual";
+        _panel.Visible = false;
+        if (_movingLeaf is not null)
+            _movingLeaf.Visible = false;
+        foreach (var grayboxName in new[] { "Handle", "TrayBottom", "TrayLeft", "TrayRight", "TrayBack" })
+            if (GetNodeOrNull<GeometryInstance3D>(grayboxName) is { } graybox)
+                graybox.Visible = false;
+
+        if (_kind != CabinetPartKind.SlidingDoor)
+            return;
+        _productionMovingVisual = visual.GetNodeOrNull<Node3D>("MovingProductionVisual") ??
+            throw new InvalidOperationException($"Sliding cabinet {Name} has no moving production leaf.");
+        _productionMovingClosedPosition = _productionMovingVisual.Position;
+        _productionMovingOpenPosition = _productionMovingClosedPosition +
+            (_movingLeafOpenPosition - _movingLeafClosedPosition);
+    }
+
     public void SetOpen(bool open, bool animate)
     {
         if (open)
@@ -185,6 +216,9 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
             _tween.SetParallel();
             _tween.TweenProperty(_movingLeaf, "position", target, 0.28d);
             _tween.TweenProperty(_movingLeafCollision, "position", target, 0.28d);
+            if (_productionMovingVisual is not null)
+                _tween.TweenProperty(_productionMovingVisual, "position",
+                    open ? _productionMovingOpenPosition : _productionMovingClosedPosition, 0.28d);
         }
         GameSession.Instance.EmitSignal(GameSession.SignalName.StatusMessage,
             $"已{(open ? "打开" : "关闭")}{PartLabel()}；{_contentsDescription}。 ");
@@ -287,6 +321,10 @@ public partial class CabinetInteractable : StaticBody3D, IInteractable
             _movingLeaf.Position = position;
         if (_movingLeafCollision is not null)
             _movingLeafCollision.Position = position;
+        if (_productionMovingVisual is not null)
+            _productionMovingVisual.Position = position == _movingLeafOpenPosition
+                ? _productionMovingOpenPosition
+                : _productionMovingClosedPosition;
     }
 
     private string PartLabel() => _kind switch

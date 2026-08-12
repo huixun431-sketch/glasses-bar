@@ -49,6 +49,15 @@
 - 检查结果：27 张均已在本机打开检查；本轮未发现南门异物、顶棚光斑、墨绿残留、旧水槽横栏或过时开启状态截图。
 - 用户决定：pending。本批现停在 Task 10 预集成审查，等待用户检查样式。
 
+## 2026-08-12 Task 11 production integration and lighting candidate
+
+- 六模块已在默认 `Main` 中事务式加载；建筑／家具／灯具外壳按现实与眼镜世界各一份，吧台／背柜／磨损保持共享表现，柜门和抽屉视觉绑定到权威玩法节点。任一模块缺失会原子式回退完整灰盒。
+- 项目继续拥有碰撞、稳定 ID、开合状态和真实灯光；每个世界为 14 盏逻辑灯。灯光候选降低直下灯峰值，并用两项既有不可见填光照亮深棕立面，未添加额外灯具或修改 GLB。
+- Capture scene：`tests/godot/BarProductionVisualCapture.tscn`；Renderer：Godot `4.7.1.stable.mono` Vulkan Forward+／RTX 5070 Laptop GPU；现行证据为 `artifacts/bar-interior-production-integration/` 下 24 张 `1920×1080` PNG。
+- 24 张全部已打开检查；`14_reality_lighting`／`15_glasses_lighting` 与 `23_reality_player_eye_lighting`／`24_glasses_player_eye_lighting` 不使用捕获专用技术补光。当前候选的吧台、背柜、地板和客区可读，暖／冷世界差异明确，未见高光白片、死黑立面、柜门行程或动线回归。
+- 自动化：主清单 `21/0`、领域 `28/28`、Debug/Release `0/0`、`BAR_PRODUCTION_ASSET_INTEGRATION_PASS` 及完整 Godot 回归通过；批次 `forward-plus-review errors=0`。
+- 用户检查点 2 仍为 pending，六项环境主清单保持 `placeholder: true`；本节记录真实证据，不代替用户批准。
+
 ## Checkpoint 2: actual integrated Godot Forward+
 
 - Status：pending，未开始。

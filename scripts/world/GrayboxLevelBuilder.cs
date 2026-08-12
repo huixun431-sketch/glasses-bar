@@ -8,6 +8,8 @@ namespace GlassesBar;
 /// </summary>
 public partial class GrayboxLevelBuilder : Node3D
 {
+    [Export] public bool ForceProductionVisualFallback { get; set; }
+
     // Compatibility constants remain here because integration tests and scene setup
     // already use this public surface. The authoritative values live in the layout definition.
     public const float FrontBarTopHeight = BarLayoutDefinition.FrontBarTopHeight;
@@ -32,7 +34,6 @@ public partial class GrayboxLevelBuilder : Node3D
             reality,
             glasses);
         architecture.BuildCollisions();
-        architecture.BuildGrayboxVisuals();
 
         var gameplay = new GameplaySceneComposer(
             this,
@@ -44,6 +45,19 @@ public partial class GrayboxLevelBuilder : Node3D
 
         var cabinetry = new CabinetBuilder(layout, neutral);
         cabinetry.Build();
+
+        var loader = new BarEnvironmentVisualLoader(
+            ForceProductionVisualFallback ? "bar_lighting" : null);
+        if (loader.TryInstantiate(neutral, reality, glasses, out var visualSet))
+        {
+            new BarGameplayVisualBinder().Bind(layout, neutral, visualSet);
+            new BarLightRigController(layout, reality, glasses).Build();
+            var variants = new BarMaterialVariantController { Name = "BarMaterialVariantController" };
+            variants.Configure(visualSet.NeutralModules["bar_wear_overlays"]);
+            AddChild(variants);
+        }
+        else
+            architecture.BuildGrayboxVisuals();
 
         gameplay.BuildStations(cabinetry);
         gameplay.BuildWorkboard(workstation);

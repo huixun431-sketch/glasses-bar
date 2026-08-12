@@ -152,6 +152,17 @@ class ModelingSkillFrameworkTests(unittest.TestCase):
         self.assertTrue(any(error.startswith("TRACKED_BLEND:") for error in errors))
         self.assertFalse(any(error.startswith("TRACKED_IMPORT_METADATA:") for error in errors))
 
+    def test_validator_allows_tracked_product_ui_pngs(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            errors = self.validator.validate_batch(
+                VALID_CONFIG,
+                Path(temporary_directory),
+                "silhouette-review",
+                tracked_files=["assets/ui/main_menu/title.png"],
+            )
+
+        self.assertFalse(any(error.startswith("TRACKED_SCREENSHOT:") for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

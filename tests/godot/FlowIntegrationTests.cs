@@ -226,28 +226,45 @@ public partial class FlowIntegrationTests : Node
         Require(Math.Abs(main.GetNode<Node3D>("Player/Head").GlobalPosition.Y - GrayboxLevelBuilder.PlayerEyeHeight) < 0.01f,
             "player capsule and camera use the approved eye height");
         var realityWorld = main.GetNode<Node3D>("RealityWorld");
-        Require(!realityWorld.HasNode("MergedBottleRackBack") &&
-                layout.BottleRackBays.All(bay => realityWorld.HasNode(bay.Back.Name) &&
-                    bay.Shelves.All(shelf => realityWorld.HasNode(shelf.Name))),
-            "rear bar uses five aligned empty rack bays without the obsolete merged rack: " +
-            string.Join(",", realityWorld.GetChildren().Select(node => node.Name.ToString())));
-        Require(realityWorld.HasNode("UpperBackCabinet"), "rear bar keeps the approved upper cabinet");
-        Require(realityWorld.HasNode("RearBarWorktop"), "rear bar uses the approved 0.96 metre worktop");
+        var productionMode = realityWorld.HasNode("ProductionArchitecture");
         Require(!main.GetNode<Node3D>("NeutralGameplay").HasNode("MergedBackBarCollider"),
             "obsolete low rear-bar collision stays removed");
         Require(main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarBodyCollider") &&
                 !main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarWestChamferCollider") &&
-                !main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarEastChamferCollider") &&
-                realityWorld.GetNode<MeshInstance3D>("FrontBarBody").Mesh is ArrayMesh &&
-                !realityWorld.HasNode("FrontBarWestChamfer") &&
-                !realityWorld.HasNode("FrontBarEastChamfer"),
-            "front bar collision and visuals come from one authoritative polygon without overlay chamfers");
-        Require(main.GetNode<Node3D>("RealityWorld/SouthWindows").GetChildCount() == 1,
-            "runtime shell has exactly one south-east landscape window");
-        Require(realityWorld.HasNode("Ceiling") &&
-                realityWorld.GetNode<Node3D>("Wainscot").GetChildCount() == 8,
-            "runtime shell includes the ceiling and segmented 1.05 metre wainscot break around openings");
-        Require(!realityWorld.HasNode("RearBooth"), "obsolete booths stay removed");
+                !main.GetNode<Node3D>("NeutralGameplay").HasNode("FrontBarEastChamferCollider"),
+            "front bar collision remains owned by the authoritative polygon layout");
+        if (productionMode)
+        {
+            var architecture = realityWorld.GetNode<Node3D>("ProductionArchitecture");
+            var backbar = main.GetNode<Node3D>("NeutralGameplay/ProductionBackbar");
+            Require(architecture.FindChild("room_shell", true, false) is MeshInstance3D &&
+                    architecture.FindChild("south_east_window", true, false) is Node3D,
+                "production architecture retains the approved shell and single south-east window");
+            Require(backbar.FindChildren("bottle_rack_bay_*", "", true, false).Count >= 5 &&
+                    backbar.FindChild("upper_cabinet_shell_1", true, false) is Node3D,
+                "production backbar retains five aligned bottle-rack bays and hollow upper cabinets");
+            Require(realityWorld.FindChild("RearBooth", true, false) is null &&
+                    realityWorld.FindChild("MergedBottleRackBack", true, false) is null,
+                "production visuals contain no obsolete booth or merged rack");
+        }
+        else
+        {
+            Require(!realityWorld.HasNode("MergedBottleRackBack") &&
+                    layout.BottleRackBays.All(bay => realityWorld.HasNode(bay.Back.Name) &&
+                        bay.Shelves.All(shelf => realityWorld.HasNode(shelf.Name))),
+                "graybox rear bar uses five aligned empty rack bays without the obsolete merged rack");
+            Require(realityWorld.HasNode("UpperBackCabinet") && realityWorld.HasNode("RearBarWorktop"),
+                "graybox rear bar keeps the approved upper cabinet and worktop");
+            Require(realityWorld.GetNode<MeshInstance3D>("FrontBarBody").Mesh is ArrayMesh &&
+                    !realityWorld.HasNode("FrontBarWestChamfer") &&
+                    !realityWorld.HasNode("FrontBarEastChamfer"),
+                "graybox front visuals come from one polygon without overlay chamfers");
+            Require(realityWorld.GetNode<Node3D>("SouthWindows").GetChildCount() == 1 &&
+                    realityWorld.HasNode("Ceiling") &&
+                    realityWorld.GetNode<Node3D>("Wainscot").GetChildCount() == 8,
+                "graybox shell includes one south-east window, ceiling and segmented wainscot");
+            Require(!realityWorld.HasNode("RearBooth"), "obsolete booths stay removed");
+        }
         foreach (var assignment in layout.ItemStorageAssignments.Where(item =>
                      layout.Tools.Any(tool => tool.ToolId == item.ItemId)))
         {
@@ -309,22 +326,41 @@ public partial class FlowIntegrationTests : Node
         Require(main.GetNode<Node3D>("NeutralGameplay").HasNode("EmployeeGate") &&
                 layout.EmployeeGate.Size.Y < BarLayoutDefinition.PlayerWorktopHeight,
             "the east employee gate is a closed authoritative half-height part");
-        Require(realityWorld.GetNode<Node3D>("FrontStools").GetChildCount() == 6 &&
-                realityWorld.GetNode<Node3D>("LoungeTables").GetChildCount() == 3 &&
-                realityWorld.GetNode<Node3D>("LoungeChairs").GetChildCount() == 12,
-            "runtime graybox builds six stools, three tables and twelve independent chairs");
         var lightRig = realityWorld.GetNode<Node3D>("BarLightRig");
-        Require(lightRig.GetNode<Node3D>("Pendants").GetChildCount() == 3 &&
-                lightRig.GetNode<Node3D>("RearLinears").GetChildCount() == 2 &&
-                lightRig.GetNode<Node3D>("CustomerSconces").GetChildCount() == 4 &&
-                lightRig.GetNode<Node3D>("CustomerFills").GetChildCount() == 2 &&
-                !main.HasNode("KeyLight") && !main.HasNode("WarmLight") && !main.HasNode("BackBarLight"),
-            "approved fixture groups replace the obsolete generic global lights");
-        Require(lightRig.GetNode<Node3D>("RearLinears").GetChildren()
-                .Cast<Node3D>()
-                .All(fixture => fixture.GetNode<MeshInstance3D>("Fixture").Mesh is BoxMesh box &&
-                    box.Size.X >= 2.40f && box.Size.Z <= 0.08f),
-            "rear task fixtures are concealed east-west linear strips rather than generic point-light housings");
+        if (productionMode)
+        {
+            var furniture = realityWorld.GetNode<Node3D>("ProductionFurniture");
+            Require(furniture.FindChild("stool_1", true, false) is Node3D &&
+                    furniture.FindChild("stool_6", true, false) is Node3D &&
+                    furniture.FindChild("lounge_table_1", true, false) is Node3D &&
+                    furniture.FindChild("lounge_table_3", true, false) is Node3D &&
+                    furniture.FindChild("lounge_chair_1", true, false) is Node3D &&
+                    furniture.FindChild("lounge_chair_12", true, false) is Node3D,
+                "production furniture includes six stools, three tables and twelve chairs");
+            Require(lightRig.FindChildren("*", "Light3D", true, false).Count == 14 &&
+                    lightRig.FindChildren("*", "MeshInstance3D", true, false).Count == 0,
+                "production rig owns fourteen real lights without duplicating fixture meshes");
+        }
+        else
+        {
+            Require(realityWorld.GetNode<Node3D>("FrontStools").GetChildCount() == 6 &&
+                    realityWorld.GetNode<Node3D>("LoungeTables").GetChildCount() == 3 &&
+                    realityWorld.GetNode<Node3D>("LoungeChairs").GetChildCount() == 12,
+                "runtime graybox builds six stools, three tables and twelve independent chairs");
+            Require(lightRig.GetNode<Node3D>("Pendants").GetChildCount() == 3 &&
+                    lightRig.GetNode<Node3D>("LoungePendants").GetChildCount() == 3 &&
+                    lightRig.GetNode<Node3D>("RearLinears").GetChildCount() == 2 &&
+                    lightRig.GetNode<Node3D>("CustomerSconces").GetChildCount() == 4 &&
+                    lightRig.GetNode<Node3D>("CustomerFills").GetChildCount() == 2,
+                "graybox fixture groups retain all fourteen approved logical lights");
+            Require(lightRig.GetNode<Node3D>("RearLinears").GetChildren()
+                    .Cast<Node3D>()
+                    .All(fixture => fixture.GetNode<MeshInstance3D>("Fixture").Mesh is BoxMesh box &&
+                        box.Size.X >= 2.40f && box.Size.Z <= 0.08f),
+                "rear task fixtures are concealed east-west linear strips rather than generic point-light housings");
+        }
+        Require(!main.HasNode("KeyLight") && !main.HasNode("WarmLight") && !main.HasNode("BackBarLight"),
+            "approved fixture groups replace obsolete generic global lights");
         Require(narrowestWalkingLane >= 1.0f,
             "a fully opened short-travel drawer keeps approximately one metre of aisle clearance");
         var iceDrawer = main.GetNode<CabinetInteractable>("NeutralGameplay/front_drawer_2_upper");
